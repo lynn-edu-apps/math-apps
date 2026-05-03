@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Division Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fef9f0; --sky: #e8f4fd; --card: #ffffff;
+    --gold: #f5a623; --gold-dark: #d4891a;
+    --blue: #4a90d9; --blue-dark: #2d6fb5;
+    --green: #5cb85c; --green-dark: #3d8b3d;
+    --red: #e74c3c; --purple: #9b59b6; --teal: #1abc9c;
+    --coral: #ff6b6b; --coral-dark: #c94040;
+    --rem: #a855f7; --rem-dark: #7c3aed; --rem-light: #d8b4fe;
+    --shadow: 0 4px 20px rgba(0,0,0,0.1);
+    --shadow-deep: 0 8px 32px rgba(0,0,0,0.15);
+    --radius: 16px;
+    --font-display: 'Fredoka One', cursive;
+    --font-body: 'Nunito', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-body); background: var(--bg); min-height: 100vh; overflow-x: hidden; }
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; }
+
+  /* ══ START SCREEN ══ */
+  #start-screen {
+    flex-direction: column; align-items: center; justify-content: flex-start;
+    padding: 32px 20px 24px;
+    background: linear-gradient(160deg,#e8f4fd 0%,#fef9f0 60%,#fff8e8 100%);
+  }
+  .start-logo { font-family: var(--font-display); font-size: clamp(2rem,8vw,3.8rem); color: var(--blue-dark); text-align: center; line-height: 1.1; margin-bottom: 4px; text-shadow: 3px 3px 0 rgba(74,144,217,0.18); }
+  .start-logo span { color: var(--gold); }
+  .start-tagline { font-size: 1rem; color: #888; font-weight: 600; text-align: center; margin-bottom: 28px; }
+  .start-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow-deep); padding: 28px 32px; width: 100%; max-width: 520px; margin-bottom: 16px; }
+  .start-section-label { font-family: var(--font-display); font-size: 1.1rem; color: var(--blue-dark); margin-bottom: 12px; }
+  .divisor-quick-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .dq-btn { width: 48px; height: 48px; border-radius: 12px; border: 3px solid transparent; font-family: var(--font-display); font-size: 1.2rem; cursor: pointer; transition: all 0.15s; background: var(--sky); color: var(--blue-dark); }
+  .dq-btn:hover { transform: scale(1.12); }
+  .dq-btn.selected { background: var(--blue); color: #fff; border-color: var(--blue-dark); transform: scale(1.12); }
+  .divisor-custom-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .divisor-custom-row label { font-weight: 700; color: #666; font-size: 0.9rem; white-space: nowrap; }
+  .custom-divisor-input { width: 80px; padding: 8px 12px; border: 2px solid #ddd; border-radius: 10px; font-family: var(--font-body); font-size: 1.1rem; font-weight: 700; text-align: center; }
+  .custom-divisor-input:focus { outline: none; border-color: var(--blue); }
+  .dividend-options { display: flex; gap: 12px; margin-bottom: 8px; }
+  .dividend-choice-btn { flex: 1; padding: 12px 8px; border-radius: 12px; border: 3px solid transparent; font-family: var(--font-display); font-size: 1rem; cursor: pointer; transition: all 0.15s; background: var(--sky); color: var(--blue-dark); text-align: center; }
+  .dividend-choice-btn.selected { background: var(--gold); color: #fff; border-color: var(--gold-dark); }
+  .dividend-choice-btn:hover { transform: scale(1.04); }
+  #dividend-type-area { margin-top: 10px; }
+  .dividend-input-row { display: flex; align-items: center; gap: 10px; }
+  #dividend-value-input { width: 100px; padding: 10px 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 1.3rem; font-weight: 800; text-align: center; font-family: var(--font-body); }
+  #dividend-value-input:focus { outline: none; border-color: var(--gold); }
+  .lets-go-btn { width: 100%; max-width: 520px; padding: 18px; background: linear-gradient(135deg,var(--green) 0%,var(--teal) 100%); color: #fff; border: none; border-radius: var(--radius); font-family: var(--font-display); font-size: 1.8rem; cursor: pointer; box-shadow: 0 6px 0 var(--green-dark); transition: all 0.15s; letter-spacing: 1px; }
+  .lets-go-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 var(--green-dark); }
+  .lets-go-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 var(--green-dark); }
+  .advanced-link { margin-top: 12px; background: none; border: none; color: #bbb; font-size: 0.78rem; font-family: var(--font-body); cursor: pointer; text-decoration: underline; }
+  .advanced-link:hover { color: #999; }
+
+  /* ══ ADVANCED SETTINGS MODAL ══ */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--card); border-radius: var(--radius); padding: 32px; width: 100%; max-width: 480px; box-shadow: var(--shadow-deep); position: relative; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-family: var(--font-display); font-size: 1.5rem; color: var(--blue-dark); margin-bottom: 6px; }
+  .modal-subtitle { font-size: 0.85rem; color: #999; margin-bottom: 24px; }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: #f0f0f0; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; gap: 16px; }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { font-weight: 700; color: #444; font-size: 0.9rem; }
+  .setting-desc { font-size: 0.78rem; color: #aaa; margin-top: 2px; }
+  .toggle { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: #ddd; border-radius: 26px; cursor: pointer; transition: 0.3s; }
+  .toggle-slider:before { content: ''; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+  .toggle input:checked + .toggle-slider { background: var(--green); }
+  .toggle input:checked + .toggle-slider:before { transform: translateX(22px); }
+  .range-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .range-row input[type=number] { width: 70px; padding: 6px 8px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; font-weight: 700; text-align: center; }
+  .range-row input:focus { outline: none; border-color: var(--blue); }
+  .range-row span { color: #aaa; font-size: 0.85rem; }
+  .save-settings-btn { width: 100%; margin-top: 20px; padding: 14px; background: var(--blue); color: #fff; border: none; border-radius: 12px; font-family: var(--font-display); font-size: 1.2rem; cursor: pointer; }
+  .save-settings-btn:hover { background: var(--blue-dark); }
+
+  /* ══ EXPLORER SCREEN ══ */
+  #explorer-screen { flex-direction: column; align-items: stretch; padding: 0; background: linear-gradient(180deg,#e8f4fd 0%,#fef9f0 100%); min-height: 100vh; }
+
+  .explorer-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 8px; background: var(--card); box-shadow: 0 2px 8px rgba(0,0,0,0.07); gap: 6px; flex-wrap: wrap; }
+  .explorer-title { font-family: var(--font-display); font-size: 1.2rem; color: var(--blue-dark); }
+  .problem-display { font-family: var(--font-display); font-size: 1.5rem; color: var(--blue-dark); letter-spacing: 2px; }
+  .problem-display .op { color: var(--gold); }
+  .quit-btn-small { background: #f0f0f0; border: none; border-radius: 10px; padding: 7px 12px; font-family: var(--font-display); font-size: 0.9rem; color: #888; cursor: pointer; }
+  .quit-btn-small:hover { background: #e0e0e0; }
+
+  /* ── Vocabulary bar ── */
+  .vocab-bar { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 8px 16px 6px; background: rgba(255,255,255,0.7); border-bottom: 1px solid #eee; }
+  .vocab-pill { display: flex; flex-direction: column; align-items: center; padding: 4px 12px; border-radius: 20px; border: 2px solid transparent; transition: all 0.3s; opacity: 0.3; min-width: 72px; }
+  .vocab-pill .vp-name { font-family: var(--font-display); font-size: 0.72rem; letter-spacing: 0.5px; }
+  .vocab-pill .vp-value { font-family: var(--font-display); font-size: 1.2rem; line-height: 1.1; }
+  .vocab-pill.vp-dividend  { background:#fff8e8; border-color:var(--gold);  color:var(--gold-dark); }
+  .vocab-pill.vp-divisor   { background:#e8f4fd; border-color:var(--blue);  color:var(--blue-dark); }
+  .vocab-pill.vp-quotient  { background:#f0fff4; border-color:var(--green); color:var(--green-dark); }
+  .vocab-pill.vp-remainder { background:#f5f0ff; border-color:var(--rem); color:var(--rem-dark); }
+  .vocab-pill.active { opacity: 1; transform: scale(1.1); box-shadow: 0 3px 12px rgba(0,0,0,0.14); }
+  .vocab-pill.solved { opacity: 0.82; }
+
+  /* ── Phase banner ── */
+  .phase-banner {
+    width: 100%; max-width: 700px; text-align: center;
+    font-family: var(--font-display); font-size: 0.88rem;
+    padding: 6px 16px 4px; border-radius: 12px; margin-bottom: 6px;
+    min-height: 2rem; transition: background 0.3s, border-color 0.3s;
+    color: #777; border: 2px solid #ddd; background: #fafafa;
+  }
+  /* The big multiplication fact shown during phase 1 */
+  .phase-math {
+    display: block;
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    color: #7a9fc2;            /* muted blue for divisor, ×, = */
+    letter-spacing: 2px;
+    line-height: 1.2;
+    margin-top: 2px;
+  }
+  /* Green numbers are same size but heavier weight to stand out */
+  .math-multiplier { color: var(--green-dark); font-size: 1em; font-weight: 900; }
+  .math-product    { color: var(--green-dark); font-size: 1em; font-weight: 900; }
+  .phase-banner.phase1     { background:#e8f4fd; color:var(--blue-dark); border:2px solid var(--blue); }
+  .phase-banner.phase2     { background:#f5f0ff; color:var(--rem-dark); border:2px solid var(--rem); animation:popIn 0.3s ease; }
+  .phase-banner.phase-done { background:#d1e7dd; color:#0a3622; border:2px solid var(--green); animation:popIn 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes popIn { 0%{transform:scale(0.78);opacity:0} 100%{transform:scale(1);opacity:1} }
+
+  /* ── Main explorer area ── */
+  .explorer-main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 16px 8px; }
+
+  /* ── Rod stage ── */
+  .rod-stage-wrapper { position: relative; width: 100%; max-width: 700px; background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 10px 20px 14px; margin-bottom: 10px; }
+  .rod-stage-labels {
+    display: flex;
+    justify-content: center;
+    gap: 40px;          /* matches .rod-stage gap */
+    margin-bottom: 4px;
+    /* Each label is the same width as a rod (72px) so it centers over it naturally */
+  }
+  /* When only 2 columns visible, the third label is hidden (visibility:hidden keeps space) */
+  .rod-column-label { width: 72px; font-family: var(--font-display); font-size: 0.78rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; text-align: center; flex-shrink: 0; }
+  .rod-stage { position: relative; height: 260px; display: flex; align-items: flex-end; justify-content: center; gap: 40px; overflow: visible; }
+  .rod-column { display: flex; flex-direction: column-reverse; align-items: center; }
+
+  /* Remainder column: positioned so its top edge sits AT the aim line, growing downward */
+  .remainder-col {
+    /* stays in normal flow for column gap alignment */
+    position: relative;
+    display: flex;
+    flex-direction: column;   /* grows downward */
+    align-items: center;
+    justify-content: flex-start;
+    /* vertical alignment: top of this column = aim line height.
+       We use JS to set margin-bottom so the column baseline sits correctly. */
+  }
+
+  .rod { border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); color: rgba(255,255,255,0.95); position: relative; flex-shrink: 0; }
+  .rod.dividend-rod { background: linear-gradient(180deg,#f5d87a 0%,#f5a623 100%); box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -3px 0 rgba(0,0,0,0.15), 2px 4px 8px rgba(245,166,35,0.35); }
+  .rod.divisor-rod { background: linear-gradient(180deg,#7ec8f7 0%,#4a90d9 100%); box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -3px 0 rgba(0,0,0,0.15), 2px 4px 8px rgba(74,144,217,0.35); border-top: 2px solid rgba(255,255,255,0.5); }
+  .rod.divisor-rod.bottom-rod { border-top: none; }
+  .rod.remainder-rod {
+    background: linear-gradient(180deg,#c084fc 0%,#a855f7 100%);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,0.45), inset 0 -3px 0 rgba(0,0,0,0.15), 2px 4px 10px rgba(168,85,247,0.4);
+    margin-top: -3px;
+    border-top: 3px dashed rgba(255,255,255,0.9);
+    border-radius: 0 0 6px 6px;
+    min-height: 0;        /* allow height:0 so only the dashed border shows for value=0 */
+    overflow: visible;
+    transition: height 0.1s ease;
+  }
+
+  .aim-line { position: absolute; left: -8px; right: -8px; height: 3px; background: repeating-linear-gradient(90deg,#f5a623 0,#f5a623 10px,transparent 10px,transparent 17px); opacity: 0.85; pointer-events: none; z-index: 5; }
+
+  /* Second dashed line — top of divisor tower, shown only during remainder phase.
+     Starts at the divisor column and extends right through the remainder column.
+     left is set by JS to align with the divisor column. */
+  .tower-top-line { position: absolute; right: -8px; height: 3px; background: repeating-linear-gradient(90deg,#4a90d9 0,#4a90d9 8px,transparent 8px,transparent 14px); opacity: 0.75; pointer-events: none; z-index: 5; display: none; }
+
+  /* ── Controls ── */
+  .controls-area { width: 100%; max-width: 700px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+  .ctrl-row { display: flex; align-items: center; gap: 12px; background: white; border-radius: 60px; padding: 9px 20px; box-shadow: var(--shadow); }
+  .ctrl-row.quotient-row { border: 2.5px solid var(--blue); }
+  .ctrl-row.quotient-row.dimmed {
+    opacity: 0.38;
+    filter: grayscale(40%);
+    pointer-events: none;
+  }
+  .ctrl-row.remainder-row { border: 2.5px solid var(--rem); }
+  .ctrl-label { font-family: var(--font-display); font-size: 1.15rem; white-space: nowrap; }
+  .ctrl-label.ql { color: var(--blue-dark); }
+  .ctrl-label.rl { color: var(--rem-dark); }
+
+  .q-btn { width: 42px; height: 42px; border-radius: 50%; border: 3px solid currentColor; font-size: 1.4rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; line-height: 1; background: white; user-select: none; -webkit-user-select: none; }
+  .q-btn.bq { color: var(--blue); }
+  .q-btn.br { color: var(--rem); }
+  .q-btn:hover { transform: scale(1.15); }
+  .q-btn:active { transform: scale(0.93); }
+  .q-btn:disabled { opacity: 0.25; cursor: not-allowed; transform: none; }
+
+  .val-display { font-family: var(--font-display); font-size: 2rem; min-width: 44px; text-align: center; }
+  .val-display.qc { color: var(--blue-dark); }
+  .val-display.rc { color: var(--rem-dark); }
+
+  .check-btn { padding: 13px 38px; background: linear-gradient(135deg,var(--purple) 0%,#7b2ff7 100%); color: #fff; border: none; border-radius: 60px; font-family: var(--font-display); font-size: 1.25rem; cursor: pointer; box-shadow: 0 5px 0 #6a1fd0; transition: all 0.15s; }
+  .check-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #6a1fd0; }
+  .check-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #6a1fd0; }
+
+  .tower-done-btn { padding: 13px 28px; background: linear-gradient(135deg,var(--blue) 0%,var(--teal) 100%); color: #fff; border: none; border-radius: 60px; font-family: var(--font-display); font-size: 1.1rem; cursor: pointer; box-shadow: 0 5px 0 var(--blue-dark); transition: all 0.15s; }
+  .tower-done-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 0 var(--blue-dark); }
+  .tower-done-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--blue-dark); }
+
+  .explorer-quit-btn { background: none; border: none; color: #aaa; font-family: var(--font-display); font-size: 0.95rem; cursor: pointer; padding: 6px 12px; text-decoration: underline; transition: color 0.15s; }
+  .explorer-quit-btn:hover { color: #777; }
+
+  /* ══ RESULT SCREEN ══ */
+  #result-screen { flex-direction: column; align-items: center; justify-content: center; padding: 32px 20px; text-align: center; }
+  .result-emoji { font-size: 5rem; margin-bottom: 12px; animation: bounceIn 0.5s ease; }
+  @keyframes bounceIn { 0%{transform:scale(0)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} }
+  .result-title { font-family: var(--font-display); font-size: clamp(1.8rem,8vw,3rem); margin-bottom: 8px; }
+  .result-title.correct { color: var(--green-dark); }
+  .result-title.wrong   { color: var(--red); }
+  .result-equation { font-family: var(--font-display); font-size: clamp(1.1rem,5vw,1.9rem); color: var(--blue-dark); background: white; border-radius: var(--radius); padding: 14px 28px; box-shadow: var(--shadow); margin: 14px 0 10px; }
+  .result-explanation { font-size: 1.25rem; color: #555; max-width: 420px; line-height: 1.6; margin-bottom: 18px; }
+  .result-vocab { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+  .rv-pill { display: flex; flex-direction: column; align-items: center; padding: 6px 14px; border-radius: 14px; border: 2px solid transparent; font-family: var(--font-display); }
+  .rv-pill .rv-name { font-size: 0.7rem; letter-spacing: 0.5px; opacity: 0.8; }
+  .rv-pill .rv-value { font-size: 1.4rem; line-height: 1.1; }
+  .rv-pill.vp-dividend  { background:#fff8e8; border-color:var(--gold);  color:var(--gold-dark); }
+  .rv-pill.vp-divisor   { background:#e8f4fd; border-color:var(--blue);  color:var(--blue-dark); }
+  .rv-pill.vp-quotient  { background:#f0fff4; border-color:var(--green); color:var(--green-dark); }
+  .rv-pill.vp-remainder { background:#f5f0ff; border-color:var(--rem); color:var(--rem-dark); }
+  .result-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .play-again-btn { padding: 13px 32px; background: linear-gradient(135deg,var(--green) 0%,var(--teal) 100%); color: white; border: none; border-radius: 60px; font-family: var(--font-display); font-size: 1.2rem; cursor: pointer; box-shadow: 0 5px 0 var(--green-dark); transition: all 0.15s; }
+  .play-again-btn:hover { transform: translateY(-2px); }
+  .try-again-btn { padding: 13px 32px; background: linear-gradient(135deg,var(--gold) 0%,#e8940d 100%); color: white; border: none; border-radius: 60px; font-family: var(--font-display); font-size: 1.2rem; cursor: pointer; box-shadow: 0 5px 0 var(--gold-dark); transition: all 0.15s; }
+  .try-again-btn:hover { transform: translateY(-2px); }
+  .quit-btn { padding: 13px 32px; background: #f0f0f0; color: #888; border: none; border-radius: 60px; font-family: var(--font-display); font-size: 1.2rem; cursor: pointer; }
+  .quit-btn:hover { background: #e0e0e0; }
+
+  /* ══ WRONG ANSWER POPUP ══ */
+  .wrong-popup-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 120; align-items: flex-end; justify-content: center;
+    padding-bottom: 24px;
+  }
+  .wrong-popup-overlay.open { display: flex; animation: fadeInOverlay 0.25s ease; }
+  @keyframes fadeInOverlay { from{opacity:0} to{opacity:1} }
+
+  .wrong-popup {
+    background: white; border-radius: 20px 20px 20px 20px;
+    padding: 22px 28px 20px; width: 100%; max-width: 520px;
+    box-shadow: 0 -4px 32px rgba(0,0,0,0.18);
+    animation: slideUp 0.3s cubic-bezier(0.34,1.2,0.64,1);
+    text-align: center; border-top: 5px solid var(--red);
+  }
+  @keyframes slideUp { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+  .wrong-popup-title {
+    font-family: var(--font-display); font-size: 1.6rem;
+    color: var(--red); margin-bottom: 6px;
+  }
+  .wrong-popup-msg {
+    font-size: 1rem; color: #444; line-height: 1.55;
+    margin-bottom: 16px;
+  }
+  .wrong-popup-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .popup-try-again-btn {
+    padding: 12px 28px;
+    background: linear-gradient(135deg,var(--gold) 0%,#e8940d 100%);
+    color: white; border: none; border-radius: 60px;
+    font-family: var(--font-display); font-size: 1.1rem;
+    cursor: pointer; box-shadow: 0 4px 0 var(--gold-dark);
+    transition: all 0.15s;
+  }
+  .popup-try-again-btn:hover { transform: translateY(-2px); }
+  .popup-keep-going-btn {
+    padding: 12px 28px; background: #f0f0f0; color: #666;
+    border: none; border-radius: 60px;
+    font-family: var(--font-display); font-size: 1.1rem;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .popup-keep-going-btn:hover { background: #e0e0e0; }
+
+  /* Highlight wrong values on the explorer screen */
+  .wrong-highlight { color: var(--red) !important; }
+  .wrong-highlight-rod { box-shadow: 0 0 0 3px var(--red), inset 0 2px 0 rgba(255,255,255,0.4) !important; }
+  #confetti-container { position: fixed; inset: 0; pointer-events: none; z-index: 200; overflow: hidden; }
+  .confetti-piece { position: absolute; top: -12px; border-radius: 2px; animation: confettiFall linear forwards; }
+  @keyframes confettiFall { 0%{transform:translateY(0) rotate(0deg);opacity:1} 85%{opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }
+  .oops-emoji { position: fixed; font-size: 2rem; pointer-events: none; z-index: 200; animation: oopsFloat 1.5s ease forwards; }
+  @keyframes oopsFloat { 0%{transform:translateY(0) scale(0);opacity:1} 50%{transform:translateY(-60px) scale(1.2);opacity:1} 100%{transform:translateY(-120px) scale(0.8);opacity:0} }
+
+  /* ══ NUMBER PAD ══ */
+  .numpad-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 150; align-items: flex-end; justify-content: center; }
+  .numpad-modal.open { display: flex; }
+  .numpad-sheet { background: var(--card); border-radius: 24px 24px 0 0; padding: 20px 20px 28px; width: 100%; max-width: 360px; }
+  .numpad-title { font-family: var(--font-display); font-size: 1.2rem; color: var(--blue-dark); text-align: center; margin-bottom: 8px; }
+  .numpad-display { text-align: center; font-family: var(--font-display); font-size: 2.5rem; color: var(--blue-dark); background: var(--sky); border-radius: 12px; padding: 8px; margin-bottom: 14px; min-height: 62px; }
+  .numpad-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 12px; }
+  .np-btn { padding: 16px; border-radius: 12px; border: none; font-family: var(--font-display); font-size: 1.4rem; cursor: pointer; transition: all 0.12s; background: var(--sky); color: var(--blue-dark); }
+  .np-btn:hover { background: var(--blue); color: white; }
+  .np-btn.zero { grid-column: 2; }
+  .np-btn.backspace { background: #fff0f0; color: var(--red); font-size: 1.1rem; }
+  .np-confirm { width: 100%; padding: 14px; background: var(--green); color: white; border: none; border-radius: 14px; font-family: var(--font-display); font-size: 1.3rem; cursor: pointer; }
+  .numpad-error { color: var(--red); font-size: 0.85rem; text-align: center; font-weight: 700; min-height: 1.2em; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<!-- ══ START SCREEN ══ -->
+<div id="start-screen" class="screen active">
+  <div class="start-logo">🥧 Division<br><span>Explorer</span></div>
+  <div class="start-tagline">How many fit? Let's find out!</div>
+  <div class="start-card">
+    <div class="start-section-label">① Pick your divisor</div>
+    <div class="divisor-quick-btns" id="divisor-quick-btns"></div>
+    <div class="divisor-custom-row">
+      <label>or type one:</label>
+      <input type="number" id="custom-divisor-input" class="custom-divisor-input" min="2" step="1" placeholder="?" />
+    </div>
+    <div id="custom-divisor-error" style="color:var(--red);font-size:0.8rem;min-height:1.1em;font-weight:700;margin-top:2px;"></div>
+  </div>
+  <div class="start-card">
+    <div class="start-section-label">② Choose your dividend</div>
+    <div class="dividend-options">
+      <button class="dividend-choice-btn selected" id="btn-computer-pick" onclick="setDividendMode('computer')">🎲 Computer picks!</button>
+      <button class="dividend-choice-btn" id="btn-i-pick" onclick="setDividendMode('me')">✏️ I'll choose</button>
+    </div>
+    <div id="dividend-type-area" style="display:none;">
+      <div class="dividend-input-row">
+        <input type="number" id="dividend-value-input" min="1" step="1" placeholder="?" />
+        <button class="np-btn" onclick="openNumpad('dividend')" style="width:auto;padding:10px 14px;font-size:0.9rem;">🔢 Pad</button>
+      </div>
+      <div id="dividend-input-error" style="color:var(--red);font-size:0.8rem;min-height:1.2em;font-weight:700;margin-top:4px;"></div>
+    </div>
+  </div>
+  <button class="lets-go-btn" onclick="startExplorer()">Let's Go! 🚀</button>
+  <button class="advanced-link" onclick="openAdvanced()">⚙️ Parent / Teacher Settings</button>
+</div>
+
+<!-- ══ ADVANCED SETTINGS ══ -->
+<div class="modal-overlay" id="advanced-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAdvanced()">✕</button>
+    <div class="modal-title">⚙️ Teacher &amp; Parent Settings</div>
+    <div class="modal-subtitle">Customize what the student sees and can do.</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Allow remainders when computer picks</div><div class="setting-desc">When on, the computer may choose a dividend that doesn't divide evenly.</div></div>
+      <label class="toggle"><input type="checkbox" id="setting-remainders" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">Student may type a custom divisor</div><div class="setting-desc">When off, student can only pick from the preset buttons.</div></div>
+      <label class="toggle"><input type="checkbox" id="setting-custom-divisor" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <div style="width:100%"><div class="setting-label">Divisor button range</div><div class="setting-desc">Which divisors appear as quick buttons.</div>
+        <div class="range-row"><input type="number" id="setting-div-min" min="2" max="20" value="2"><span>to</span><input type="number" id="setting-div-max" min="2" max="99" value="12"></div>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div style="width:100%"><div class="setting-label">Dividend range (when computer picks)</div>
+        <div class="range-row"><input type="number" id="setting-dd-min" min="1" value="10"><span>to</span><input type="number" id="setting-dd-max" min="2" value="100"></div>
+      </div>
+    </div>
+    <button class="save-settings-btn" onclick="saveAdvanced()">Save Settings</button>
+  </div>
+</div>
+
+<!-- ══ EXPLORER SCREEN ══ -->
+<div id="explorer-screen" class="screen">
+  <div class="explorer-header">
+    <div class="explorer-title">🥧 Division Explorer</div>
+    <div class="problem-display">
+      <span id="prob-dividend">?</span><span class="op"> ÷ </span><span id="prob-divisor">?</span><span class="op"> = </span><span id="prob-quotient">?</span><span id="prob-rem-part" style="color:var(--rem)"></span>
+    </div>
+    <button class="quit-btn-small" onclick="goToStart()">Quit</button>
+  </div>
+
+  <!-- Vocabulary bar -->
+  <div class="vocab-bar">
+    <div class="vocab-pill vp-dividend" id="pill-dividend">
+      <span class="vp-name">DIVIDEND</span><span class="vp-value" id="pill-dividend-val">?</span>
+    </div>
+    <div class="vocab-pill vp-divisor" id="pill-divisor">
+      <span class="vp-name">DIVISOR</span><span class="vp-value" id="pill-divisor-val">?</span>
+    </div>
+    <div class="vocab-pill vp-quotient" id="pill-quotient">
+      <span class="vp-name">QUOTIENT</span><span class="vp-value" id="pill-quotient-val">?</span>
+    </div>
+    <div class="vocab-pill vp-remainder" id="pill-remainder">
+      <span class="vp-name">REMAINDER</span><span class="vp-value" id="pill-remainder-val">?</span>
+    </div>
+  </div>
+
+  <div class="explorer-main">
+    <div class="phase-banner phase1" id="phase-banner">Step 1 — Stack blue rods to reach the gold line!</div>
+
+    <div class="rod-stage-wrapper">
+      <div class="rod-stage-labels" id="rod-stage-labels">
+        <div class="rod-column-label">Dividend</div>
+        <div class="rod-column-label">Divisor Tower</div>
+        <div class="rod-column-label" id="remainder-col-label" style="display:none;">Remainder</div>
+      </div>
+      <div class="rod-stage" id="rod-stage">
+        <div class="rod-column" id="dividend-stack"></div>
+        <div class="rod-column" id="divisor-stack"></div>
+        <!-- Remainder column: rod grows downward from aim line, uses absolute positioning -->
+        <div class="rod-column remainder-col" id="remainder-col" style="display:none;">
+          <div class="rod remainder-rod" id="remainder-rod" style="width:72px;height:6px;"></div>
+        </div>
+        <div class="aim-line" id="aim-line" style="display:none;"></div>
+        <div class="tower-top-line" id="tower-top-line"></div>
+      </div>
+    </div>
+
+    <div class="controls-area">
+      <!-- Phase 1: quotient -->
+      <div class="ctrl-row quotient-row" id="quotient-controls">
+        <span class="ctrl-label ql">Quotient — how many <span id="divisor-label-inline">?</span>s fit?</span>
+        <button class="q-btn bq" onclick="adjustQuotient(-1)">−</button>
+        <div class="val-display qc" id="quotient-display">0</div>
+        <button class="q-btn bq" onclick="adjustQuotient(1)">+</button>
+      </div>
+      <!-- Tower done button — always visible during phase 1 once quotient > 0 -->
+      <button class="tower-done-btn" id="tower-done-btn" onclick="userClickedTowerDone()" style="display:none;">I'm done stacking! →</button>
+      <!-- Phase 2: remainder -->
+      <div class="ctrl-row remainder-row" id="remainder-controls" style="display:none;">
+        <span class="ctrl-label rl">Remainder — leftover size?</span>
+        <button class="q-btn br" onclick="adjustRemainder(-1)">−</button>
+        <div class="val-display rc" id="remainder-display">0</div>
+        <button class="q-btn br" onclick="adjustRemainder(1)">+</button>
+      </div>
+      <button class="check-btn" id="check-btn" onclick="checkAnswer()">Check My Answer ✓</button>
+      <button class="explorer-quit-btn" onclick="goToStart()">← Back to Start</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESULT SCREEN ══ -->
+<div id="result-screen" class="screen">
+  <div class="result-emoji" id="result-emoji">🎉</div>
+  <div class="result-title" id="result-title">Correct!</div>
+  <div class="result-equation" id="result-equation"></div>
+  <div class="result-explanation" id="result-explanation"></div>
+  <div class="result-vocab" id="result-vocab"></div>
+  <div class="result-btns">
+    <button class="try-again-btn" id="try-again-btn" onclick="tryAgain()" style="display:none;">Try Again</button>    <button class="play-again-btn" onclick="playAgain()">Play Again! 🎲</button>
+    <button class="quit-btn" onclick="goToStart()">Quit</button>
+  </div>
+</div>
+
+<!-- ══ WRONG ANSWER POPUP ══ -->
+<div class="wrong-popup-overlay" id="wrong-popup-overlay">
+  <div class="wrong-popup">
+    <div class="wrong-popup-title" id="wrong-popup-title">Not quite! 🙁</div>
+    <div class="wrong-popup-msg" id="wrong-popup-msg"></div>
+    <div class="wrong-popup-btns">
+      <button class="popup-try-again-btn" id="popup-action-btn">Fix My Tower →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ NUMBER PAD ══ -->
+<div class="numpad-modal" id="numpad-modal">
+  <div class="numpad-sheet">
+    <div class="numpad-title" id="numpad-title">Enter a number</div>
+    <div class="numpad-display" id="numpad-display">—</div>
+    <div class="numpad-error" id="numpad-confirm-error"></div>
+    <div class="numpad-grid">
+      <button class="np-btn" onclick="npPress(7)">7</button><button class="np-btn" onclick="npPress(8)">8</button><button class="np-btn" onclick="npPress(9)">9</button>
+      <button class="np-btn" onclick="npPress(4)">4</button><button class="np-btn" onclick="npPress(5)">5</button><button class="np-btn" onclick="npPress(6)">6</button>
+      <button class="np-btn" onclick="npPress(1)">1</button><button class="np-btn" onclick="npPress(2)">2</button><button class="np-btn" onclick="npPress(3)">3</button>
+      <button class="np-btn backspace" onclick="npBack()">⌫</button><button class="np-btn zero" onclick="npPress(0)">0</button>
+    </div>
+    <button class="np-confirm" onclick="npConfirm()">Done ✓</button>
+  </div>
+</div>
+
+<div id="confetti-container"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════════
+const settings = {
+  allowRemainders: true, allowCustomDivisor: true,
+  divisorMin: 2, divisorMax: 12, dividendMin: 10, dividendMax: 100,
+};
+
+// ══════════════════════════════════════════════════════
+// STATE
+// phase: 'tower' → building divisor stack
+//        'remainder' → sizing the remainder rod
+//        'done' → both correct, ready to check
+// ══════════════════════════════════════════════════════
+let state = {
+  divisor: null, dividend: null, dividendMode: 'computer',
+  quotient: 0, studentRemainder: 0,
+  correctQuotient: 0, correctRemainder: 0,
+  phase: 'tower',
+};
+
+let numpadTarget = null, numpadValue = '';
+
+const ROD_W  = 72;
+const STAGE_H = 260; // matches CSS
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+function init() { buildDivisorButtons(); applyCustomDivisorVisibility(); }
+
+function buildDivisorButtons() {
+  const c = document.getElementById('divisor-quick-btns');
+  c.innerHTML = '';
+  for (let i = settings.divisorMin; i <= settings.divisorMax; i++) {
+    const b = document.createElement('button');
+    b.className = 'dq-btn' + (state.divisor === i ? ' selected' : '');
+    b.textContent = i; b.dataset.val = i;
+    b.onclick = () => selectDivisor(i);
+    c.appendChild(b);
+  }
+}
+function applyCustomDivisorVisibility() {
+  document.querySelector('.divisor-custom-row').style.display = settings.allowCustomDivisor ? 'flex' : 'none';
+}
+
+// ══════════════════════════════════════════════════════
+// START SCREEN
+// ══════════════════════════════════════════════════════
+function selectDivisor(val) {
+  state.divisor = val;
+  document.querySelectorAll('.dq-btn').forEach(b => b.classList.toggle('selected', +b.dataset.val === val));
+  document.getElementById('custom-divisor-input').value = '';
+}
+document.getElementById('custom-divisor-input').addEventListener('input', function() {
+  const raw = this.value;
+  const errEl = document.getElementById('custom-divisor-error');
+  // Reject anything that isn't a plain positive integer
+  if (raw === '') { errEl.textContent = ''; state.divisor = null; return; }
+  if (!/^\d+$/.test(raw)) {
+    errEl.textContent = 'Please enter a whole number only (no decimals or symbols).';
+    state.divisor = null; return;
+  }
+  errEl.textContent = '';
+  const v = parseInt(raw, 10);
+  if (v >= 2) {
+    state.divisor = v;
+    document.querySelectorAll('.dq-btn').forEach(b => b.classList.remove('selected'));
+  } else {
+    errEl.textContent = 'Divisor must be 2 or more.';
+    state.divisor = null;
+  }
+});
+document.addEventListener('DOMContentLoaded', function() {
+  const ddInput = document.getElementById('dividend-value-input');
+  if (ddInput) {
+    ddInput.addEventListener('input', function() {
+      const raw = this.value;
+      const err = document.getElementById('dividend-input-error');
+      if (raw === '') { err.textContent = ''; return; }
+      if (!/^\d+$/.test(raw)) {
+        err.textContent = 'Please enter a whole number only (no decimals or symbols).';
+      } else {
+        err.textContent = '';
+      }
+    });
+  }
+});
+function setDividendMode(mode) {
+  state.dividendMode = mode;
+  document.getElementById('btn-computer-pick').classList.toggle('selected', mode === 'computer');
+  document.getElementById('btn-i-pick').classList.toggle('selected', mode === 'me');
+  document.getElementById('dividend-type-area').style.display = mode === 'me' ? 'block' : 'none';
+}
+function startExplorer() {
+  const customDivEl  = document.getElementById('custom-divisor-input');
+  const customDivErr = document.getElementById('custom-divisor-error');
+
+  if (!state.divisor) {
+    const raw = customDivEl.value;
+    if (!/^\d+$/.test(raw) && raw !== '') {
+      customDivErr.textContent = 'Please enter a whole number only (no decimals or symbols).';
+      return;
+    }
+    const v = parseInt(raw, 10);
+    if (v >= 2) { state.divisor = v; customDivErr.textContent = ''; }
+    else { alert('Please pick or type a divisor first!'); return; }
+  }
+
+  if (state.dividendMode === 'computer') {
+    state.dividend = generateDividend(state.divisor);
+  } else {
+    const ddEl  = document.getElementById('dividend-value-input');
+    const err   = document.getElementById('dividend-input-error');
+    const raw   = ddEl.value;
+    if (!/^\d+$/.test(raw)) {
+      err.textContent = 'Please enter a whole number only (no decimals or symbols).';
+      return;
+    }
+    const v = parseInt(raw, 10);
+    if (!v || v <= state.divisor) { err.textContent = `Must be bigger than ${state.divisor}!`; return; }
+    if (Math.floor(v / state.divisor) > 12) { err.textContent = `That would need more than 12 rods — try a smaller number!`; return; }
+    if (!settings.allowRemainders && v % state.divisor !== 0) { err.textContent = `Try a number that divides evenly by ${state.divisor}!`; return; }
+    err.textContent = ''; state.dividend = v;
+  }
+  state.quotient = 0; state.studentRemainder = 0;
+  state.correctQuotient = Math.floor(state.dividend / state.divisor);
+  state.correctRemainder = state.dividend % state.divisor;
+  state.phase = 'tower';
+  launchExplorer();
+}
+function generateDividend(divisor) {
+  // Quotient must be ≤ 12 — cap the dividend accordingly
+  const maxByQuotient = divisor * 12;
+  let min = Math.max(settings.dividendMin, divisor + 1);
+  let max = Math.min(settings.dividendMax, maxByQuotient);
+  if (min > max) max = min; // safety fallback
+  if (!settings.allowRemainders) {
+    const mn = Math.ceil(min/divisor), mx = Math.floor(max/divisor);
+    const clampedMx = Math.min(mx, 12);
+    const clampedMn = Math.min(mn, clampedMx);
+    return (clampedMn + Math.floor(Math.random()*(clampedMx - clampedMn + 1))) * divisor;
+  }
+  return min + Math.floor(Math.random()*(max - min + 1));
+}
+
+// ══════════════════════════════════════════════════════
+// EXPLORER LAUNCH
+// ══════════════════════════════════════════════════════
+function launchExplorer() {
+  showScreen('explorer-screen');
+  document.getElementById('prob-dividend').textContent  = state.dividend;
+  document.getElementById('prob-divisor').textContent   = state.divisor;
+  document.getElementById('prob-quotient').textContent  = '?';
+  document.getElementById('prob-rem-part').textContent  = '';
+  document.getElementById('divisor-label-inline').textContent = state.divisor;
+
+  // Vocab pills
+  document.getElementById('pill-dividend-val').textContent  = state.dividend;
+  document.getElementById('pill-divisor-val').textContent   = state.divisor;
+  document.getElementById('pill-quotient-val').textContent  = '?';
+  document.getElementById('pill-remainder-val').textContent = '?';
+  setActivePills(['dividend','divisor']);
+
+  // Controls
+  document.getElementById('quotient-display').textContent  = '0';
+  document.getElementById('remainder-display').textContent = '0';
+  document.getElementById('quotient-controls').style.display  = 'flex';
+  document.getElementById('quotient-controls').classList.remove('dimmed');
+  document.getElementById('remainder-controls').style.display = 'none';
+  document.getElementById('tower-done-btn').style.display = 'none';
+  document.getElementById('remainder-col').style.display      = 'none';
+  document.getElementById('remainder-col-label').style.display = 'none';
+  document.getElementById('tower-top-line').style.display      = 'none';
+
+  state.phase = 'tower';
+  renderRods();
+  updatePhaseBanner();
+}
+
+// ══════════════════════════════════════════════════════
+// VOCAB PILLS
+// ══════════════════════════════════════════════════════
+function setActivePills(active) {
+  ['dividend','divisor','quotient','remainder'].forEach(n => {
+    const el = document.getElementById('pill-' + n);
+    el.classList.remove('active','solved');
+    if (active.includes(n)) el.classList.add('active');
+  });
+}
+function solvePill(name, val) {
+  document.getElementById('pill-'+name+'-val').textContent = val;
+  const el = document.getElementById('pill-'+name);
+  el.classList.remove('active'); el.classList.add('solved');
+}
+
+// ══════════════════════════════════════════════════════
+// RENDERING
+// ══════════════════════════════════════════════════════
+function calcPPU() {
+  const maxNeeded = Math.max(
+    state.dividend,
+    state.divisor * state.quotient + state.studentRemainder,
+    state.divisor * (state.correctQuotient + 1)   // room for one overshoot
+  );
+  return STAGE_H / maxNeeded;
+}
+
+function renderRods() {
+  const ppu  = calcPPU();
+  const divH = Math.max(8, Math.round(state.dividend * ppu));
+
+  // ── Dividend rod ──
+  const divStack = document.getElementById('dividend-stack');
+  divStack.innerHTML = '';
+  const divRod = document.createElement('div');
+  divRod.className = 'rod dividend-rod';
+  divRod.style.cssText = `width:${ROD_W}px;height:${divH}px;font-size:${divH>40?'1.5rem':divH>24?'1.15rem':'0.85rem'};font-weight:900;`;
+  divRod.textContent = state.dividend;
+  divStack.appendChild(divRod);
+
+  // ── Divisor tower ──
+  const divsorStack = document.getElementById('divisor-stack');
+  divsorStack.innerHTML = '';
+
+  // Label rods only when the correct answer quotient ≤ 12, so the decision
+  // doesn't flip as the student builds the tower rod by rod.
+  const showLabels = state.correctQuotient <= 12;
+
+  if (state.quotient === 0) {
+    const ghost = document.createElement('div');
+    ghost.className = 'rod divisor-rod bottom-rod';
+    ghost.style.cssText = `width:${ROD_W}px;height:${Math.max(8,Math.round(state.divisor*ppu))}px;opacity:0.18;`;
+    divsorStack.appendChild(ghost);
+  } else {
+    // Compute total tower height first to avoid per-rod rounding drift.
+    // Give the extra pixel to the BOTTOM rod (i===0), keeping all upper rods
+    // the same height (baseH) so the top rod is never bigger than the rest.
+    const totalH = Math.max(8, Math.round(state.divisor * state.quotient * ppu));
+    const baseH  = Math.floor(totalH / state.quotient);
+    const extra  = totalH - baseH * state.quotient; // 0 or 1
+
+    for (let i = 0; i < state.quotient; i++) {
+      const h = baseH + (i === 0 ? extra : 0); // extra goes to bottom rod only
+      const r = document.createElement('div');
+      r.className = 'rod divisor-rod' + (i === 0 ? ' bottom-rod' : '');
+      r.style.cssText = `width:${ROD_W}px;height:${h}px;`;
+      // Use baseH (not h) for the threshold so the bottom rod's extra pixel
+      // never triggers a label that the other rods don't have.
+      if (showLabels && baseH > 20) {
+        r.style.fontSize = baseH > 28 ? '0.95rem' : '0.72rem';
+        r.textContent = state.divisor;
+      }
+      divsorStack.appendChild(r);
+    }
+  }
+
+  // ── Remainder column (3rd column, grows DOWNWARD from aim line) ──
+  const remCol   = document.getElementById('remainder-col');
+  const remRod   = document.getElementById('remainder-rod');
+  const remLabel = document.getElementById('remainder-col-label');
+
+  if (state.phase === 'remainder' || state.phase === 'done') {
+    remCol.style.display    = 'flex';
+    remLabel.style.display  = 'block';
+
+    // Column height = divH - 3 to match the aim line's adjusted bottom position
+    remCol.style.height         = (divH - 3) + 'px';
+    remCol.style.flexDirection  = 'column';
+    remCol.style.justifyContent = 'flex-start';
+
+    // When studentRemainder is 0, height=0 means only the CSS dashed border-top shows —
+    // a thin stripe that is visually less than a rod of height 1.
+    // Add 1px when value matches the correct answer so rod bottom just touches tower-top line.
+    const isCorrectRem = state.studentRemainder === state.correctRemainder && state.correctRemainder > 0;
+    const remPx = state.studentRemainder > 0
+      ? Math.min(divH - 3, Math.round(state.studentRemainder * ppu) + (isCorrectRem ? 2 : 0))
+      : 0;
+
+    remRod.style.width  = ROD_W + 'px';
+    remRod.style.height = remPx + 'px';
+    if (remPx > 18 && state.studentRemainder > 0) {
+      remRod.style.fontSize = remPx > 26 ? '0.9rem' : '0.7rem';
+      remRod.textContent = state.studentRemainder;
+    } else {
+      remRod.textContent = '';
+    }
+  } else {
+    remCol.style.display   = 'none';
+    remLabel.style.display = 'none';
+  }
+
+  // ── Aim line — position so its bottom edge is flush with the top of the dividend rod ──
+  // The line is 3px tall; bottom=divH would put its bottom 3px above the rod top.
+  // bottom=(divH-3) puts the line's bottom exactly at the rod's top edge.
+  const aimLine = document.getElementById('aim-line');
+  aimLine.style.display = 'block';
+  aimLine.style.bottom  = (divH - 3) + 'px';
+
+  // ── Tower-top line — blue dashed, at top of divisor stack, remainder phase only ──
+  // Shown only when in remainder phase AND correctRemainder > 0.
+  // Spans from the divisor column leftward edge to the right edge of the stage.
+  const towerTopLine = document.getElementById('tower-top-line');
+  const showTowerLine = (state.phase === 'remainder') &&
+                        state.correctRemainder > 0 &&
+                        state.quotient === state.correctQuotient;
+
+  if (showTowerLine) {
+    // Tower height in px (same calculation as totalH above)
+    const towerPx = Math.round(state.divisor * state.quotient * ppu);
+    // bottom of the line = towerPx - 3 (flush with tower top, same logic as aim-line)
+    towerTopLine.style.bottom  = (towerPx - 3) + 'px';
+    towerTopLine.style.display = 'block';
+
+    // Set left edge: measure the divisor-stack column position within the stage
+    const stage       = document.getElementById('rod-stage');
+    const divsorCol   = document.getElementById('divisor-stack');
+    const stageRect   = stage.getBoundingClientRect();
+    const colRect     = divsorCol.getBoundingClientRect();
+    towerTopLine.style.left = (colRect.left - stageRect.left) + 'px';
+  } else {
+    towerTopLine.style.display = 'none';
+  }
+
+  // ── Header equation ──
+  document.getElementById('prob-quotient').textContent = state.quotient > 0 ? state.quotient : '?';
+  const remPart = document.getElementById('prob-rem-part');
+  remPart.textContent = (state.phase === 'remainder' || state.phase === 'done')
+    ? ` r ${state.studentRemainder}` : '';
+}
+
+// ══════════════════════════════════════════════════════
+// PHASE BANNER
+// ══════════════════════════════════════════════════════
+function updatePhaseBanner() {
+  const el      = document.getElementById('phase-banner');
+  const doneBtn = document.getElementById('tower-done-btn');
+  el.className  = 'phase-banner';
+
+  if (state.phase === 'tower') {
+    el.classList.add('phase1');
+    const towerH = state.quotient * state.divisor;
+
+    if (state.quotient === 0) {
+      el.innerHTML = `Step 1 — Press <b>+</b> to stack blue rods!`;
+      doneBtn.style.display = 'none';
+    } else {
+      const towerH = state.quotient * state.divisor;
+      el.innerHTML = `<span class="phase-math"><span class="math-multiplier">${state.quotient}</span> × ${state.divisor} = <span class="math-product">${towerH}</span></span>`;
+      doneBtn.style.display  = 'block';
+      doneBtn.disabled       = false;
+      doneBtn.style.opacity  = '';
+      doneBtn.style.cursor   = '';
+    }
+  } else if (state.phase === 'remainder') {
+    doneBtn.style.display = 'none';
+    el.classList.add('phase2');
+    if (state.studentRemainder === 0) {
+      el.textContent = `Step 2 — Grow the purple rod down to fill the gap!`;
+    } else {
+      el.innerHTML = `<span class="phase-math" style="color:var(--rem-dark)">remainder = ${state.studentRemainder}</span>`;
+    }
+  } else if (state.phase === 'done') {
+    doneBtn.style.display = 'none';
+    el.classList.add('phase-done');
+    el.textContent = `Tower locked in! Hit Check Answer to see if you're right.`;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// QUOTIENT ADJUSTMENT (Phase 1)
+// ══════════════════════════════════════════════════════
+function adjustQuotient(delta) {
+  if (state.phase !== 'tower') return;
+  const newQ = state.quotient + delta;
+  if (newQ < 0 || newQ * state.divisor > state.dividend * 3) return;
+  state.quotient = newQ;
+
+  document.getElementById('quotient-display').textContent = state.quotient;
+  document.getElementById('pill-quotient-val').textContent = state.quotient || '?';
+  setActivePills(state.quotient > 0 ? ['quotient'] : ['dividend','divisor']);
+
+  renderRods();
+  updatePhaseBanner();
+}
+
+// Called when user clicks "I'm done stacking! →"
+function userClickedTowerDone() {
+  if (state.phase !== 'tower') return;
+  if (state.quotient === 0) return; // nothing stacked yet, ignore silently
+  const towerH = state.quotient * state.divisor;
+  if (towerH > state.dividend) {
+    // Too tall — treat exactly the same as a wrong Check Answer
+    showWrongFeedback();
+  } else {
+    completeTowerPhase();
+  }
+}
+
+function completeTowerPhase() {
+  if (state.phase !== 'tower') return;
+  document.getElementById('tower-done-btn').style.display = 'none';
+  // Dim the quotient controls — locked for the rest of this round
+  document.getElementById('quotient-controls').classList.add('dimmed');
+  solvePill('quotient', state.quotient);
+  document.getElementById('prob-quotient').textContent = state.quotient;
+
+  const hasRem = state.correctRemainder > 0 && settings.allowRemainders
+                 && state.quotient === state.correctQuotient;
+
+  if (!hasRem) {
+    state.phase = 'done';
+    state.studentRemainder = 0;
+    setActivePills([]);
+    renderRods();
+    const el = document.getElementById('phase-banner');
+    el.className = 'phase-banner phase-done';
+    el.textContent = `Tower locked in! Hit Check Answer to see if you're right.`;
+  } else {
+    state.phase = 'remainder';
+    state.studentRemainder = 0;
+    document.getElementById('remainder-controls').style.display = 'flex';
+    document.getElementById('remainder-display').textContent = '0';
+    setActivePills(['remainder']);
+    renderRods();
+    updatePhaseBanner();
+    const rc = document.getElementById('remainder-controls');
+    rc.style.boxShadow = '0 0 0 5px rgba(255,107,107,0.5)';
+    setTimeout(() => { rc.style.boxShadow = ''; }, 900);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// REMAINDER ADJUSTMENT (Phase 2)
+// ══════════════════════════════════════════════════════
+function adjustRemainder(delta) {
+  if (state.phase !== 'remainder') return;
+  const newR = state.studentRemainder + delta;
+  if (newR < 0) return;
+  // Cap at dividend value — the remainder can never exceed the whole dividend
+  if (newR > state.dividend) return;
+  state.studentRemainder = newR;
+
+  document.getElementById('remainder-display').textContent  = state.studentRemainder;
+  document.getElementById('pill-remainder-val').textContent = state.studentRemainder;
+  document.getElementById('prob-rem-part').textContent      = ` r ${state.studentRemainder}`;
+
+  renderRods();
+  updatePhaseBanner();
+}
+
+// ══════════════════════════════════════════════════════
+// CHECK ANSWER
+// ══════════════════════════════════════════════════════
+function checkAnswer() {
+  const correct = state.quotient === state.correctQuotient &&
+                  state.studentRemainder === state.correctRemainder;
+  if (correct) {
+    showResult(true);
+  } else {
+    showWrongFeedback();
+  }
+}
+
+function clearWrongHighlights() {
+  // Remove any red highlights from previous attempt
+  document.getElementById('quotient-display').classList.remove('wrong-highlight');
+  document.getElementById('remainder-display').classList.remove('wrong-highlight');
+  document.getElementById('prob-quotient').classList.remove('wrong-highlight');
+  document.getElementById('prob-rem-part').classList.remove('wrong-highlight');
+  document.querySelectorAll('.rod.divisor-rod').forEach(r => r.classList.remove('wrong-highlight-rod'));
+  document.querySelectorAll('.rod.remainder-rod').forEach(r => r.classList.remove('wrong-highlight-rod'));
+}
+
+function showWrongFeedback() {
+  // Can be called from Phase 1 (tower wrong/tall) or Phase 2 (remainder wrong)
+  const qWrong = state.quotient !== state.correctQuotient ||
+                 (state.quotient * state.divisor) > state.dividend; // too tall counts as wrong
+  const rWrong = state.phase === 'remainder' &&
+                 state.studentRemainder !== state.correctRemainder;
+
+  clearWrongHighlights();
+
+  // Highlight wrong parts on the live screen
+  if (qWrong) {
+    document.getElementById('quotient-display').classList.add('wrong-highlight');
+    document.getElementById('prob-quotient').classList.add('wrong-highlight');
+    document.querySelectorAll('.rod.divisor-rod').forEach(r => r.classList.add('wrong-highlight-rod'));
+  }
+  if (rWrong) {
+    document.getElementById('remainder-display').classList.add('wrong-highlight');
+    document.getElementById('prob-rem-part').classList.add('wrong-highlight');
+    document.querySelectorAll('.rod.remainder-rod').forEach(r => r.classList.add('wrong-highlight-rod'));
+  }
+
+  // Message — no correct values revealed
+  let msg = '';
+  const towerH = state.quotient * state.divisor;
+  if (towerH > state.dividend) {
+    msg = `The tower is taller than the dividend rod. Remove some rods and try again.`;
+  } else if (qWrong && rWrong) {
+    msg = `Both the tower and the remainder need adjusting.`;
+  } else if (qWrong) {
+    msg = `The tower has <strong>${state.quotient}</strong> rod${state.quotient!==1?'s':''}. How many groups of <strong>${state.divisor}</strong> fit inside <strong>${state.dividend}</strong>?`;
+  } else if (rWrong) {
+    if (state.studentRemainder >= state.divisor) {
+      msg = `The remainder must always be <em>less than</em> the divisor (<strong>${state.divisor}</strong>). Try a smaller number for the leftover.`;
+    } else {
+      msg = `The tower is right, but the purple remainder rod doesn't match the size of the gap.`;
+    }
+  }
+  document.getElementById('wrong-popup-msg').innerHTML = msg;
+
+  // Single action button — label and behaviour depend on what's wrong
+  const actionBtn = document.getElementById('popup-action-btn');
+  if (!rWrong || qWrong) {
+    // Tower is the problem — go back to Phase 1 with tower intact
+    actionBtn.textContent = 'Fix My Tower →';
+    actionBtn.onclick = fixTower;
+  } else {
+    // Only remainder is wrong — go back to Phase 2 with tower intact
+    actionBtn.textContent = 'Fix My Remainder →';
+    actionBtn.onclick = fixRemainder;
+  }
+
+  document.getElementById('wrong-popup-overlay').classList.add('open');
+  launchOops();
+}
+
+function fixTower() {
+  // Return to Phase 1 with the current tower still showing — student adjusts from here
+  closeWrongPopup();
+  clearWrongHighlights();
+  state.phase = 'remainder' === state.phase || state.phase === 'done'
+    ? 'tower' : state.phase; // revert to tower phase
+  state.phase = 'tower';
+  // Re-enable quotient controls (un-dim them)
+  document.getElementById('quotient-controls').classList.remove('dimmed');
+  // Hide remainder controls and col if we came from remainder phase
+  document.getElementById('remainder-controls').style.display = 'none';
+  document.getElementById('remainder-col').style.display = 'none';
+  document.getElementById('remainder-col-label').style.display = 'none';
+  document.getElementById('tower-top-line').style.display = 'none';
+  state.studentRemainder = 0;
+  document.getElementById('remainder-display').textContent = '0';
+  document.getElementById('prob-rem-part').textContent = '';
+  // Reset quotient pill to live (not solved)
+  document.getElementById('pill-quotient-val').textContent = state.quotient || '?';
+  setActivePills(state.quotient > 0 ? ['quotient'] : ['dividend','divisor']);
+  renderRods();
+  updatePhaseBanner();
+}
+
+function fixRemainder() {
+  // Return to Phase 2 — keep tower AND current remainder rod so student can see what to adjust
+  closeWrongPopup();
+  clearWrongHighlights();
+  state.phase = 'remainder';
+  // Do NOT reset studentRemainder — leave rod where it is so student can adjust from there
+  renderRods();
+  updatePhaseBanner();
+}
+
+function closeWrongPopup() {
+  document.getElementById('wrong-popup-overlay').classList.remove('open');
+}
+
+// ══════════════════════════════════════════════════════
+// RESULT SCREEN (correct only)
+// ══════════════════════════════════════════════════════
+function showResult(correct) {
+  clearWrongHighlights();
+  closeWrongPopup();
+  showScreen('result-screen');
+  const hasRem = state.correctRemainder > 0 && settings.allowRemainders;
+
+  document.getElementById('result-vocab').innerHTML = `
+    <div class="rv-pill vp-dividend"><span class="rv-name">DIVIDEND</span><span class="rv-value">${state.dividend}</span></div>
+    <div class="rv-pill vp-divisor"><span class="rv-name">DIVISOR</span><span class="rv-value">${state.divisor}</span></div>
+    <div class="rv-pill vp-quotient"><span class="rv-name">QUOTIENT</span><span class="rv-value">${state.correctQuotient}</span></div>
+    <div class="rv-pill vp-remainder"><span class="rv-name">REMAINDER</span><span class="rv-value">${hasRem ? state.correctRemainder : 0}</span></div>`;
+
+  const emojiEl = document.getElementById('result-emoji');
+  const titleEl = document.getElementById('result-title');
+  const eqEl    = document.getElementById('result-equation');
+  const expEl   = document.getElementById('result-explanation');
+  document.getElementById('try-again-btn').style.display = 'none';
+
+  const win = ['🎉','🏆','⭐','🌟','🎊','🥳'];
+  emojiEl.textContent = win[~~(Math.random()*win.length)];
+  titleEl.textContent = 'You got it!'; titleEl.className = 'result-title correct';
+  let eq = `${state.dividend} ÷ ${state.divisor} = ${state.correctQuotient}`;
+  if (hasRem) eq += `  remainder ${state.correctRemainder}`;
+  eqEl.textContent = eq;
+  // Helper spans for consistent coloring — matches vocab pill colors
+  const qSpan  = `<span style="color:var(--green-dark);font-weight:800;">${state.correctQuotient}</span>`;
+  const dvrSpan = `<span style="color:var(--blue-dark);font-weight:800;">${state.divisor}</span>`;
+  const ddSpan  = `<span style="color:var(--gold-dark);font-weight:800;">${state.dividend}</span>`;
+  const remSpan = `<span style="color:var(--rem-dark);font-weight:800;">${state.correctRemainder}</span>`;
+  const remWord = `<span style="color:var(--rem-dark);font-weight:800;">remainder</span>`;
+
+  expEl.innerHTML = hasRem
+    ? `${qSpan} groups of ${dvrSpan} fit into ${ddSpan},<br>with ${remSpan} left over — that's the ${remWord}!`
+    : `${qSpan} groups of ${dvrSpan} fit <em>exactly</em> into ${ddSpan}.<br>No leftovers — the remainder is <span style="color:var(--rem-dark);font-weight:800;">0</span>! ✨`;
+  launchConfetti();
+}
+
+function tryAgain() {
+  closeWrongPopup();
+  clearWrongHighlights();
+  state.phase = 'tower'; state.quotient = 0; state.studentRemainder = 0;
+  launchExplorer();
+}
+function playAgain() {
+  closeWrongPopup();
+  clearWrongHighlights();
+  state.dividend = generateDividend(state.divisor);
+  state.quotient = 0; state.studentRemainder = 0;
+  state.correctQuotient = Math.floor(state.dividend / state.divisor);
+  state.correctRemainder = state.dividend % state.divisor;
+  launchExplorer();
+}
+function goToStart() {
+  document.getElementById('dividend-value-input').value = '';
+  document.getElementById('dividend-input-error').textContent = '';
+  showScreen('start-screen');
+}
+
+// ══════════════════════════════════════════════════════
+// ADVANCED SETTINGS
+// ══════════════════════════════════════════════════════
+function openAdvanced() {
+  document.getElementById('setting-remainders').checked     = settings.allowRemainders;
+  document.getElementById('setting-custom-divisor').checked = settings.allowCustomDivisor;
+  document.getElementById('setting-div-min').value  = settings.divisorMin;
+  document.getElementById('setting-div-max').value  = settings.divisorMax;
+  document.getElementById('setting-dd-min').value   = settings.dividendMin;
+  document.getElementById('setting-dd-max').value   = settings.dividendMax;
+  document.getElementById('advanced-modal').classList.add('open');
+}
+function closeAdvanced() { document.getElementById('advanced-modal').classList.remove('open'); }
+function saveAdvanced() {
+  settings.allowRemainders    = document.getElementById('setting-remainders').checked;
+  settings.allowCustomDivisor = document.getElementById('setting-custom-divisor').checked;
+  settings.divisorMin  = parseInt(document.getElementById('setting-div-min').value)  || 2;
+  settings.divisorMax  = parseInt(document.getElementById('setting-div-max').value)  || 12;
+  settings.dividendMin = parseInt(document.getElementById('setting-dd-min').value)   || 10;
+  settings.dividendMax = parseInt(document.getElementById('setting-dd-max').value)   || 100;
+  buildDivisorButtons(); applyCustomDivisorVisibility();
+  if (state.divisor && (state.divisor < settings.divisorMin || state.divisor > settings.divisorMax)) state.divisor = null;
+  closeAdvanced();
+}
+
+// ══════════════════════════════════════════════════════
+// NUMBER PAD
+// ══════════════════════════════════════════════════════
+function openNumpad(target) {
+  numpadTarget = target; numpadValue = '';
+  document.getElementById('numpad-display').textContent = '—';
+  document.getElementById('numpad-confirm-error').textContent = '';
+  document.getElementById('numpad-title').textContent =
+    target === 'dividend' ? `Dividend — bigger than ${state.divisor||'?'}` : 'Enter a number';
+  document.getElementById('numpad-modal').classList.add('open');
+}
+function closeNumpad() { document.getElementById('numpad-modal').classList.remove('open'); }
+function npPress(d) {
+  if (numpadValue.length >= 5) return;
+  numpadValue += d;
+  document.getElementById('numpad-display').textContent = numpadValue;
+  document.getElementById('numpad-confirm-error').textContent = '';
+}
+function npBack() {
+  numpadValue = numpadValue.slice(0,-1);
+  document.getElementById('numpad-display').textContent = numpadValue||'—';
+}
+function npConfirm() {
+  const val = parseInt(numpadValue), err = document.getElementById('numpad-confirm-error');
+  if (!val || val < 1) { err.textContent = 'Please enter a positive number!'; return; }
+  if (numpadTarget === 'dividend') {
+    if (state.divisor && val <= state.divisor) { err.textContent = `Must be bigger than ${state.divisor}!`; return; }
+    if (state.divisor && Math.floor(val / state.divisor) > 12) { err.textContent = `That needs more than 12 rods — try smaller!`; return; }
+    if (!settings.allowRemainders && state.divisor && val % state.divisor !== 0) { err.textContent = `Must divide evenly by ${state.divisor}!`; return; }
+    document.getElementById('dividend-value-input').value = val;
+    document.getElementById('dividend-input-error').textContent = '';
+  }
+  closeNumpad();
+}
+
+// ══════════════════════════════════════════════════════
+// CONFETTI / OOPS
+// ══════════════════════════════════════════════════════
+function launchConfetti() {
+  const c = document.getElementById('confetti-container'); c.innerHTML = '';
+  const cols = ['#f5a623','#4a90d9','#5cb85c','#9b59b6','#ff6b6b','#1abc9c','#f39c12','#3498db'];
+  for (let i=0;i<80;i++) {
+    const p=document.createElement('div'); p.className='confetti-piece';
+    p.style.left=Math.random()*100+'vw'; p.style.background=cols[~~(Math.random()*cols.length)];
+    p.style.width=(6+Math.random()*10)+'px'; p.style.height=(10+Math.random()*16)+'px';
+    p.style.animationDuration=(1.5+Math.random()*2)+'s'; p.style.animationDelay=Math.random()*0.8+'s';
+    c.appendChild(p);
+  }
+  setTimeout(()=>{c.innerHTML='';},5000);
+}
+function launchOops() {
+  const c=document.getElementById('confetti-container'); c.innerHTML='';
+  // No smiling faces — 😅 removed, no ambiguous expressions
+  const em=['😬','🙁','🙈','😮','🤔','❓','😟'];
+  for(let i=0;i<12;i++){
+    const el=document.createElement('div'); el.className='oops-emoji';
+    el.textContent=em[~~(Math.random()*em.length)];
+    el.style.left=(10+Math.random()*80)+'vw'; el.style.top=(20+Math.random()*50)+'vh';
+    el.style.animationDelay=Math.random()*0.4+'s'; c.appendChild(el);
+  }
+  setTimeout(()=>{c.innerHTML='';},2500);
+}
+
+// ══════════════════════════════════════════════════════
+// SCREEN SWITCH
+// ══════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+init();
+</script>
+</body>
+</html>
