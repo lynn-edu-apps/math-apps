@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Round It! — Rounding Practice</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  * { -webkit-tap-highlight-color: transparent; }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(145deg, #3d7a8a 0%, #2e6b72 45%, #3a7560 100%);
+    font-family: 'Nunito', 'Comic Sans MS', cursive, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 16px 48px;
+    overflow-x: hidden;
+  }
+
+  select, .digit-row, .digit-row * {
+    -webkit-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  @keyframes pulse {
+    0%,100%{opacity:1;transform:scale(1);}50%{opacity:.65;transform:scale(1.35);}
+  }
+  @keyframes shake {
+    0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}
+    40%{transform:translateX(8px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}
+  }
+  @keyframes popIn {
+    0%{transform:scale(0.82);opacity:0;}100%{transform:scale(1);opacity:1;}
+  }
+  @keyframes confettiFall {
+    0%{transform:translateY(-30px) rotate(0deg);opacity:1;}
+    100%{transform:translateY(130px) rotate(380deg);opacity:0;}
+  }
+  @keyframes fadeIn {
+    from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}
+  }
+
+  select option { background: #ffffff; color: #1a3540; }
+
+  #app { width: 100%; display: flex; flex-direction: column; align-items: center; }
+
+  header {
+    width: 100%; max-width: 920px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 22px 0 12px;
+  }
+  .logo-row { display: flex; align-items: center; gap: 10px; }
+  .logo-emoji { font-size: 36px; }
+  .logo-text {
+    font-size: 34px; font-weight: 900; color: #fff;
+    letter-spacing: -1px; text-shadow: 0 2px 10px rgba(0,0,0,.3);
+  }
+
+  .score-box {
+    background: rgba(0,0,0,.22); border-radius: 12px;
+    padding: 8px 22px; display: flex; flex-direction: column;
+    align-items: center; border: 1.5px solid rgba(255,255,255,.25);
+  }
+  .score-label  { color: rgba(255,255,255,.7); font-size: 11px; font-weight: 800; letter-spacing: 2px; }
+  .score-val    { color: #ffd43b; font-size: 26px; font-weight: 900; }
+  .score-correct{ color: rgba(255,255,255,.7); font-size: 12px; font-weight: 700; }
+  .score-fixed  { color: rgba(130,220,255,.85); font-size: 12px; font-weight: 700; }
+  .score-wrong  { color: rgba(255,160,160,.85); font-size: 12px; font-weight: 700; }
+  .score-skipped{ color: rgba(255,220,130,.85); font-size: 12px; font-weight: 700; }
+
+  .screen { display: none; width: 100%; flex-direction: column; align-items: center; }
+  .screen.active { display: flex; }
+
+  .setup-card {
+    margin-top: 40px; background: rgba(0,0,0,.25);
+    border: 1.5px solid rgba(255,255,255,.22); border-radius: 24px;
+    padding: 48px 52px; display: flex; flex-direction: column;
+    align-items: center; gap: 20px; max-width: 420px; width: 100%;
+    box-shadow: 0 8px 32px rgba(0,0,0,.25);
+  }
+  .setup-emoji { font-size: 56px; line-height: 1; }
+  .setup-title { color: #fff; font-size: 28px; font-weight: 900; text-align: center; }
+  .setup-sub   { color: rgba(255,255,255,.75); font-size: 15px; text-align: center; line-height: 1.7; }
+
+  .q-count-row { display: flex; flex-direction: row; gap: 10px; justify-content: center; width: 100%; }
+  .q-count-btn {
+    width: 54px; height: 54px; border-radius: 27px;
+    border: 2px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12);
+    color: #fff; font-size: 20px; font-weight: 900;
+    cursor: pointer; font-family: inherit; transition: all .15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .q-count-btn.selected {
+    background: linear-gradient(135deg,#ffd43b,#f59f00);
+    border-color: #ffd43b; color: #3a2000;
+    box-shadow: 0 4px 14px rgba(245,159,0,.5);
+    transform: scale(1.12);
+  }
+
+  .setup-checkbox-label {
+    display: flex; align-items: center; gap: 10px;
+    color: #fff; font-size: 15px; font-weight: 700;
+    cursor: pointer; user-select: none;
+    background: rgba(0,0,0,.18); border: 1.5px solid rgba(255,255,255,.22);
+    border-radius: 10px; padding: 10px 16px; width: 100%;
+  }
+  .setup-checkbox-label input { width: 18px; height: 18px; cursor: pointer; accent-color: #ffd43b; }
+
+  .start-btn {
+    width: 100%; padding: 14px 0; border-radius: 13px; border: none;
+    background: linear-gradient(135deg,#ffd43b,#f59f00);
+    color: #3a2000; font-size: 20px; font-weight: 900;
+    cursor: pointer; font-family: inherit;
+    box-shadow: 0 4px 18px rgba(245,159,0,.45); margin-top: 8px;
+  }
+
+  main {
+    width: 100%; max-width: 960px;
+    display: flex; flex-direction: column; align-items: center; gap: 26px;
+  }
+
+  .instruction-card {
+    background: rgba(0,0,0,.22); border: 1.5px solid rgba(255,255,255,.22);
+    border-radius: 16px; padding: 18px 32px;
+    text-align: center; max-width: 680px; width: 100%;
+  }
+  .instruction     { color: #fff; font-size: 21px; margin: 0 0 6px; font-weight: 800; }
+  .sub-instruction { color: rgba(255,255,255,.78); font-size: 14px; }
+  .highlight       { color: #ffd43b; text-decoration: underline dotted; }
+
+  .checkbox-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+  .checkbox-label {
+    display: flex; align-items: center; gap: 8px;
+    color: #fff; font-size: 15px; font-weight: 700;
+    cursor: pointer; user-select: none;
+    background: rgba(0,0,0,.18); border: 1.5px solid rgba(255,255,255,.22);
+    border-radius: 10px; padding: 8px 18px;
+  }
+  .checkbox-label input { width: 18px; height: 18px; cursor: pointer; accent-color: #ffd43b; }
+
+  .digit-row {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    align-items: flex-start; gap: 5px;
+    padding: 18px 22px; background: rgba(0,0,0,.18);
+    border-radius: 20px; border: 1.5px solid rgba(255,255,255,.2);
+    width: 100%; max-width: 900px;
+  }
+  .digit-row.shake { animation: shake .5s ease; }
+
+  .orig-label {
+    width: 100%; font-size: 12px; font-weight: 800;
+    color: #ffd43b; letter-spacing: .5px;
+    margin-bottom: -18px; padding-left: 2px;
+  }
+
+  .digit-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 54px; }
+  .asterisk-row { height: 22px; display: flex; align-items: center; justify-content: center; }
+  .asterisk-row-spacer { height: 22px; }
+  .asterisk {
+    font-size: 17px; color: #ffd43b; font-weight: 900;
+    text-shadow: 0 0 10px rgba(255,212,59,.8);
+    animation: pulse 1.4s infinite;
+  }
+
+  .orig-digit-box {
+    width: 54px; height: 36px; border-radius: 8px; border: none;
+    background: rgba(255,212,59,.13); color: #ffe8a0;
+    font-size: 22px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .orig-digit-spacer { height: 36px; }
+
+  select.digit-select {
+    width: 54px; height: 54px; border-radius: 10px;
+    border: 2px solid rgba(255,255,255,.5); background: #fff;
+    color: #1a3540; font-size: 27px; font-weight: 900;
+    cursor: pointer; text-align: center; text-align-last: center;
+    outline: none; appearance: none; -webkit-appearance: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,.2); padding: 0;
+    transition: all .2s; touch-action: manipulation;
+    font-family: 'Nunito', cursive;
+  }
+  select.digit-select.overflow { border: 2.5px solid #74c0fc; background: #e8f4ff; }
+  select.digit-select.correct  { box-shadow: 0 0 14px rgba(64,192,87,.55), 0 2px 6px rgba(0,0,0,.2); }
+  select.digit-select.wrong    { border: 3px solid #fa5252; box-shadow: 0 0 14px rgba(250,82,82,.55), 0 2px 6px rgba(0,0,0,.2); }
+
+  .place-label {
+    color: rgba(255,255,255,.62); font-weight: 700;
+    letter-spacing: .5px; text-transform: uppercase;
+    height: 16px; display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+  }
+  .place-label-spacer { height: 16px; }
+
+  .zero-spread-label {
+    font-size: 11px; font-weight: 800; color: rgba(255,255,255,.55);
+    cursor: pointer; letter-spacing: .5px; margin-top: 1px;
+    padding: 1px 4px; border-radius: 4px; user-select: none;
+  }
+
+  .comma-cell { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0 1px; }
+  .comma-char {
+    height: 54px; display: flex; align-items: flex-end;
+    justify-content: center; padding-bottom: 6px;
+    font-size: 26px; font-weight: 900; color: #fff; line-height: 1;
+  }
+
+  .decimal-point-cell {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; padding: 0 2px; justify-content: flex-start;
+  }
+  .decimal-dot-wrap { width: 11px; height: 54px; display: flex; align-items: center; justify-content: center; }
+  .decimal-dot-inner { width: 11px; height: 11px; border-radius: 50%; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,.3); }
+
+  .btn-row { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+
+  .check-btn {
+    padding: 13px 30px; border-radius: 13px; border: none;
+    background: linear-gradient(135deg,#ffd43b,#f59f00);
+    color: #3a2000; font-size: 19px; font-weight: 900;
+    cursor: pointer; font-family: inherit;
+    box-shadow: 0 4px 18px rgba(245,159,0,.45);
+    transition: transform .1s, box-shadow .1s;
+  }
+  .reset-btn {
+    padding: 13px 24px; border-radius: 13px;
+    border: 2px solid rgba(255,255,255,.3); background: rgba(255,255,255,.12);
+    color: #fff; font-size: 17px; font-weight: 800;
+    cursor: pointer; font-family: inherit; transition: all .15s;
+  }
+  .skip-btn {
+    padding: 13px 24px; border-radius: 13px;
+    border: 2px solid rgba(255,255,255,.4); background: rgba(255,255,255,.15);
+    color: #fff; font-size: 17px; font-weight: 800;
+    cursor: pointer; font-family: inherit; transition: all .15s;
+  }
+  .quit-btn {
+    padding: 13px 24px; border-radius: 13px;
+    border: 2px solid rgba(255,100,100,.45); background: rgba(255,80,80,.12);
+    color: #ffaaaa; font-size: 17px; font-weight: 800;
+    cursor: pointer; font-family: inherit; transition: all .15s;
+  }
+
+  .feedback-banner {
+    width: 100%; max-width: 680px; padding: 16px 24px;
+    border-radius: 14px; font-size: 17px; font-weight: 800;
+    text-align: center; animation: popIn .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .feedback-banner.correct { background: rgba(30,160,80,.28); border: 2px solid #69db7c; color: #fff; }
+  .feedback-banner.wrong   { background: rgba(210,40,40,.28); border: 2px solid #ff8787; color: #fff; }
+
+  .hint-box {
+    background: rgba(0,0,0,.2); border: 1px solid rgba(255,255,255,.22);
+    border-radius: 12px; padding: 13px 22px;
+    max-width: 680px; width: 100%;
+    font-size: 15px; color: rgba(255,255,255,.88);
+    animation: fadeIn .2s ease;
+  }
+  .hint-title { font-weight: 900; color: #ffd43b; }
+
+  .confetti {
+    position: fixed; pointer-events: none; z-index: 100;
+    animation: confettiFall 1.8s ease-out forwards;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SETUP SCREEN -->
+  <div id="screen-setup" class="screen active">
+    <header>
+      <div class="logo-row">
+        <span class="logo-emoji">🔢</span>
+        <span class="logo-text">Round It!</span>
+      </div>
+    </header>
+    <div class="setup-card">
+      <div class="setup-emoji">🎯</div>
+      <h2 class="setup-title">How many questions?</h2>
+      <div class="q-count-row" id="q-count-row"></div>
+      <label class="setup-checkbox-label">
+        <input type="checkbox" id="chk-carry">
+        Include carrying over series of 9s
+      </label>
+      <button class="start-btn" id="btn-start">Start Quiz ▶</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="screen-game" class="screen">
+    <header>
+      <div class="logo-row">
+        <span class="logo-emoji">🔢</span>
+        <span class="logo-text">Round It!</span>
+      </div>
+      <div class="score-box">
+        <span class="score-label">QUESTION</span>
+        <span class="score-val" id="score-qnum">1/10</span>
+        <span class="score-correct" id="score-correct" style="display:none"></span>
+        <span class="score-fixed"   id="score-fixed"   style="display:none"></span>
+        <span class="score-wrong"   id="score-wrong"   style="display:none"></span>
+        <span class="score-skipped" id="score-skipped" style="display:none"></span>
+      </div>
+    </header>
+    <main>
+      <div class="instruction-card">
+        <p class="instruction">Round this number to the <strong class="highlight" id="place-name">tens</strong> place.</p>
+        <p class="sub-instruction">Click on a digit to display a drop-down to change its value.</p>
+      </div>
+
+      <div class="checkbox-row">
+        <label class="checkbox-label"><input type="checkbox" id="chk-asterisk"> Show ✱ marker</label>
+        <label class="checkbox-label"><input type="checkbox" id="chk-place-labels"> Show place value labels</label>
+      </div>
+
+      <div class="digit-row" id="digit-row"></div>
+
+      <div class="btn-row">
+        <button class="check-btn" id="btn-check">Check My Answer ✓</button>
+      </div>
+
+      <div class="feedback-banner" id="feedback-banner" style="display:none"></div>
+
+      <div class="checkbox-row">
+        <label class="checkbox-label"><input type="checkbox" id="chk-hint"> Show hint</label>
+      </div>
+
+      <div class="hint-box" id="hint-box" style="display:none"></div>
+
+      <div class="btn-row">
+        <button class="reset-btn" id="btn-reset">Reset ↺</button>
+        <button class="skip-btn"  id="btn-skip">Skip ⏭</button>
+      </div>
+
+      <button class="quit-btn" id="btn-quit">Quit ✕</button>
+    </main>
+  </div>
+
+  <!-- COMPLETION SCREEN -->
+  <div id="screen-done" class="screen">
+    <header>
+      <div class="logo-row">
+        <span class="logo-emoji">🔢</span>
+        <span class="logo-text">Round It!</span>
+      </div>
+    </header>
+    <div class="setup-card">
+      <div class="setup-emoji" id="done-emoji">🏆</div>
+      <h2 class="setup-title">Quiz Complete!</h2>
+      <p class="setup-sub" id="done-stats"></p>
+      <button class="start-btn" id="btn-again">Play Again ↻</button>
+    </div>
+  </div>
+
+</div>
+<script>
+// ── data ──────────────────────────────────────────────────────────────────
+
+const INT_NAMES = ["billions","hundred-millions","ten-millions","millions",
+  "hundred-thousands","ten-thousands","thousands","hundreds","tens","ones"];
+const DEC_NAMES = ["tenths","hundredths","thousandths"];
+const PLACE_LABEL_MAP = {
+  "billions":"B","hundred-millions":"HM","ten-millions":"TM","millions":"M",
+  "hundred-thousands":"HTh","ten-thousands":"TTh","thousands":"Th",
+  "hundreds":"H","tens":"T","ones":"O","tenths":"t","hundredths":"h","thousandths":"th"
+};
+
+// ── number generation ─────────────────────────────────────────────────────
+
+function generateNumber(forceCarry) {
+  while (true) {
+    const r = generateOnce(forceCarry);
+    const da = r.allDigits[r.roundIdx + 1];
+    if (da !== undefined && da !== 0) return r;
+  }
+}
+
+function generateOnce(forceCarry) {
+  const totalDigits = Math.floor(Math.random() * 7) + 4;
+  const hasDecimal  = Math.random() < 0.45;
+  const decPlaces   = hasDecimal ? Math.floor(Math.random() * 3) + 1 : 0;
+  const intDigits   = totalDigits - decPlaces;
+
+  let intStr = String(Math.floor(Math.random() * 9) + 1);
+  for (let i = 1; i < intDigits; i++) intStr += String(Math.floor(Math.random() * 10));
+  let decStr = "";
+  for (let i = 0; i < decPlaces; i++) decStr += String(Math.floor(Math.random() * 10));
+
+  const allDigits = (intStr + decStr).split("").map(Number);
+  const nInt = intStr.length;
+
+  const placeNames = [];
+  for (let i = 0; i < nInt; i++)     placeNames.push(INT_NAMES[Math.max(0, INT_NAMES.length - nInt + i)]);
+  for (let i = 0; i < decPlaces; i++) placeNames.push(DEC_NAMES[i]);
+
+  let roundIdx;
+  if (forceCarry) {
+    const candidates = [];
+    for (let i = 1; i < allDigits.length - 1; i++) candidates.push(i);
+    if (candidates.length === 0) {
+      roundIdx = Math.floor(Math.random() * (allDigits.length - 1));
+    } else {
+      roundIdx = candidates[Math.floor(Math.random() * candidates.length)];
+      const nNines = Math.min(2 + Math.floor(Math.random() * 3), roundIdx + 1);
+      for (let k = 0; k < nNines; k++) allDigits[roundIdx - k] = 9;
+      allDigits[roundIdx + 1] = 5 + Math.floor(Math.random() * 5);
+      const stopIdx = roundIdx - nNines;
+      if (stopIdx >= 0 && allDigits[stopIdx] === 9) allDigits[stopIdx] = Math.floor(Math.random() * 8) + 1;
+    }
+  } else {
+    roundIdx = Math.floor(Math.random() * (allDigits.length - 1));
+  }
+
+  const intPart = allDigits.slice(0, nInt).join("");
+  const decPart = allDigits.slice(nInt).join("");
+  const numStr  = decPart.length > 0 ? intPart + "." + decPart : intPart;
+  return { numStr, intStr: intPart, decStr: decPart, decPlaces, allDigits, placeNames, roundIdx, nInt };
+}
+
+function computeAnswer(puzzle) {
+  const digits  = [...puzzle.allDigits];
+  const roundUp = digits[puzzle.roundIdx + 1] >= 5;
+  for (let i = puzzle.roundIdx + 1; i < digits.length; i++) digits[i] = 0;
+  if (roundUp) {
+    let carry = 1;
+    for (let i = puzzle.roundIdx; i >= 0 && carry; i--) {
+      const s = digits[i] + carry; digits[i] = s % 10; carry = Math.floor(s / 10);
+    }
+    if (carry) digits.unshift(1);
+  }
+  return digits;
+}
+
+function choicesFor(puzzle, i) {
+  const orig   = puzzle.allDigits[i];
+  const higher = (orig + 1) % 10;
+  return [...new Set([0, orig, higher])].sort((a, b) => a - b);
+}
+
+// ── app state ─────────────────────────────────────────────────────────────
+
+let S = {
+  screen:          "setup",
+  totalQuestions:  10,
+  includeCarry:    false,
+  questionNum:     0,
+  score:           { correct:0, fixed:0, attempts:0, skipped:0 },
+  puzzle:          null,
+  answer:          null,
+  userDigits:      [],
+  hasOverflow:     false,
+  overflowVal:     1,
+  wrongDigits:     new Set(),
+  feedback:        null,
+  showOriginal:    false,
+  showAsterisk:    false,
+  showPlaceLabels: false,
+  showHint:        false,
+};
+
+// ── render ────────────────────────────────────────────────────────────────
+
+function showScreen(id) {
+  ["screen-setup","screen-game","screen-done"].forEach(s => {
+    document.getElementById(s).classList.toggle("active", s === id);
+  });
+}
+
+function render() {
+  showScreen("screen-" + S.screen);
+  if (S.screen === "setup")  renderSetup();
+  if (S.screen === "game")   renderGame();
+  if (S.screen === "done")   renderDone();
+}
+
+function renderSetup() {
+  const row = document.getElementById("q-count-row");
+  row.innerHTML = "";
+  [3, 5, 10, 15, 20].forEach(n => {
+    const btn = document.createElement("button");
+    btn.className = "q-count-btn" + (S.totalQuestions === n ? " selected" : "");
+    btn.textContent = n;
+    btn.onclick = () => { S.totalQuestions = n; renderSetup(); };
+    row.appendChild(btn);
+  });
+  document.getElementById("chk-carry").checked = S.includeCarry;
+}
+
+function renderGame() {
+  if (!S.puzzle) return;
+  const p = S.puzzle;
+
+  document.getElementById("score-qnum").textContent = S.questionNum + "/" + S.totalQuestions;
+  const sc = S.score;
+  const wrongCount = sc.attempts - sc.correct;
+  setEl("score-correct", sc.correct > 0,  "✓ " + sc.correct + " correct");
+  setEl("score-fixed",   sc.fixed > 0,    "🔧 " + sc.fixed + " fixed");
+  setEl("score-wrong",   wrongCount > 0,   "✗ " + wrongCount + " wrong");
+  setEl("score-skipped", sc.skipped > 0,   "⏭ " + sc.skipped + " skipped");
+
+  document.getElementById("place-name").textContent = p.placeNames[p.roundIdx];
+
+  const fb = document.getElementById("feedback-banner");
+  if (S.feedback) {
+    fb.style.display = "";
+    fb.className = "feedback-banner " + S.feedback;
+    fb.textContent = S.feedback === "correct"
+      ? "🎉 Perfect! You rounded it correctly!"
+      : "❌ Not quite — the original number is shown above each digit. Try again!";
+  } else {
+    fb.style.display = "none";
+  }
+
+  document.getElementById("chk-asterisk").checked    = S.showAsterisk;
+  document.getElementById("chk-place-labels").checked = S.showPlaceLabels;
+  document.getElementById("chk-hint").checked         = S.showHint;
+
+  const hintBox = document.getElementById("hint-box");
+  if (S.showHint) {
+    hintBox.style.display = "";
+    hintBox.innerHTML = buildHintHTML(p);
+  } else {
+    hintBox.style.display = "none";
+  }
+
+  renderDigitRow();
+}
+
+function setEl(id, show, text) {
+  const el = document.getElementById(id);
+  el.style.display = show ? "" : "none";
+  el.textContent = text;
+}
+
+function buildHintHTML(p) {
+  const nextDigit = p.allDigits[p.roundIdx + 1];
+  const roundUp   = nextDigit >= 5;
+  const cascading = roundUp && p.allDigits[p.roundIdx] === 9
+    && p.roundIdx > 0 && p.allDigits[p.roundIdx - 1] === 9;
+  let nineRun = 0;
+  if (cascading) for (let k = p.roundIdx; k >= 0 && p.allDigits[k] === 9; k--) nineRun++;
+
+  let h = '<span class="hint-title">💡 Hint: </span>';
+  h += "The digit right after ✱ is <strong>" + nextDigit + "</strong>. ";
+  if (roundUp) {
+    h += "Since it's 5 or more, round the ✱ digit UP!";
+    if (cascading) {
+      h += " <strong>Watch out:</strong> the ✱ digit is 9, and so ";
+      h += nineRun > 2 ? "are the " + (nineRun - 1) + " digits" : "is the digit";
+      h += " to its left — each 9 rounds up to 0 and carries 1 further left. Keep following the carry until you reach a digit that is not 9.";
+    }
+  } else {
+    h += "Since it's less than 5, keep the ✱ digit the same!";
+  }
+  h += " Then set all digits to the right to zero.";
+  return h;
+}
+
+function renderDigitRow() {
+  const p     = S.puzzle;
+  const total = p.allDigits.length;
+  const nInt  = p.nInt;
+  const row   = document.getElementById("digit-row");
+  row.innerHTML = "";
+  row.classList.remove("shake");
+
+  // find leftmost cleared zero for "0 →" button
+  let zeroStart = -1;
+  for (let i = p.roundIdx + 1; i < total; i++) {
+    if (S.userDigits[i] === 0) { zeroStart = i; break; }
+  }
+  const hasMoreToWipe = zeroStart !== -1 && S.userDigits.slice(zeroStart + 1).some(d => d !== 0);
+
+  if (S.showOriginal) {
+    const lbl = document.createElement("div");
+    lbl.className = "orig-label";
+    lbl.textContent = "Original:";
+    row.appendChild(lbl);
+  }
+
+  if (S.hasOverflow) row.appendChild(buildOverflowCell());
+
+  for (let i = 0; i < total; i++) {
+    row.appendChild(buildDigitCell(i, zeroStart, hasMoreToWipe));
+    if (i < nInt - 1 && (nInt - 1 - i) % 3 === 0) row.appendChild(buildCommaCell());
+    if (i === nInt - 1 && p.decPlaces > 0)         row.appendChild(buildDecimalCell());
+  }
+}
+
+function buildDigitCell(i, zeroStart, hasMoreToWipe) {
+  const p          = S.puzzle;
+  const isAllOk    = S.feedback === "correct";
+  const isWrong    = S.wrongDigits.has(i);
+  const cell       = document.createElement("div");
+  cell.className   = "digit-cell";
+
+  const arow = document.createElement("div");
+  arow.className = "asterisk-row";
+  if (i === p.roundIdx && S.showAsterisk) {
+    const star = document.createElement("span");
+    star.className = "asterisk"; star.textContent = "✱";
+    arow.appendChild(star);
+  }
+  cell.appendChild(arow);
+
+  if (S.showOriginal) {
+    const od = document.createElement("div");
+    od.className = "orig-digit-box";
+    od.textContent = p.allDigits[i];
+    cell.appendChild(od);
+  }
+
+  const sel = document.createElement("select");
+  sel.className = "digit-select";
+  if (isAllOk)  sel.classList.add("correct");
+  if (isWrong)  sel.classList.add("wrong");
+
+  choicesFor(p, i).forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c; opt.textContent = c;
+    if (c === S.userDigits[i]) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener("change", () => handleDigitChange(i, Number(sel.value)));
+  cell.appendChild(sel);
+
+  const pl = document.createElement("div");
+  pl.className = "place-label";
+  pl.textContent = S.showPlaceLabels ? (PLACE_LABEL_MAP[p.placeNames[i]] || "") : "\u00a0";
+  cell.appendChild(pl);
+
+  if (i === zeroStart && hasMoreToWipe) {
+    const wl = document.createElement("div");
+    wl.className = "zero-spread-label";
+    wl.textContent = "0 →";
+    wl.addEventListener("click", () => wipeFrom(zeroStart));
+    cell.appendChild(wl);
+  }
+
+  return cell;
+}
+
+function buildOverflowCell() {
+  const cell = document.createElement("div"); cell.className = "digit-cell";
+  const sp   = document.createElement("div"); sp.className = "asterisk-row"; cell.appendChild(sp);
+  if (S.showOriginal) { const od = document.createElement("div"); od.className = "orig-digit-spacer"; cell.appendChild(od); }
+  const sel = document.createElement("select"); sel.className = "digit-select overflow";
+  [0,1,2].forEach(c => {
+    const o = document.createElement("option"); o.value = c; o.textContent = c;
+    if (c === S.overflowVal) o.selected = true; sel.appendChild(o);
+  });
+  sel.addEventListener("change", () => { S.overflowVal = Number(sel.value); });
+  cell.appendChild(sel);
+  const pl = document.createElement("div"); pl.className = "place-label"; pl.innerHTML = "&nbsp;"; cell.appendChild(pl);
+  return cell;
+}
+
+function buildCommaCell() {
+  const cell = document.createElement("div"); cell.className = "comma-cell";
+  const sp = document.createElement("div"); sp.className = "asterisk-row-spacer"; cell.appendChild(sp);
+  if (S.showOriginal) { const od = document.createElement("div"); od.className = "orig-digit-spacer"; cell.appendChild(od); }
+  const ch = document.createElement("div"); ch.className = "comma-char"; ch.textContent = ","; cell.appendChild(ch);
+  const ps = document.createElement("div"); ps.className = "place-label-spacer"; cell.appendChild(ps);
+  return cell;
+}
+
+function buildDecimalCell() {
+  const cell = document.createElement("div"); cell.className = "decimal-point-cell";
+  const sp = document.createElement("div"); sp.className = "asterisk-row-spacer"; cell.appendChild(sp);
+  if (S.showOriginal) { const od = document.createElement("div"); od.className = "orig-digit-spacer"; cell.appendChild(od); }
+  const dw = document.createElement("div"); dw.className = "decimal-dot-wrap";
+  const di = document.createElement("div"); di.className = "decimal-dot-inner";
+  dw.appendChild(di); cell.appendChild(dw);
+  const ps = document.createElement("div"); ps.className = "place-label-spacer"; cell.appendChild(ps);
+  return cell;
+}
+
+// ── actions ───────────────────────────────────────────────────────────────
+
+function handleDigitChange(i, val) {
+  S.userDigits[i] = val;
+  if (i === 0) { S.hasOverflow = (val === 0); if (S.hasOverflow) S.overflowVal = 1; }
+  S.wrongDigits.delete(i);
+  renderGame();
+}
+
+function wipeFrom(startIdx) {
+  const total = S.puzzle.allDigits.length;
+  for (let i = startIdx; i < total; i++) {
+    const delay = (i - startIdx) * 80;
+    const idx = i;
+    setTimeout(() => {
+      S.userDigits[idx] = 0;
+      S.wrongDigits.delete(idx);
+      renderDigitRow();
+    }, delay);
+  }
+}
+
+function checkAnswer() {
+  const userAnswer = S.hasOverflow ? [S.overflowVal, ...S.userDigits] : [...S.userDigits];
+  const ans        = S.answer;
+  const correct    = ans.length === userAnswer.length && ans.every((d, i) => d === userAnswer[i]);
+  const wasWrong   = S.showOriginal;
+
+  if (correct) {
+    if (wasWrong) { S.score.fixed++; S.score.attempts--; }
+    else          { S.score.correct++; S.score.attempts++; }
+  } else {
+    if (!wasWrong) S.score.attempts++;
+  }
+
+  S.feedback = correct ? "correct" : "wrong";
+
+  if (correct) {
+    S.showOriginal = false;
+    S.wrongDigits  = new Set();
+    spawnConfetti();
+    renderGame();
+    setTimeout(() => { removeConfetti(); advanceQuestion(); }, 1200);
+  } else {
+    const offset = ans.length > S.puzzle.allDigits.length ? 1 : 0;
+    S.wrongDigits = new Set();
+    ans.forEach((d, i) => { if (d !== userAnswer[i]) S.wrongDigits.add(i - offset); });
+    S.showOriginal = true;
+    renderGame();
+    const row = document.getElementById("digit-row");
+    row.classList.remove("shake");
+    void row.offsetWidth;
+    row.classList.add("shake");
+    setTimeout(() => row.classList.remove("shake"), 600);
+  }
+}
+
+function advanceQuestion() {
+  S.questionNum++;
+  if (S.questionNum > S.totalQuestions) { S.screen = "done"; render(); }
+  else loadQuestion();
+}
+
+function loadQuestion() {
+  const forceCarry = S.includeCarry && (S.questionNum % 4 === 2);
+  S.puzzle         = generateNumber(forceCarry);
+  S.answer         = computeAnswer(S.puzzle);
+  S.userDigits     = [...S.puzzle.allDigits];
+  S.hasOverflow    = false;
+  S.overflowVal    = 1;
+  S.wrongDigits    = new Set();
+  S.feedback       = null;
+  S.showOriginal   = false;
+  S.showAsterisk   = false;
+  S.showHint       = false;
+  renderGame();
+}
+
+function startQuiz() {
+  S.score          = { correct:0, fixed:0, attempts:0, skipped:0 };
+  S.questionNum    = 1;
+  S.screen         = "game";
+  S.showAsterisk   = false;
+  S.showHint       = false;
+  S.showPlaceLabels = false;
+  loadQuestion();
+  render();
+}
+
+function restartQuiz() {
+  S.screen = "setup"; S.puzzle = null; render();
+}
+
+function renderDone() {
+  const sc  = S.score;
+  const pct = Math.round(((sc.correct + sc.fixed) / S.totalQuestions) * 100);
+  document.getElementById("done-emoji").textContent = pct === 100 ? "🏆" : pct >= 70 ? "🌟" : "💪";
+  const wrongCount = sc.attempts - sc.correct;
+  let h = '<span style="color:rgba(255,255,255,.6)">📋 <strong style="color:#fff">' + S.totalQuestions + '</strong> questions total</span>';
+  if (sc.correct > 0)  h += '<br><span style="color:#fff">✓ <strong style="color:#ffd43b">' + sc.correct + '</strong> correct first try</span>';
+  if (sc.fixed > 0)    h += '<br><span style="color:rgba(130,220,255,.9)">🔧 <strong>' + sc.fixed + '</strong> fixed after wrong</span>';
+  if (wrongCount > 0)  h += '<br><span style="color:rgba(255,160,160,.9)">✗ <strong>' + wrongCount + '</strong> wrong</span>';
+  if (sc.skipped > 0)  h += '<br><span style="color:rgba(255,220,130,.9)">⏭ <strong>' + sc.skipped + '</strong> skipped</span>';
+  document.getElementById("done-stats").innerHTML = h;
+  spawnConfetti();
+}
+
+// ── confetti ──────────────────────────────────────────────────────────────
+
+function spawnConfetti() {
+  removeConfetti();
+  const colors = ["#ffd43b","#ff6b6b","#69db7c","#4dabf7","#f783ac","#b197fc"];
+  for (let k = 0; k < 22; k++) {
+    const el = document.createElement("div");
+    el.className = "confetti";
+    el.style.left         = (4 + (k * 4.9) % 92) + "%";
+    el.style.top          = (8 + (k * 6.3) % 72) + "%";
+    el.style.background   = colors[k % colors.length];
+    el.style.width        = (k % 3 === 0 ? 14 : 10) + "px";
+    el.style.height       = (k % 3 === 0 ? 14 : 10) + "px";
+    el.style.borderRadius = k % 2 === 0 ? "50%" : "3px";
+    el.style.animationDelay = (k * 0.06).toFixed(2) + "s";
+    document.body.appendChild(el);
+  }
+}
+
+function removeConfetti() {
+  document.querySelectorAll(".confetti").forEach(el => el.remove());
+}
+
+// ── event wiring ──────────────────────────────────────────────────────────
+
+document.getElementById("btn-start").addEventListener("click", startQuiz);
+document.getElementById("btn-again").addEventListener("click", restartQuiz);
+document.getElementById("chk-carry").addEventListener("change", e => { S.includeCarry = e.target.checked; });
+document.getElementById("btn-check").addEventListener("click", checkAnswer);
+document.getElementById("btn-reset").addEventListener("click", () => {
+  S.userDigits = [...S.puzzle.allDigits]; S.feedback = null;
+  S.wrongDigits = new Set(); S.showOriginal = false;
+  S.hasOverflow = false; S.overflowVal = 1;
+  renderGame();
+});
+document.getElementById("btn-skip").addEventListener("click", () => {
+  if (!S.showOriginal) S.score.skipped++;
+  advanceQuestion();
+});
+document.getElementById("btn-quit").addEventListener("click", () => {
+  S.questionNum = S.totalQuestions + 1; S.screen = "done"; render();
+});
+document.getElementById("chk-asterisk").addEventListener("change", e => { S.showAsterisk = e.target.checked; renderDigitRow(); });
+document.getElementById("chk-place-labels").addEventListener("change", e => { S.showPlaceLabels = e.target.checked; renderDigitRow(); });
+document.getElementById("chk-hint").addEventListener("change", e => { S.showHint = e.target.checked; renderGame(); });
+
+// ── boot ──────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
