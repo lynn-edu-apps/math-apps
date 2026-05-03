@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Area Model Multiplication</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fdf6ec;
+    --surface: #fff9f0;
+    --border: #e8d8c0;
+    --accent1: #e07b39;
+    --accent2: #3b82c4;
+    --accent-mix: #8b5e99;
+    --text: #2c1e0f;
+    --text-light: #7a5c3a;
+    --cell-a: #fde6c8;
+    --cell-b: #c8dff8;
+    --cell-ab: #e8d0f5;
+    --grid-line: #d4bfa0;
+    --shadow: 0 4px 24px rgba(44,30,15,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'DM Mono', monospace;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 3rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2.2rem;
+  }
+
+  header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  header p {
+    font-size: 0.82rem;
+    color: var(--text-light);
+    margin-top: 0.35rem;
+    letter-spacing: 0.03em;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 2rem 2.2rem;
+    width: 100%;
+    max-width: 700px;
+  }
+
+  /* ── Sliders ── */
+  .sliders {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .slider-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 180px;
+  }
+
+  .slider-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-light);
+  }
+
+  .slider-value-row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .factor-badge {
+    font-family: 'Fraunces', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    width: 2.8rem;
+    text-align: center;
+    line-height: 1;
+  }
+
+  .factor-a { color: var(--accent1); }
+  .factor-b { color: var(--accent2); }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 160px;
+    height: 6px;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2.5px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+
+  .slider-a { background: linear-gradient(to right, #fbbf7a, var(--accent1)); }
+  .slider-a::-webkit-slider-thumb { background: var(--accent1); }
+  .slider-b { background: linear-gradient(to right, #93c5f8, var(--accent2)); }
+  .slider-b::-webkit-slider-thumb { background: var(--accent2); }
+
+  /* ── Decompose row ── */
+  .decompose-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.15rem;
+    color: var(--text-light);
+    margin-bottom: 1.4rem;
+    flex-wrap: wrap;
+  }
+
+  .dec-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.22rem 0.85rem;
+    border-radius: 99px;
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+
+  .dec-a { background: #fde6c8; color: #b85e1a; border: 1px solid #f5c48a; }
+  .dec-b { background: #c8dff8; color: #1e5fa8; border: 1px solid #93c5f8; }
+
+  /* ── Grid area ── */
+  .grid-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.6rem;
+  }
+
+  .grid-outer {
+    position: relative;
+    display: inline-block;
+  }
+
+  /* Top axis (columns = B = width) */
+  .axis-top {
+    display: flex;
+    margin-bottom: 4px;
+    padding-left: 36px; /* align with grid */
+  }
+
+  .axis-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    height: 24px;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .axis-seg-b { background: #c8dff8; color: #1e5fa8; }
+  .axis-seg-space { width: 4px; }
+
+  /* Left axis (rows = A = height) */
+  .axis-left {
+    position: absolute;
+    left: 0;
+    top: 28px;
+    display: flex;
+    flex-direction: column;
+    width: 32px;
+  }
+
+  .axis-seg-a-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    border-radius: 4px 0 0 4px;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+  }
+
+  .axis-seg-a { background: #fde6c8; color: #b85e1a; }
+
+  .grid-canvas-wrap {
+    margin-left: 36px;
+  }
+
+  canvas {
+    display: block;
+    border-radius: 6px;
+  }
+
+  /* ── Result ── */
+  .result-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .equation {
+    font-family: 'Fraunces', serif;
+    font-size: 2.8rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .eq-a { color: var(--accent1); }
+  .eq-b { color: var(--accent2); }
+  .eq-op { color: var(--text-light); font-size: 2.3rem; }
+  .eq-result { color: var(--text); }
+
+  .breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 0.2rem;
+  }
+
+  .bk-chip {
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+  }
+
+  .bk-tens-tens { background: #ede0f7; color: #6b3fa0; border: 1px solid #c9a8e8; }
+  .bk-tens-ones { background: #d6ebff; color: #1b5899; border: 1px solid #8ec8f8; }
+  .bk-ones-tens { background: #ffe9d0; color: #a0521a; border: 1px solid #f5c08a; }
+  .bk-ones-ones { background: #d9f5dc; color: #2a7a38; border: 1px solid #85d890; }
+
+  .bk-plus { color: var(--text-light); align-self: center; font-size: 0.9rem; }
+  .bk-eq { color: var(--text); font-weight: 600; }
+
+  .totals-row {
+    font-size: 0.78rem;
+    color: var(--text-light);
+    margin-top: 0.1rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Area Model Multiplication</h1>
+  <p>Drag the sliders — watch the grid grow</p>
+</header>
+
+<div class="card">
+  <!-- Sliders -->
+  <div class="sliders">
+    <div class="slider-group">
+      <span class="slider-label">First Factor</span>
+      <div class="slider-value-row">
+        <span class="factor-badge factor-a" id="valA">12</span>
+        <input type="range" id="sliderA" class="slider-a" min="1" max="99" value="12">
+      </div>
+    </div>
+    <div class="slider-group">
+      <span class="slider-label">Second Factor</span>
+      <div class="slider-value-row">
+        <span class="factor-badge factor-b" id="valB">13</span>
+        <input type="range" id="sliderB" class="slider-b" min="1" max="99" value="13">
+      </div>
+    </div>
+  </div>
+
+  <!-- Decompose chips -->
+  <div class="decompose-row" id="decomposeRow"></div>
+
+  <!-- Grid -->
+  <div class="grid-wrapper">
+    <div class="grid-outer">
+      <div class="axis-top" id="axisTop"></div>
+      <div class="axis-left" id="axisLeft"></div>
+      <div class="grid-canvas-wrap">
+        <canvas id="gridCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-area">
+    <div class="equation">
+      <span class="eq-a" id="eqA">12</span>
+      <span class="eq-op">×</span>
+      <span class="eq-b" id="eqB">13</span>
+      <span class="eq-op">=</span>
+      <span class="eq-result" id="eqResult">156</span>
+    </div>
+    <div class="breakdown" id="breakdown"></div>
+    <div class="totals-row" id="totalsRow"></div>
+  </div>
+</div>
+
+<script>
+const sliderA = document.getElementById('sliderA');
+const sliderB = document.getElementById('sliderB');
+const valA = document.getElementById('valA');
+const valB = document.getElementById('valB');
+const canvas = document.getElementById('gridCanvas');
+const ctx = canvas.getContext('2d');
+const decomposeRow = document.getElementById('decomposeRow');
+const axisTop = document.getElementById('axisTop');
+const axisLeft = document.getElementById('axisLeft');
+const eqA = document.getElementById('eqA');
+const eqB = document.getElementById('eqB');
+const eqResult = document.getElementById('eqResult');
+const breakdown = document.getElementById('breakdown');
+
+const GAP = 4;       // px gap between tens/ones blocks
+
+function decompose(n) {
+  const tens = Math.floor(n / 10) * 10;
+  const ones = n % 10;
+  if (tens === 0) return [ones];
+  if (ones === 0) return [tens];
+  return [tens, ones];
+}
+
+function cellColor(rowPart, colPart, a, b) {
+  const aIsTens = (a >= 10) && rowPart === Math.floor(a / 10) * 10;
+  const bIsTens = (b >= 10) && colPart === Math.floor(b / 10) * 10;
+  if (aIsTens && bIsTens) return { fill: '#ede0f7', stroke: '#c9a8e8' };
+  if (aIsTens && !bIsTens) return { fill: '#ffe9d0', stroke: '#f5c08a' };
+  if (!aIsTens && bIsTens) return { fill: '#d6ebff', stroke: '#8ec8f8' };
+  return { fill: '#d9f5dc', stroke: '#85d890' };
+}
+
+function render() {
+  const a = parseInt(sliderA.value);
+  const b = parseInt(sliderB.value);
+  valA.textContent = a;
+  valB.textContent = b;
+  eqA.textContent = a;
+  eqB.textContent = b;
+  eqResult.textContent = a * b;
+
+  const aParts = decompose(a);
+  const bParts = decompose(b);
+
+  // Use available card width to size the grid generously
+  const cardWidth = canvas.closest('.card').clientWidth;
+  const maxGridPx = Math.min(Math.max(cardWidth - 80, 300), 620);
+  const gap = GAP;
+
+  // Cell size: fill up to maxGridPx along the wider axis
+  const maxCells = Math.max(a, b);
+  const rawCell = Math.floor((maxGridPx - gap * (Math.max(aParts.length, bParts.length) - 1)) / maxCells);
+  const unitCell = Math.max(4, Math.min(14, rawCell));
+
+  const partWidths = bParts.map(p => p * unitCell);
+  const partHeights = aParts.map(p => p * unitCell);
+
+  const totalW = partWidths.reduce((s, w) => s + w, 0) + gap * (bParts.length - 1);
+  const totalH = partHeights.reduce((s, h) => s + h, 0) + gap * (aParts.length - 1);
+
+  // HiDPI / retina fix
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = totalW * dpr;
+  canvas.height = totalH * dpr;
+  canvas.style.width = totalW + 'px';
+  canvas.style.height = totalH + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  let y = 0;
+  aParts.forEach((ap, ri) => {
+    let x = 0;
+    bParts.forEach((bp, ci) => {
+      const { fill, stroke } = cellColor(ap, bp, a, b);
+      ctx.fillStyle = fill;
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(x, y, partWidths[ci], partHeights[ri], 3);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.strokeStyle = stroke + '88';
+      ctx.lineWidth = 0.5;
+      for (let col = 1; col < bp; col++) {
+        ctx.beginPath();
+        ctx.moveTo(x + col * unitCell, y);
+        ctx.lineTo(x + col * unitCell, y + partHeights[ri]);
+        ctx.stroke();
+      }
+      for (let row = 1; row < ap; row++) {
+        ctx.beginPath();
+        ctx.moveTo(x, y + row * unitCell);
+        ctx.lineTo(x + partWidths[ci], y + row * unitCell);
+        ctx.stroke();
+      }
+
+      const product = ap * bp;
+      const fontSize = Math.max(9, Math.min(18, Math.floor(Math.min(partWidths[ci], partHeights[ri]) / 3)));
+      ctx.fillStyle = stroke.replace('88', '');
+      ctx.font = `600 ${fontSize}px 'Fraunces', serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(product, x + partWidths[ci] / 2, y + partHeights[ri] / 2);
+
+      x += partWidths[ci] + gap;
+    });
+    y += partHeights[ri] + gap;
+  });
+
+  axisTop.innerHTML = '';
+  bParts.forEach((bp, ci) => {
+    const seg = document.createElement('div');
+    seg.className = 'axis-seg axis-seg-b';
+    seg.style.width = partWidths[ci] + 'px';
+    seg.textContent = bp;
+    axisTop.appendChild(seg);
+    if (ci < bParts.length - 1) {
+      const sp = document.createElement('div');
+      sp.className = 'axis-seg-space';
+      axisTop.appendChild(sp);
+    }
+  });
+
+  axisLeft.innerHTML = '';
+  // axis-top is 24px tall + 4px margin-bottom = 28px above canvas
+  axisLeft.style.top = '28px';
+  aParts.forEach((ap, ri) => {
+    const seg = document.createElement('div');
+    seg.className = 'axis-seg-a-item axis-seg-a';
+    seg.style.height = partHeights[ri] + 'px';
+    seg.style.width = '32px';
+    seg.textContent = ap;
+    axisLeft.appendChild(seg);
+    if (ri < aParts.length - 1) {
+      const sp = document.createElement('div');
+      sp.style.height = gap + 'px';
+      axisLeft.appendChild(sp);
+    }
+  });
+
+  decomposeRow.innerHTML = '';
+  const addChip = (text, cls) => {
+    const c = document.createElement('span');
+    c.className = `dec-chip ${cls}`;
+    c.textContent = text;
+    decomposeRow.appendChild(c);
+  };
+  const addTxt = (t) => {
+    const s = document.createElement('span');
+    s.textContent = t;
+    decomposeRow.appendChild(s);
+  };
+
+  addChip(a, 'dec-a');
+  addTxt('=');
+  aParts.forEach((p, i) => {
+    addChip(p, 'dec-a');
+    if (i < aParts.length - 1) addTxt('+');
+  });
+  addTxt('  ×  ');
+  addChip(b, 'dec-b');
+  addTxt('=');
+  bParts.forEach((p, i) => {
+    addChip(p, 'dec-b');
+    if (i < bParts.length - 1) addTxt('+');
+  });
+
+  breakdown.innerHTML = '';
+  let first = true;
+  const colorMap = [
+    ['bk-tens-tens', 'bk-tens-ones'],
+    ['bk-ones-tens', 'bk-ones-ones'],
+  ];
+  const parts = [];
+  aParts.forEach((ap, ri) => {
+    bParts.forEach((bp, ci) => {
+      parts.push({ ap, bp, cls: colorMap[Math.min(ri,1)][Math.min(ci,1)], val: ap * bp });
+    });
+  });
+  parts.forEach((p, i) => {
+    if (!first) {
+      const pl = document.createElement('span');
+      pl.className = 'bk-plus';
+      pl.textContent = '+';
+      breakdown.appendChild(pl);
+    }
+    const ch = document.createElement('span');
+    ch.className = `bk-chip ${p.cls}`;
+    ch.textContent = `${p.ap}×${p.bp}=${p.val}`;
+    breakdown.appendChild(ch);
+    first = false;
+  });
+
+  if (parts.length > 1) {
+    const eq = document.createElement('span');
+    eq.className = 'bk-chip bk-eq';
+    eq.style.background = '#f0ebe4';
+    eq.style.border = '1px solid #d4bfa0';
+    eq.textContent = `= ${a * b}`;
+    const eqSp = document.createElement('span');
+    eqSp.className = 'bk-plus';
+    eqSp.textContent = '';
+    breakdown.appendChild(eqSp);
+    breakdown.appendChild(eq);
+  }
+}
+
+sliderA.addEventListener('input', render);
+sliderB.addEventListener('input', render);
+window.addEventListener('resize', render);
+
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    this.moveTo(x + r, y);
+    this.lineTo(x + w - r, y);
+    this.quadraticCurveTo(x + w, y, x + w, y + r);
+    this.lineTo(x + w, y + h - r);
+    this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    this.lineTo(x + r, y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - r);
+    this.lineTo(x, y + r);
+    this.quadraticCurveTo(x, y, x + r, y);
+    this.closePath();
+  };
+}
+
+render();
+</script>
+</body>
+</html>
