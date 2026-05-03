@@ -1,0 +1,2224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Number Friends: Friendly Adding!</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap');
+
+  :root {
+    --sky: #e0f4ff;
+    --blue: #3a86ff;
+    --green: #06d6a0;
+    --yellow: #ffbe0b;
+    --orange: #fb5607;
+    --pink: #ff006e;
+    --purple: #8338ec;
+    --white: #ffffff;
+    --dark: #1a1a2e;
+    --card: #ffffff;
+    --shadow: 0 6px 0px rgba(0,0,0,0.15);
+    --shadow-deep: 0 10px 0px rgba(0,0,0,0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--sky);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 16px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* ── BACKGROUND BLOBS ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 15% 20%, #ffe9b3 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 85% 75%, #d4f4e8 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 70% 10%, #ddd4fc 0%, transparent 60%);
+    z-index: 0;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 860px;
+  }
+
+  /* ══ START SCREEN ══ */
+  .start-screen {
+    background: var(--white);
+    border-radius: 32px;
+    padding: 40px 36px;
+    box-shadow: var(--shadow-deep);
+    text-align: center;
+  }
+
+  .logo {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.8rem;
+    line-height: 1.1;
+    background: linear-gradient(135deg, var(--blue) 0%, var(--purple) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+
+  .logo-sub {
+    font-size: 1.05rem;
+    color: #666;
+    font-weight: 700;
+    margin-bottom: 30px;
+  }
+
+  .mascot {
+    font-size: 5rem;
+    margin-bottom: 20px;
+    display: block;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  .config-row {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+
+  .config-box {
+    background: #f7f8ff;
+    border-radius: 20px;
+    padding: 20px 24px;
+    min-width: 200px;
+    text-align: left;
+  }
+
+  .config-box h3 {
+    font-weight: 900;
+    color: var(--dark);
+    font-size: 1rem;
+    margin-bottom: 14px;
+  }
+
+  .radio-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .radio-group label {
+    cursor: pointer;
+  }
+
+  .radio-group input[type=radio] { display: none; }
+
+  .radio-group .pill {
+    display: inline-block;
+    background: #e8eaf6;
+    border-radius: 50px;
+    padding: 8px 18px;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #555;
+    transition: all .2s;
+    border: 3px solid transparent;
+  }
+  .radio-group input[type=radio]:checked + .pill {
+    background: var(--blue);
+    color: white;
+    border-color: #1a5fb9;
+    transform: scale(1.08);
+    box-shadow: 0 4px 0 #1a5fb9;
+  }
+
+  .select-wrap {
+    position: relative;
+  }
+  .select-wrap select {
+    appearance: none;
+    background: #e8eaf6;
+    border: 3px solid #ccd0f5;
+    border-radius: 14px;
+    padding: 10px 40px 10px 16px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--dark);
+    cursor: pointer;
+    width: 100%;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .select-wrap select:focus { border-color: var(--blue); }
+  .select-wrap::after {
+    content: '▾';
+    position: absolute; right: 14px; top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-size: 1.2rem;
+    color: var(--blue);
+  }
+
+  .btn-start {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.6rem;
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 16px 52px;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #04a67a;
+    transition: transform .1s, box-shadow .1s;
+    letter-spacing: .5px;
+  }
+  .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #04a67a; }
+  .btn-start:active { transform: translateY(3px); box-shadow: 0 3px 0 #04a67a; }
+
+  /* ══ GAME SCREEN ══ */
+  .game-screen { display: none; }
+
+  .game-panel {
+    background: white;
+    border-radius: 28px;
+    padding: 20px 20px 16px;
+    box-shadow: var(--shadow-deep);
+  }
+
+  .game-divider {
+    border: none;
+    border-top: 2px solid #f0f0f8;
+    margin: 12px 0;
+  }
+
+  .hud {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .hud-item {
+    text-align: center;
+  }
+  .hud-item .label {
+    font-size: .7rem;
+    font-weight: 800;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .hud-item .val {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    color: var(--dark);
+  }
+
+  .progress-bar-wrap {
+    flex: 1;
+    min-width: 120px;
+    height: 14px;
+    background: #eee;
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue), var(--purple));
+    border-radius: 99px;
+    transition: width .5s ease;
+  }
+
+  /* ── NUMBER PAD ── */
+  .numpad-section {
+    background: #f7f8ff;
+    border-radius: 16px;
+    padding: 10px 16px 14px;
+  }
+
+  .problem-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--purple);
+    text-transform: none;
+    letter-spacing: 1.5px;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+
+  /* Equation table — each addend is a column, subcomponents are rows */
+  .equation-row {
+    margin-bottom: 12px;
+    overflow-x: auto;
+  }
+
+  .eq-table {
+    border-collapse: separate;
+    border-spacing: 10px 0;
+    margin: 0 auto;
+  }
+
+  /* Addend cells — each row of the table aligns across all addend columns */
+  .eq-table td {
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  /* Operator cells (+, =) span all 4 rows and sit vertically centred */
+  .eq-table td.op-cell {
+    vertical-align: middle;
+    padding: 0 2px;
+  }
+
+  /* Hint row */
+  .eq-table tr.row-hint td {
+    vertical-align: bottom;
+    padding-bottom: 4px;
+    text-align: center;
+  }
+
+  /* Number row */
+  .eq-table tr.row-number td {
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  /* Dots row */
+  .eq-table tr.row-below td {
+    vertical-align: top;
+    padding-top: 10px;
+  }
+
+
+  @keyframes arrowGlowLeft {
+    0%   { box-shadow: 0 4px 0 #d07090, 0 0 6px 2px rgba(212,0,110,0.2); }
+    50%  { box-shadow: 0 4px 0 #d07090, 0 0 18px 6px rgba(212,0,110,0.5); }
+    100% { box-shadow: 0 4px 0 #d07090, 0 0 6px 2px rgba(212,0,110,0.2); }
+  }
+  @keyframes arrowGlowRight {
+    0%   { box-shadow: 0 4px 0 #04a67a, 0 0 6px 2px rgba(6,214,160,0.2); }
+    50%  { box-shadow: 0 4px 0 #04a67a, 0 0 18px 6px rgba(6,214,160,0.5); }
+    100% { box-shadow: 0 4px 0 #04a67a, 0 0 6px 2px rgba(6,214,160,0.2); }
+  }
+  .arrow-pulse.t-arrow-left  { animation: arrowGlowLeft  2s ease-in-out infinite; }
+  .arrow-pulse.t-arrow-right { animation: arrowGlowRight 2s ease-in-out infinite; }
+
+  /* ── Transfer control (Option B) ── */
+  .transfer-ctrl {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .transfer-arrow {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.6rem;
+    border: none;
+    border-radius: 12px;
+    width: 52px;
+    height: 44px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: transform .1s, box-shadow .1s;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.18);
+  }
+  .transfer-arrow:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.18); }
+  .transfer-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .t-arrow-left  { background: #ffe0e8; color: #c00040; box-shadow: 0 4px 0 #d07090; }
+  .t-arrow-left:hover  { background: #ffc8d8; transform: translateY(-2px); }
+
+  .t-arrow-right { background: #d4fce9; color: #006647; box-shadow: 0 4px 0 #04a67a; }
+  .t-arrow-right:hover { background: #a8f5d0; transform: translateY(-2px); }
+
+  /* Friendly slider — kept for decomp modal use */
+  .slider-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .addend-box {
+    background: #f0f4ff;
+    border: 3px solid #c5d0f5;
+    border-radius: 16px;
+    min-width: 70px;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.4rem;
+    color: var(--dark);
+    transition: background .2s, border-color .2s, transform .15s;
+    position: relative;
+  }
+  .addend-box.friendly {
+    background: #d4fce9;
+    border-color: #06d6a0;
+    color: #006647;
+  }
+  .addend-box.changed {
+    animation: pop .25s ease;
+  }
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+
+  /* ten-frame preview under addend */
+  .ten-frame-preview {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .ten-frame-row {
+    display: flex;
+    gap: 2px;
+  }
+  .tf-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 1.5px solid #aab;
+    background: #eee;
+    transition: background .2s;
+  }
+  .tf-dot.filled { background: var(--blue); border-color: #2255bb; }
+  .tf-dot.ten-full { background: #f5c542; border-color: #c8920a; }
+
+  /* operator + sign */
+  .op-symbol {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.2rem;
+    color: #bbb;
+    align-self: center;
+  }
+
+  /* equals */
+  .eq-symbol {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.2rem;
+    color: #bbb;
+    align-self: center;
+  }
+
+  /* ── ANSWER AREA ── */
+  .answer-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .answer-display {
+    background: #fff9e6;
+    border: 3px dashed #f0b429;
+    border-radius: 16px;
+    min-width: 90px;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.4rem;
+    color: var(--dark);
+    transition: all .2s;
+    cursor: default;
+  }
+
+  .original-problem {
+    text-align: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    color: var(--blue);
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+    user-select: none;
+    background: #f0f4ff;
+    border-radius: 10px;
+    padding: 6px 16px;
+    display: inline-block;
+  }
+
+  .transfer-hint {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e06000;
+    text-align: center;
+    min-height: 22px;
+  }
+  .answer-display.correct {
+    background: #d4fce9;
+    border: 3px solid var(--green);
+    color: #006647;
+    animation: pop .3s ease;
+  }
+  .answer-display.wrong {
+    background: #ffe0e0;
+    border: 3px solid var(--pink);
+    color: #b00040;
+    animation: shake .3s ease;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  .answer-placeholder {
+    color: #ddd;
+    font-size: 1.8rem;
+  }
+
+  /* ── NUMBER PAD ── */
+  .numpad-label {
+    text-align: center;
+    font-weight: 800;
+    color: #888;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .numpad-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    max-width: 380px;
+    margin: 0 auto 0;
+  }
+
+  .np-btn {
+    background: white;
+    border: 3px solid #d0d8ff;
+    border-radius: 14px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.3rem;
+    color: var(--dark);
+    padding: 10px 0;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #c0c8f0;
+    transition: transform .1s, box-shadow .1s;
+    text-align: center;
+  }
+  .np-btn:hover { background: #eef0ff; transform: translateY(-1px); }
+  .np-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #c0c8f0; }
+  .np-btn.np-ten {
+    background: #fff3cd;
+    border-color: #f0c040;
+    box-shadow: 0 3px 0 #d8a800;
+    color: #7a5a00;
+  }
+  .np-btn.np-ten:hover { background: #ffe89a; }
+  .np-btn.np-del {
+    background: #ffe0e8;
+    border-color: #f0a0b8;
+    box-shadow: 0 3px 0 #d07090;
+    color: #a00040;
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .numpad-row2 {
+    display: flex;
+    gap: 8px;
+    max-width: 380px;
+    padding-top: 32px;
+    margin: 0 auto;
+  }
+
+  /* ── numpad-row2 buttons — unified style ── */
+  .btn-check, .btn-next, .btn-skip, .btn-reset {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 14px;
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: transform .1s, box-shadow .1s;
+    flex: 1;
+    white-space: nowrap;
+  }
+  .btn-check, .btn-next, .btn-skip, .btn-reset {
+    box-shadow: 0 5px 0 rgba(0,0,0,0.18);
+  }
+  .btn-check:hover, .btn-next:hover, .btn-skip:hover,
+  .btn-reset:hover { transform: translateY(-2px); }
+  .btn-check:active, .btn-next:active, .btn-skip:active,
+  .btn-reset:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.18); }
+
+  .btn-check  { background: var(--green); color: white; box-shadow: 0 5px 0 #04a67a; font-size: 1.3rem; flex: 2; }
+  .btn-check:hover  { box-shadow: 0 7px 0 #04a67a; }
+  .btn-check:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+  .btn-next   { background: var(--blue);   color: white;         box-shadow: 0 5px 0 #1a5fb9; }
+  .btn-next:hover   { box-shadow: 0 7px 0 #1a5fb9; }
+
+  .btn-reset  { background: #fff0e0;       color: #c06000;       box-shadow: 0 5px 0 #d08030; }
+  .btn-reset:hover  { background: #ffe4c0; box-shadow: 0 7px 0 #d08030; }
+
+  .btn-skip   { background: #f0f0f0;       color: #666;          box-shadow: 0 5px 0 #aaa; }
+  .btn-skip:hover   { background: #e4e4e4; box-shadow: 0 7px 0 #aaa; }
+
+
+  /* Friendly summary strip — fixed height so layout never shifts */
+  .friendly-strip {
+    background: #f0fff8;
+    border: 2px solid #a8f0d0;
+    border-radius: 14px;
+    padding: 0 16px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: #007755;
+    margin-top: 10px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: opacity .3s;
+  }
+
+  .numpad-local-answer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px 0 4px;
+  }
+  .nla-label {
+    font-weight: 800;
+    font-size: .85rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .nla-value {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2rem;
+    color: var(--dark);
+    min-width: 60px;
+    text-align: center;
+    background: #fff9e6;
+    border: 3px dashed #f0b429;
+    border-radius: 12px;
+    padding: 4px 16px;
+    transition: all .2s;
+  }
+  .nla-value.correct { background: #d4fce9; border-color: var(--green); color: #006647; border-style: solid; }
+  .nla-value.wrong   { background: #ffe0e0; border-color: var(--pink);  color: #b00040; border-style: solid; }
+  .nla-value.empty   { color: #ddd; }
+
+  @keyframes panelShake {
+    0%   { transform: translateX(0); }
+    15%  { transform: translateX(-8px) rotate(-1deg); }
+    30%  { transform: translateX(8px) rotate(1deg); }
+    45%  { transform: translateX(-6px) rotate(-0.5deg); }
+    60%  { transform: translateX(6px) rotate(0.5deg); }
+    75%  { transform: translateX(-3px); }
+    90%  { transform: translateX(3px); }
+    100% { transform: translateX(0); }
+  }
+  .panel-shake { animation: panelShake 0.5s ease; }
+
+  #confetti-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ══ DECOMPOSE MODAL ══ */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(26,26,46,.45);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal-box {
+    background: white;
+    border-radius: 28px;
+    padding: 28px 28px 24px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    animation: slide-up .25s ease;
+  }
+  @keyframes slide-up {
+    from { transform: translateY(30px); opacity:0; }
+    to { transform: translateY(0); opacity:1; }
+  }
+
+  .modal-box h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    color: var(--dark);
+    margin-bottom: 6px;
+  }
+  .modal-box p {
+    font-size: .9rem;
+    color: #666;
+    font-weight: 700;
+    margin-bottom: 18px;
+  }
+
+  .decomp-split {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .decomp-num {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.6rem;
+    color: var(--blue);
+    min-width: 60px;
+    text-align: center;
+  }
+  .decomp-arrow {
+    font-size: 1.5rem;
+    color: #aaa;
+  }
+  .decomp-parts {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+  }
+  .decomp-parts-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .decomp-part-box {
+    background: #f0f4ff;
+    border: 3px solid #c5d0f5;
+    border-radius: 12px;
+    min-width: 54px;
+    padding: 8px 14px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.6rem;
+    text-align: center;
+    color: var(--dark);
+  }
+  .decomp-part-box.ten-box {
+    background: #fff3cd;
+    border-color: #f0c040;
+    color: #7a5a00;
+  }
+
+  .decomp-slider-wrap {
+    margin-bottom: 14px;
+  }
+  .decomp-slider-wrap label {
+    font-weight: 800;
+    font-size: .85rem;
+    color: #888;
+    display: block;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  input[type=range].decomp-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 12px;
+    background: linear-gradient(90deg, var(--yellow) 0%, var(--orange) 100%);
+    border-radius: 99px;
+    outline: none;
+  }
+  input[type=range].decomp-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: white;
+    border: 4px solid var(--orange);
+    cursor: grab;
+    box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  }
+
+  .decomp-preview-frames {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin: 10px 0 16px;
+    flex-wrap: wrap;
+  }
+
+  .decomp-frame-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .decomp-frame-label {
+    font-size: .7rem;
+    font-weight: 800;
+    color: #999;
+  }
+  .small-ten-frame {
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+    grid-template-rows: repeat(5,1fr);
+    gap: 2px;
+    background: #dde;
+    padding: 3px;
+    border-radius: 6px;
+  }
+  .stf-cell {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    background: #f0f0f8;
+    transition: background .15s;
+  }
+  .stf-cell.filled { background: var(--blue); }
+  .stf-cell.ten-filled { background: var(--yellow); }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+  }
+  .btn-modal-cancel {
+    flex: 1;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    background: #eee;
+    color: #666;
+    border: none;
+    border-radius: 14px;
+    padding: 12px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-modal-cancel:hover { background: #ddd; }
+  .btn-modal-ok {
+    flex: 2;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #04a67a;
+    transition: transform .1s;
+  }
+  .btn-modal-ok:hover { transform: translateY(-1px); }
+
+  /* ══ RESULTS SCREEN ══ */
+  .results-screen {
+    display: none;
+    background: white;
+    border-radius: 32px;
+    padding: 40px 32px;
+    box-shadow: var(--shadow-deep);
+    text-align: center;
+  }
+
+  .results-emoji {
+    font-size: 5rem;
+    display: block;
+    margin-bottom: 12px;
+  }
+  .results-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.4rem;
+    color: var(--dark);
+    margin-bottom: 8px;
+  }
+  .results-score {
+    font-family: 'Fredoka One', cursive;
+    font-size: 4rem;
+    background: linear-gradient(135deg, var(--green), var(--blue));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 16px;
+  }
+  .results-detail {
+    font-size: 1rem;
+    color: #888;
+    font-weight: 700;
+    margin-bottom: 30px;
+  }
+  .btn-play-again {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    background: var(--purple);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 16px 48px;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #5a1cbb;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .btn-play-again:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #5a1cbb; }
+  .btn-play-again:active { transform: translateY(3px); box-shadow: 0 3px 0 #5a1cbb; }
+
+  .btn-quit {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    background: #ffe0e8;
+    color: #a00040;
+    border: none;
+    border-radius: 14px;
+    padding: 10px 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #d07090;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .btn-quit:hover { background: #ffc8d8; transform: translateY(-2px); box-shadow: 0 6px 0 #d07090; }
+  .btn-quit:active { transform: translateY(2px); box-shadow: 0 2px 0 #d07090; }
+  .tip-bubble {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fffbec;
+    border: 2px solid #ffe080;
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #886600;
+    margin-bottom: 16px;
+  }
+
+  /* ── pair-link button ── */
+  .pair-btn {
+    background: none;
+    border: 2.5px dashed #ccc;
+    border-radius: 10px;
+    font-size: .7rem;
+    font-weight: 800;
+    color: #bbb;
+    padding: 3px 7px;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .pair-btn:hover, .pair-btn.paired {
+    border-color: var(--orange);
+    color: var(--orange);
+    background: #fff5ee;
+  }
+
+  .decomp-btn {
+    background: none;
+    border: 2.5px dashed #ccc;
+    border-radius: 10px;
+    font-size: .7rem;
+    font-weight: 800;
+    color: #bbb;
+    padding: 3px 7px;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: all .2s;
+  }
+  .decomp-btn:hover {
+    border-color: var(--purple);
+    color: var(--purple);
+    background: #f5eeff;
+  }
+
+  /* responsive */
+  @media (max-width: 500px) {
+    .addend-box { min-width: 56px; min-height: 56px; font-size: 1.9rem; }
+    .op-symbol, .eq-symbol { font-size: 1.6rem; }
+    .answer-display { min-width: 72px; min-height: 56px; font-size: 1.9rem; }
+  }
+</style>
+</head>
+<body>
+<canvas id="confetti-canvas"></canvas>
+
+<div id="app">
+
+  <!-- ══ START SCREEN ══ -->
+  <div class="start-screen" id="startScreen">
+    <span class="mascot">🧮</span>
+    <div class="logo">Number Friends!</div>
+    <div class="logo-sub">Making Addition Easy with Friendly Numbers</div>
+
+    <div class="tip-bubble">💡 Change numbers to make them easy to add in your head!</div>
+
+    <div class="config-row">
+      <div class="config-box">
+        <h3>How many questions?</h3>
+        <div class="radio-group">
+          <label><input type="radio" name="qcount" value="5"> <span class="pill">5</span></label>
+          <label><input type="radio" name="qcount" value="10" checked> <span class="pill">10</span></label>
+          <label><input type="radio" name="qcount" value="15"> <span class="pill">15</span></label>
+          <label><input type="radio" name="qcount" value="20"> <span class="pill">20</span></label>
+        </div>
+      </div>
+      <div class="config-box">
+        <h3>Addends per problem?</h3>
+        <div class="select-wrap">
+          <select id="maxAddends">
+            <option value="2" selected>2 addends (e.g. 8 + 6)</option>
+            <option value="3">3 addends (e.g. 8 + 6 + 4)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-start" onclick="startGame()">Let's Play! 🚀</button>
+  </div>
+
+  <!-- ══ GAME SCREEN ══ -->
+  <div class="game-screen" id="gameScreen">
+    <div class="game-panel">
+      <div class="hud">
+        <div class="hud-item">
+          <div class="label">Question</div>
+          <div class="val" id="qNum">1 / 10</div>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+        </div>
+        <div class="hud-item">
+          <div class="label">Score</div>
+          <div class="val" id="scoreVal">0</div>
+        </div>
+        <div class="hud-item">
+          <div class="label">Streak 🔥</div>
+          <div class="val" id="streakVal">0</div>
+        </div>
+      </div>
+
+      <hr class="game-divider">
+
+      <div class="problem-section">
+        <div class="problem-title">Make the numbers friendly, then find the sum!</div>
+        <div style="text-align:center"><div class="original-problem" id="originalProblem"></div></div>
+        <div class="friendly-strip" id="friendlyStrip">Tap ← or → to move dots between numbers to make friendly multiples of 5 or 10 ✨</div>
+        <div class="equation-row" id="equationRow"></div>
+      </div>
+
+      <hr class="game-divider">
+
+      <div class="numpad-section">
+        <div class="numpad-label">Tap to build your answer 👇</div>
+        <div class="numpad-grid" id="numpadGrid"></div>
+        <div class="numpad-local-answer" id="numpadLocalAnswer">
+          <span class="nla-label">Your answer:</span>
+          <span class="nla-value" id="numpadAnswerVal">?</span>
+        </div>
+        <div class="numpad-row2">
+          <button class="btn-check" id="btnCheck" onclick="checkAnswer()">Check</button>
+          <button class="btn-reset" id="btnReset" onclick="resetQuestion()">Reset</button>
+          <button class="btn-skip" id="btnSkip" onclick="skipQuestion()">Skip</button>
+          <button class="btn-next" id="btnNext" onclick="nextQuestion()" style="display:none">Next</button>
+        </div>
+      </div>
+
+      <div style="text-align:center; margin-top:12px;">
+        <button class="btn-quit" onclick="goToStart()">Quit</button>
+      </div>
+    </div>
+  </div>
+  <div class="results-screen" id="resultsScreen">
+    <span class="results-emoji" id="resultsEmoji">🌟</span>
+    <div class="results-title" id="resultsTitle">Amazing!</div>
+    <div class="results-score" id="resultsScore">10/10</div>
+    <div class="results-detail" id="resultsDetail">You got all questions right!</div>
+    <button class="btn-play-again" onclick="goToStart()">Play Again 🎉</button>
+  </div>
+
+</div>
+
+<!-- ══ DECOMPOSE MODAL ══ -->
+<div class="modal-overlay" id="decompModal">
+  <div class="modal-box">
+    <h3>✂️ Split the Number!</h3>
+    <p id="decompModalDesc">Slide to choose how to break apart this number.</p>
+    <div class="decomp-split">
+      <div class="decomp-num" id="decompOrigNum">12</div>
+      <div class="decomp-arrow">→</div>
+      <div class="decomp-parts">
+        <div class="decomp-parts-row">
+          <div class="decomp-part-box ten-box" id="decompTens">10</div>
+          <span style="font-weight:900;color:#aaa;font-size:1.2rem">+</span>
+          <div class="decomp-part-box" id="decompOnes">2</div>
+        </div>
+      </div>
+    </div>
+    <div class="decomp-slider-wrap">
+      <label>How many to keep in the first part?</label>
+      <input type="range" class="decomp-slider" id="decompSlider" min="1" max="1" value="1" oninput="onDecompSlider()">
+    </div>
+    <div class="decomp-preview-frames" id="decompFrames"></div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeDecompModal()">Cancel</button>
+      <button class="btn-modal-ok" onclick="applyDecomp()">Use this split! ✅</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────
+//  CONFETTI
+// ─────────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId = null;
+
+  const COLORS = ['#3a86ff','#06d6a0','#ffbe0b','#fb5607','#ff006e','#8338ec','#ffffff'];
+  const SHAPES = ['rect', 'circle', 'strip'];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function makeParticle() {
+    const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+    return {
+      x: Math.random() * canvas.width,
+      y: -10 - Math.random() * 40,
+      vx: (Math.random() - 0.5) * 3,
+      vy: 2.5 + Math.random() * 3,
+      angle: Math.random() * Math.PI * 2,
+      spin: (Math.random() - 0.5) * 0.25,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      shape,
+      w: shape === 'strip' ? 3 + Math.random() * 3 : 7 + Math.random() * 7,
+      h: shape === 'strip' ? 14 + Math.random() * 10 : 7 + Math.random() * 7,
+      life: 1,
+      decay: 0.008 + Math.random() * 0.006,
+    };
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = p.color;
+      if (p.shape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      }
+      ctx.restore();
+    });
+  }
+
+  function tick() {
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.07; // gravity
+      p.vx *= 0.99;
+      p.angle += p.spin;
+      p.life -= p.decay;
+    });
+    particles = particles.filter(p => p.life > 0 && p.y < canvas.height + 20);
+    draw();
+    if (particles.length > 0) {
+      animId = requestAnimationFrame(tick);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      animId = null;
+    }
+  }
+
+  let burst = null;
+  window.launchConfetti = function() {
+    if (animId) cancelAnimationFrame(animId);
+    particles = [];
+    // Initial big burst
+    for (let i = 0; i < 120; i++) particles.push(makeParticle());
+    // Keep trickling for 2.5s
+    let elapsed = 0;
+    if (burst) clearInterval(burst);
+    burst = setInterval(() => {
+      for (let i = 0; i < 18; i++) particles.push(makeParticle());
+      elapsed += 120;
+      if (elapsed >= 2500) clearInterval(burst);
+    }, 120);
+    animId = requestAnimationFrame(tick);
+  };
+
+  // ── Oops animation: sad/funny emojis burst upward from bottom ──
+  const OOPS_EMOJIS = ['😬','😵','🙈','💥','😩','🤦','😱','💫','🫠','😖'];
+  const oopsParticles = [];
+  let oopsAnimId = null;
+
+  function makeOopsParticle() {
+    return {
+      emoji: OOPS_EMOJIS[Math.floor(Math.random() * OOPS_EMOJIS.length)],
+      x: 0.1 * canvas.width + Math.random() * 0.8 * canvas.width,
+      y: canvas.height + 20,
+      vx: (Math.random() - 0.5) * 2,
+      vy: -(4 + Math.random() * 5),  // gentle upward float      angle: 0,
+      size: 36 + Math.random() * 24,
+      spin: (Math.random() - 0.5) * 0.06,
+      life: 1,
+      decay: 0.003 + Math.random() * 0.002,
+    };
+  }
+
+  function tickOops() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // draw confetti particles underneath if any
+    draw();
+    oopsParticles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.04; // very gentle gravity — emojis drift and hang
+      p.angle += p.spin;
+      p.life -= p.decay;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.font = `${p.size}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.emoji, 0, 0);
+      ctx.restore();
+    });
+    // remove dead
+    for (let i = oopsParticles.length - 1; i >= 0; i--) {
+      if (oopsParticles[i].life <= 0) oopsParticles.splice(i, 1);
+    }
+    if (oopsParticles.length > 0) {
+      oopsAnimId = requestAnimationFrame(tickOops);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      oopsAnimId = null;
+    }
+  }
+
+  window.launchOops = function() {
+    // Scroll to top so the warning message is visible
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (oopsAnimId) cancelAnimationFrame(oopsAnimId);
+    oopsParticles.length = 0;
+    for (let i = 0; i < 22; i++) oopsParticles.push(makeOopsParticle());
+    oopsAnimId = requestAnimationFrame(tickOops);
+    // Shake the game panel
+    const panel = document.querySelector('.game-panel');
+    if (panel) {
+      panel.classList.remove('panel-shake');
+      void panel.offsetWidth; // reflow to restart animation
+      panel.classList.add('panel-shake');
+      setTimeout(() => panel.classList.remove('panel-shake'), 500);
+    }
+  };
+})();
+
+// ─────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────
+let totalQ = 10;
+let maxAddends = 2;
+let questions = [];
+let currentQ = 0;
+let score = 0;
+let streak = 0;
+let answered = false;
+
+// current problem
+let addends = [];         // working addend values (may grow via splits)
+let originalAddends = []; // pristine copy of the question — never mutated
+let workingAddends = []; // after slider adjustments
+let pairedIdx = null;   // index of addend selected for pairing
+let answerStr = '';
+
+// decomp state
+let decompTargetIdx = null;
+let decompSplitAt = 0;
+
+// ─────────────────────────────────────────────────
+//  UTILS
+// ─────────────────────────────────────────────────
+function rand(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+function isFriendly(n) {
+  return n % 10 === 0 || n % 5 === 0;
+}
+
+// Canonical key for a question so sorted order doesn't matter for duplicate check
+function questionKey(arr) { return [...arr].sort((a,b)=>a-b).join(','); }
+
+// Tracks every question seen this browser session
+const usedQuestions = new Set();
+
+function generateAddend(max = 2) {
+  const candidates = [];
+  for (let i = 6; i <= 30; i++) {       // no addend below 6
+    if (!isFriendly(i)) candidates.push(i);
+  }
+  let picked;
+  let attempts = 0;
+  do {
+    picked = [];
+    const numAddends = max;
+    for (let i = 0; i < numAddends; i++) {
+      picked.push(candidates[rand(0, candidates.length - 1)]);
+    }
+    // Keep sum under 100, but never let any addend drop below 6
+    while (picked.reduce((a,b)=>a+b,0) > 99) {
+      const hi = picked.indexOf(Math.max(...picked));
+      picked[hi] = Math.max(6, picked[hi] - 5);
+    }
+    attempts++;
+  } while (
+    attempts < 200 && (
+      picked.some(v => v < 6) ||                        // each addend must be >= 6
+      picked.reduce((a,b)=>a+b,0) <= 10 ||              // sum must be > 10
+      usedQuestions.has(questionKey(picked)) ||           // no repeats
+      picked.every(isFriendly)                            // at least one unfriendly addend
+    )
+  );
+  usedQuestions.add(questionKey(picked));
+  return picked;
+}
+
+function generateQuestions(n, max) {
+  const qs = [];
+  for (let i = 0; i < n; i++) qs.push(generateAddend(max));
+  return qs;
+}
+
+function correctSum(addendArr) {
+  return addendArr.reduce((a, b) => a + b, 0);
+}
+
+function friendlyEquation(arr) {
+  // Are they all multiples of 5?
+  return arr.every(isFriendly);
+}
+
+function getFriendlyHint(arr) {
+  if (arr.every(isFriendly)) {
+    const workingSum = correctSum(arr);
+    const originalSum = correctSum(originalAddends);
+    const diff = workingSum - originalSum;
+    if (diff !== 0) {
+      return `🎉 All friendly! ${arr.join(' + ')} — but your changes are off by ${diff > 0 ? '+' : ''}${diff}. They must cancel out!`;
+    }
+    return `🎉 All friendly! ${arr.join(' + ')} — now find the sum!`;
+  }
+
+  // Find the cheapest transfer between any pair that results in a net
+  // improvement — i.e. more friendly addends after than before.
+  const currentFriendlyCount = arr.filter(isFriendly).length;
+  let bestCost = Infinity;
+  let bestHint = null;
+
+  for (let i = 0; i < arr.length; i++) {
+    for (let j = 0; j < arr.length; j++) {
+      if (i === j) continue;
+      const from = arr[i];
+      const to   = arr[j];
+      const rem = to % 5;
+      const targets = rem === 0 ? [] : [to + (5 - rem), to - rem];
+      for (const t of targets) {
+        const move = t - to;
+        if (move <= 0) continue;
+        if (from - move < 0) continue;
+        // Build the resulting array and count friendly addends
+        const resultArr = arr.map((v, k) => k === i ? v - move : k === j ? v + move : v);
+        const resultFriendlyCount = resultArr.filter(isFriendly).length;
+        // Only suggest if it's actually an improvement
+        if (resultFriendlyCount > currentFriendlyCount && move < bestCost) {
+          bestCost = move;
+          bestHint = `💡 Try moving ${move} from the ${from} to the ${to} → new values: ${resultArr.join(' + ')}`;
+        }
+      }
+    }
+  }
+
+  if (bestHint) return bestHint;
+  // If no beneficial transfer exists, the numbers are as friendly as they can get
+  if (currentFriendlyCount > 0) return `Looking good! Now find the sum! 🎯`;
+  return `Tap ← or → to move dots between numbers to make friendly multiples of 5 or 10 ✨`;
+}
+
+// ─────────────────────────────────────────────────
+//  START / INIT
+// ─────────────────────────────────────────────────
+function startGame() {
+  totalQ = parseInt(document.querySelector('input[name="qcount"]:checked').value);
+  maxAddends = parseInt(document.getElementById('maxAddends').value);
+  questions = generateQuestions(totalQ, maxAddends);
+  currentQ = 0; score = 0; streak = 0;
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'block';
+  loadQuestion();
+}
+
+function goToStart() {
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('resultsScreen').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'block';
+}
+
+// ─────────────────────────────────────────────────
+//  QUESTION
+// ─────────────────────────────────────────────────
+function loadQuestion() {
+  answered = false;
+  answerStr = '';
+  pairedIdx = null;
+  addends = [...questions[currentQ]];
+  originalAddends = [...questions[currentQ]];
+  workingAddends = [...addends];
+
+  // Clear answer displays immediately
+  const local = document.getElementById('numpadAnswerVal');
+  if (local) { local.className = 'nla-value empty'; local.textContent = '?'; }
+  const disp = document.getElementById('answerDisplay');
+  if (disp) {
+    disp.className = 'answer-display';
+    disp.innerHTML = '<span class="answer-placeholder">?</span>';
+  }
+
+  document.getElementById('btnCheck').disabled = false;
+  document.getElementById('btnCheck').style.display = 'flex';
+  document.getElementById('btnReset').style.display = 'flex';
+  document.getElementById('btnSkip').style.display = 'flex';
+  document.getElementById('btnNext').style.display = 'none';
+
+  // Show original problem read-only above the working equation
+  document.getElementById('originalProblem').textContent =
+    'Original: ' + addends.join(' + ') + ' = ?';
+
+  updateHUD();
+  renderEquation();
+  renderNumpad();
+  updateFriendlyStrip();
+}
+
+function updateHUD() {
+  document.getElementById('qNum').textContent = `${currentQ+1} / ${totalQ}`;
+  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('streakVal').textContent = streak;
+  document.getElementById('progressBar').style.width = `${(currentQ / totalQ) * 100}%`;
+}
+
+// ─────────────────────────────────────────────────
+//  RESET FOR RETRY
+//  Called whenever the student changes the equation mid-question so the
+//  Check button always reappears and input is never frozen.
+// ─────────────────────────────────────────────────
+function resetForRetry() {
+  answered = false;
+  answerStr = '';
+  stopArrowPulse();
+  document.getElementById('btnCheck').style.display = 'flex';
+  document.getElementById('btnReset').style.display = 'flex';
+  document.getElementById('btnNext').style.display = 'none';
+  const disp = document.getElementById('answerDisplay');
+  if (disp) {
+    disp.className = 'answer-display';
+    disp.innerHTML = '<span class="answer-placeholder">?</span>';
+  }
+  const local = document.getElementById('numpadAnswerVal');
+  if (local) { local.className = 'nla-value empty'; local.textContent = '?'; }
+  // Clear any pending friendly-move warning
+  const flag = document.getElementById('friendlyWarningShown');
+  if (flag) flag.remove();
+  const strip = document.getElementById('friendlyStrip');
+  if (strip) {
+    strip.style.background = '';
+    strip.style.borderColor = '';
+    strip.style.color = '';
+  }
+}
+
+function startArrowPulse() {
+  document.querySelectorAll('.transfer-arrow').forEach(b => b.classList.add('arrow-pulse'));
+}
+
+function stopArrowPulse() {
+  document.querySelectorAll('.transfer-arrow').forEach(b => b.classList.remove('arrow-pulse'));
+}
+
+// ─────────────────────────────────────────────────
+//  FLYING DOT ANIMATION
+// ─────────────────────────────────────────────────
+function launchFlyingDot(fromIdx, toIdx, callback) {
+  const fromEl = document.getElementById(`addend-unit-${fromIdx}`);
+  const toEl   = document.getElementById(`addend-unit-${toIdx}`);
+  if (!fromEl || !toEl) { callback(); return; }
+
+  const fromR = fromEl.getBoundingClientRect();
+  const toR   = toEl.getBoundingClientRect();
+
+  // Start and end centers
+  const x0 = fromR.left + fromR.width  / 2;
+  const y0 = fromR.top  + fromR.height / 2;
+  const x1 = toR.left   + toR.width    / 2;
+  const y1 = toR.top    + toR.height   / 2;
+
+  // Arc peak: midpoint raised by ~100px
+  const mx = (x0 + x1) / 2;
+  const my = Math.min(y0, y1) - 100;
+
+  const dot = document.createElement('div');
+  dot.style.cssText = `
+    position: fixed;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--blue);
+    border: 2px solid #2255bb;
+    box-shadow: 0 2px 8px rgba(58,134,255,0.6);
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: none;
+  `;
+  document.body.appendChild(dot);
+
+  const duration = 480; // ms
+  const start = performance.now();
+
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    // Quadratic bezier: B(t) = (1-t)²·P0 + 2(1-t)t·P1 + t²·P2
+    const u = 1 - t;
+    const x = u*u*x0 + 2*u*t*mx + t*t*x1;
+    const y = u*u*y0 + 2*u*t*my + t*t*y1;
+    dot.style.left = x + 'px';
+    dot.style.top  = y + 'px';
+    // Fade out in last 20%
+    dot.style.opacity = t > 0.8 ? (1 - (t - 0.8) / 0.2) : 1;
+    if (t < 1) {
+      requestAnimationFrame(step);
+    } else {
+      dot.remove();
+      callback();
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+// ─────────────────────────────────────────────────
+//  TRANSFER DOT  (Option B core interaction)
+//  Move one unit of value from addend[fromIdx] to addend[toIdx].
+//  fromIdx loses 1, toIdx gains 1 — sum stays constant.
+// ─────────────────────────────────────────────────
+function transferDot(fromIdx, toIdx) {
+  if (answered) return;
+  if (workingAddends[fromIdx] <= 0) return;
+
+  // Launch flying dot BEFORE changing data or rebuilding DOM
+  // (positions must be captured while old DOM is still intact)
+  launchFlyingDot(fromIdx, toIdx, () => {
+    // Everything runs inside the animation callback
+    workingAddends[fromIdx]--;
+    workingAddends[toIdx]++;
+    stopArrowPulse();
+    resetForRetry();
+    [fromIdx, toIdx].forEach(idx => {
+      const val = workingAddends[idx];
+      const origVal = addends[idx] !== undefined ? addends[idx] : val;
+      const box = document.getElementById(`addend-box-${idx}`);
+      if (box) {
+        box.textContent = val;
+        box.className = 'addend-box' + (isFriendly(val) ? ' friendly' : '') + ' changed';
+        setTimeout(() => box.classList.remove('changed'), 250);
+      }
+      const hint = document.getElementById(`transfer-hint-${idx}`);
+      if (hint) {
+        const diff = val - origVal;
+        hint.textContent = diff !== 0 ? `(${diff > 0 ? '+' : ''}${diff})` : '';
+      }
+      rerenderTenFrame(idx, val);
+    });
+    renderEquation();
+    updateFriendlyStrip();
+  });
+}
+
+// ─────────────────────────────────────────────────
+//  EQUATION RENDER
+// ─────────────────────────────────────────────────
+function renderEquation() {
+  const row = document.getElementById('equationRow');
+  row.innerHTML = '';
+  row.className = 'equation-row';
+
+  /*
+   * Option B layout — table with 3 rows:
+   *   row-number : number boxes | transfer controls | = | answer
+   *   row-below  : ten-frame dots (one per addend)
+   *
+   * Transfer controls sit in the operator column between each addend pair.
+   * ← moves one dot from right addend to left addend (right goes down, left goes up)
+   * → moves one dot from left addend to right addend (left goes down, right goes up)
+   * A small pill shows the net transfer amount.
+   * The = and answer columns have empty cells in row-below.
+   */
+
+  const n = workingAddends.length;
+  const table = document.createElement('table');
+  table.className = 'eq-table';
+
+  const trHint   = document.createElement('tr'); trHint.className   = 'row-hint';
+  const trNumber = document.createElement('tr'); trNumber.className = 'row-number';
+  const trBelow  = document.createElement('tr'); trBelow.className  = 'row-below';
+
+  const cols = [];
+  for (let i = 0; i < n; i++) {
+    if (i > 0) cols.push({ type: 'transfer', leftIdx: i-1, rightIdx: i });
+    cols.push({ type: 'addend', idx: i });
+  }
+  cols.push({ type: 'eq' });
+  cols.push({ type: 'answer' });
+
+  cols.forEach(col => {
+
+    if (col.type === 'addend') {
+      const idx = col.idx;
+      const val = workingAddends[idx];
+      const origVal = addends[idx] !== undefined ? addends[idx] : val;
+
+      // hint row
+      const hintTd = document.createElement('td');
+      const hint = document.createElement('div');
+      hint.className = 'transfer-hint';
+      hint.id = `transfer-hint-${idx}`;
+      hint.textContent = val !== origVal
+        ? `(${val - origVal > 0 ? '+' : ''}${val - origVal})` : '';
+      hintTd.appendChild(hint);
+      trHint.appendChild(hintTd);
+
+      // number row: number box only
+      const numTd = document.createElement('td');
+      numTd.style.textAlign = 'center';
+      const box = document.createElement('div');
+      box.className = 'addend-box' + (isFriendly(val) ? ' friendly' : '');
+      box.id = `addend-box-${idx}`;
+      box.textContent = val;
+      numTd.appendChild(box);
+      trNumber.appendChild(numTd);
+
+      // below row: ten-frame dots + split button
+      const belowTd = document.createElement('td');
+      belowTd.id = `addend-unit-${idx}`;
+      belowTd.style.textAlign = 'center';
+      belowTd.appendChild(buildTenFramePreview(val));
+      if (val > 5) {
+        const decompBtn = document.createElement('button');
+        decompBtn.className = 'decomp-btn';
+        decompBtn.style.marginTop = '6px';
+        decompBtn.textContent = '✂️ split';
+        decompBtn.onclick = () => openDecompModal(idx);
+        belowTd.appendChild(decompBtn);
+      }
+      trBelow.appendChild(belowTd);
+
+    } else if (col.type === 'transfer') {
+      const L = col.leftIdx;
+      const R = col.rightIdx;
+
+      // hint row: empty
+      trHint.appendChild(document.createElement('td'));
+
+      // number row: transfer control widget
+      const td = document.createElement('td');
+      td.style.textAlign = 'center';
+      td.style.padding = '0 6px';
+
+      const wrap = document.createElement('div');
+      wrap.className = 'transfer-ctrl';
+
+      const btnLeft = document.createElement('button');
+      btnLeft.className = 'transfer-arrow t-arrow-left';
+      btnLeft.textContent = '←';
+      btnLeft.title = 'Move a dot this way';
+      btnLeft.onclick = () => transferDot(R, L);
+
+      const plus = document.createElement('div');
+      plus.className = 'op-symbol';
+      plus.style.margin = '0 2px';
+      plus.textContent = '+';
+
+      const btnRight = document.createElement('button');
+      btnRight.className = 'transfer-arrow t-arrow-right';
+      btnRight.textContent = '→';
+      btnRight.title = 'Move a dot this way';
+      btnRight.onclick = () => transferDot(L, R);
+
+      wrap.appendChild(btnLeft);
+      wrap.appendChild(plus);
+      wrap.appendChild(btnRight);
+      td.appendChild(wrap);
+      trNumber.appendChild(td);
+
+      // below row: empty
+      trBelow.appendChild(document.createElement('td'));
+
+    } else if (col.type === 'eq') {
+      trHint.appendChild(document.createElement('td'));
+      const opTd = document.createElement('td');
+      opTd.className = 'op-cell';
+      const opDiv = document.createElement('div');
+      opDiv.className = 'eq-symbol';
+      opDiv.textContent = '=';
+      opTd.appendChild(opDiv);
+      trNumber.appendChild(opTd);
+      trBelow.appendChild(document.createElement('td'));
+
+    } else if (col.type === 'answer') {
+      trHint.appendChild(document.createElement('td'));
+      const ansTd = document.createElement('td');
+      const ansDisp = document.createElement('div');
+      ansDisp.className = 'answer-display';
+      ansDisp.id = 'answerDisplay';
+      ansDisp.innerHTML = answerStr
+        ? `<span>${answerStr}</span>`
+        : `<span class="answer-placeholder">?</span>`;
+      ansTd.appendChild(ansDisp);
+      trNumber.appendChild(ansTd);
+      trBelow.appendChild(document.createElement('td'));
+    }
+  });
+
+  const tbody = document.createElement('tbody');
+  tbody.appendChild(trHint);
+  tbody.appendChild(trNumber);
+  tbody.appendChild(trBelow);
+  table.appendChild(tbody);
+  row.appendChild(table);
+}
+
+function buildTenFramePreview(val) {
+  const container = document.createElement('div');
+  container.className = 'ten-frame-preview';
+
+  const frames = Math.ceil(Math.min(val, 30) / 10);
+  for (let f = 0; f < frames; f++) {
+    const frameRow1 = document.createElement('div');
+    frameRow1.className = 'ten-frame-row';
+    const frameRow2 = document.createElement('div');
+    frameRow2.className = 'ten-frame-row';
+    for (let i = 0; i < 5; i++) {
+      const d1 = document.createElement('div');
+      d1.className = 'tf-dot' + (f*10 + i < val ? (f < frames-1 || val >= (f+1)*10 ? ' ten-full' : ' filled') : '');
+      frameRow1.appendChild(d1);
+      const d2 = document.createElement('div');
+      d2.className = 'tf-dot' + (f*10 + 5 + i < val ? (f < frames-1 || val >= (f+1)*10 ? ' ten-full' : ' filled') : '');
+      frameRow2.appendChild(d2);
+    }
+    container.appendChild(frameRow1);
+    container.appendChild(frameRow2);
+  }
+  return container;
+}
+
+// ─────────────────────────────────────────────────
+//  ADDEND SLIDER
+// ─────────────────────────────────────────────────
+// onAddendSlider no longer used (sliders replaced by transfer controls)
+// kept as no-op to avoid errors from any remaining references
+function onAddendSlider() {}
+
+function rerenderAddend(idx) {
+  const val = workingAddends[idx];
+  const box = document.getElementById(`addend-box-${idx}`);
+  if (box) {
+    box.textContent = val;
+    box.className = 'addend-box' + (isFriendly(val) ? ' friendly' : '');
+  }
+  const hint = document.getElementById(`transfer-hint-${idx}`);
+  if (hint) {
+    const base = addends[idx] !== undefined ? addends[idx] : val;
+    const diff = val - base;
+    hint.textContent = diff !== 0 ? `(${diff > 0 ? '+' : ''}${diff})` : '';
+  }
+  rerenderTenFrame(idx, val);
+}
+
+function rerenderTenFrame(idx, val) {
+  const unit = document.getElementById(`addend-unit-${idx}`);
+  if (!unit) return;
+  const oldTf = unit.querySelector('.ten-frame-preview');
+  if (oldTf) {
+    const newTf = buildTenFramePreview(val);
+    unit.replaceChild(newTf, oldTf);
+  }
+}
+
+function updateFriendlyStrip() {
+  const strip = document.getElementById('friendlyStrip');
+  strip.textContent = getFriendlyHint(workingAddends);
+}
+
+// ─────────────────────────────────────────────────
+//  PAIRING
+// ─────────────────────────────────────────────────
+function selectForPairing(idx) {
+  resetForRetry();
+  if (pairedIdx === idx) {
+    pairedIdx = null;
+  } else {
+    pairedIdx = idx;
+  }
+  renderEquation();
+  renderNumpad();
+}
+
+// ─────────────────────────────────────────────────
+//  DECOMPOSE MODAL
+// ─────────────────────────────────────────────────
+function openDecompModal(idx) {
+  decompTargetIdx = idx;
+  const val = workingAddends[idx];
+  document.getElementById('decompOrigNum').textContent = val;
+  document.getElementById('decompModalDesc').textContent =
+    `How do you want to split ${val}? Drag the slider!`;
+
+  const slider = document.getElementById('decompSlider');
+  slider.min = 1;
+  slider.max = val - 1;
+  // Default: split at nearest 5 or 10
+  let def = Math.floor(val / 10) * 10;
+  if (def === 0) def = 5;
+  if (def >= val) def = Math.floor(val / 5) * 5;
+  if (def === 0 || def >= val) def = Math.floor(val / 2);
+  slider.value = def;
+  decompSplitAt = def;
+  updateDecompDisplay();
+
+  document.getElementById('decompModal').classList.add('open');
+}
+
+function closeDecompModal() {
+  document.getElementById('decompModal').classList.remove('open');
+}
+
+function onDecompSlider() {
+  decompSplitAt = parseInt(document.getElementById('decompSlider').value);
+  updateDecompDisplay();
+}
+
+function updateDecompDisplay() {
+  const val = workingAddends[decompTargetIdx];
+  const a = decompSplitAt;
+  const b = val - a;
+  document.getElementById('decompTens').textContent = a;
+  document.getElementById('decompOnes').textContent = b;
+
+  // Color the parts
+  document.getElementById('decompTens').className =
+    'decomp-part-box' + (isFriendly(a) ? ' ten-box' : '');
+  document.getElementById('decompOnes').className =
+    'decomp-part-box' + (isFriendly(b) ? ' ten-box' : '');
+
+  // Ten-frame preview
+  renderDecompFrames(a, b);
+}
+
+function renderDecompFrames(a, b) {
+  const container = document.getElementById('decompFrames');
+  container.innerHTML = '';
+
+  [a, b].forEach((num, fi) => {
+    const group = document.createElement('div');
+    group.className = 'decomp-frame-group';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'decomp-frame-label';
+    lbl.textContent = num + (isFriendly(num) ? ' ✨' : '');
+    group.appendChild(lbl);
+
+    // mini ten-frame
+    const cells = 10;
+    const frame = document.createElement('div');
+    frame.className = 'small-ten-frame';
+    for (let i = 0; i < cells; i++) {
+      const c = document.createElement('div');
+      c.className = 'stf-cell' + (i < num ? (isFriendly(num) ? ' ten-filled' : ' filled') : '');
+      frame.appendChild(c);
+    }
+    group.appendChild(frame);
+    container.appendChild(group);
+  });
+}
+
+function applyDecomp() {
+  const idx = decompTargetIdx;
+  const a = decompSplitAt;
+  // Split based on the working value at split time
+  const workingVal = workingAddends[idx];
+  const b = workingVal - a;
+  workingAddends.splice(idx, 1, a, b);
+  // Insert matching baselines for the two new pieces using the ORIGINAL addend value
+  // split proportionally, so deltas on other addends are preserved.
+  const origVal = addends[idx] !== undefined ? addends[idx] : workingVal;
+  // Baseline for piece a = a, baseline for piece b = origVal - a
+  // This means each piece starts with zero delta relative to its new baseline,
+  // while all other addends keep their existing baselines untouched.
+  addends.splice(idx, 1, a, origVal - a);
+  stopArrowPulse();
+  closeDecompModal();
+  pairedIdx = null;
+  resetForRetry();
+  renderEquation();
+  renderNumpad();
+  updateFriendlyStrip();
+}
+
+// ─────────────────────────────────────────────────
+//  CLICK SOUND (Web Audio API — no external files)
+//  Commented out — uncomment to re-enable key sounds
+// ─────────────────────────────────────────────────
+/*
+const audioCtx = (function() {
+  try {
+    return new (window.AudioContext || window.webkitAudioContext)();
+  } catch(e) { return null; }
+})();
+
+function playClick(type = 'normal') {
+  if (!audioCtx) return;
+  // Resume context if suspended (iOS requires user gesture first)
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  if (type === 'del') {
+    // Lower thud for delete/clear
+    osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    osc.type = 'sine';
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.1);
+  } else if (type === 'ten') {
+    // Bright chime for +10/+20/+50
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(660, audioCtx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+    osc.type = 'triangle';
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.15);
+  } else {
+    // Standard tap click
+    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.06);
+    gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+    osc.type = 'sine';
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.08);
+  }
+}
+*/
+function playClick() {} // no-op placeholder
+
+// ─────────────────────────────────────────────────
+//  NUMPAD
+// ─────────────────────────────────────────────────
+function renderNumpad() {
+  const grid = document.getElementById('numpadGrid');
+  grid.innerHTML = '';
+  // Row 1: 1-5, Row 2: 6-9, +10, Del
+  const keys = [
+    {label:'1', val:'1'},{label:'2', val:'2'},{label:'3', val:'3'},
+    {label:'4', val:'4'},{label:'5', val:'5'},
+    {label:'6', val:'6'},{label:'7', val:'7'},{label:'8', val:'8'},
+    {label:'9', val:'9'},{label:'0', val:'0'},
+    {label:'+10', val:'10', cls:'np-ten'},
+    {label:'+20', val:'20', cls:'np-ten'},
+    {label:'+50', val:'50', cls:'np-ten'},
+    {label:'←', val:'del', cls:'np-del'},
+    {label:'CLR', val:'clear', cls:'np-del'},
+  ];
+  keys.forEach(k => {
+    const btn = document.createElement('button');
+    btn.className = 'np-btn ' + (k.cls || '');
+    btn.textContent = k.label;
+    btn.onclick = () => numpadPress(k.val);
+    grid.appendChild(btn);
+  });
+}
+
+function numpadPress(val) {
+  if (answered) return;
+  if (val === 'del') {
+    playClick('del');
+    answerStr = answerStr.slice(0, -1);
+  } else if (val === 'clear') {
+    playClick('del');
+    answerStr = '';
+  } else if (val === '10' || val === '20' || val === '50') {
+    playClick('ten');
+    const n = (parseInt(answerStr) || 0) + parseInt(val);
+    answerStr = n > 999 ? answerStr : String(n);
+  } else {
+    playClick('normal');
+    if (answerStr.length < 3) answerStr += val;
+  }
+  updateAnswerDisplay();
+}
+
+function updateAnswerDisplay() {
+  const disp = document.getElementById('answerDisplay');
+  if (disp) {
+    disp.className = 'answer-display';
+    disp.innerHTML = answerStr
+      ? `<span>${answerStr}</span>`
+      : `<span class="answer-placeholder">?</span>`;
+  }
+  const local = document.getElementById('numpadAnswerVal');
+  if (local) {
+    local.className = 'nla-value' + (answerStr ? '' : ' empty');
+    local.textContent = answerStr || '?';
+  }
+}
+
+// Returns true if any addend in the original question could be slid to a
+// multiple of 5 or 10 (i.e. there is a friendly move available).
+function anyCanBeMadeFriendly(arr) {
+  return arr.some(v => {
+    if (isFriendly(v)) return false;
+    const max = Math.min(v + 9, 50);
+    for (let n = 0; n <= max; n++) {
+      if (isFriendly(n)) return true;
+    }
+    return false;
+  });
+}
+
+// Returns true if the student moved at least one addend to a friendly value
+// compared to the original addends.
+function studentMadeFriendlyMove() {
+  // Compare workingAddends against originalAddends
+  for (let i = 0; i < workingAddends.length; i++) {
+    const orig = originalAddends[i] !== undefined ? originalAddends[i] : workingAddends[i];
+    if (!isFriendly(orig) && isFriendly(workingAddends[i])) return true;
+  }
+  // Also pass if all working addends happen to be friendly (e.g. after a split)
+  if (workingAddends.every(isFriendly)) return true;
+  return false;
+}
+
+// ─────────────────────────────────────────────────
+//  CHECK
+// ─────────────────────────────────────────────────
+function checkAnswer() {
+  const strip = document.getElementById('friendlyStrip');
+
+  if (!answerStr) {
+    strip.textContent = '👆 Enter your answer using the number buttons below first!';
+    strip.style.background = '#fff8e1';
+    strip.style.borderColor = '#ffe082';
+    strip.style.color = '#7a5a00';
+    strip.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  // ── Hard block: imbalanced transfers change the sum ──
+  const workingSum = correctSum(workingAddends);
+  const originalSum = correctSum(originalAddends);
+  if (workingSum !== originalSum) {
+    const diff = workingSum - originalSum;
+    strip.textContent = `⚠️ Your numbers are off by ${diff > 0 ? '+' : ''}${diff}. The increases and decreases must cancel out. Try Reset.`;
+    strip.style.background = '#fff0f0';
+    strip.style.borderColor = '#ffaaaa';
+    strip.style.color = '#aa0000';
+    strip.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    launchOops();
+    return;
+  }
+
+  // ── Soft warning: no friendly move attempted (bypassable on second press) ──
+  const alreadyWarned = !!document.getElementById('friendlyWarningShown');
+  if (!alreadyWarned &&
+      anyCanBeMadeFriendly(originalAddends) &&
+      !studentMadeFriendlyMove()) {
+    // Reset strip style first
+    strip.style.background = '#fff8e1';
+    strip.style.borderColor = '#ffe082';
+    strip.style.color = '#7a5a00';
+    strip.textContent =
+      '⚠️ Try using ← or → to make a friendly multiple of 5 or 10 first! Press Check again to submit anyway.';
+    strip.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    startArrowPulse();
+    const warn = document.createElement('span');
+    warn.id = 'friendlyWarningShown';
+    warn.style.display = 'none';
+    strip.appendChild(warn);
+    return;
+  }
+
+  // Reset strip style (clear warning if bypassing on second press)
+  strip.style.background = '';
+  strip.style.borderColor = '';
+  strip.style.color = '';
+  const flag = document.getElementById('friendlyWarningShown');
+  if (flag) flag.remove();
+
+  const userAns = parseInt(answerStr);
+  const correct = originalSum;
+
+  const disp = document.getElementById('answerDisplay');
+  if (userAns === correct) {
+    answered = true;
+    disp.className = 'answer-display correct';
+    const local = document.getElementById('numpadAnswerVal');
+    if (local) { local.className = 'nla-value correct'; }
+    score++;
+    streak++;
+    document.getElementById('scoreVal').textContent = score;
+    document.getElementById('streakVal').textContent = streak;
+    strip.textContent =
+      streak >= 3 ? `🔥 ${streak} in a row! You're on fire!` : `✅ Correct! ${originalAddends.join(' + ')} = ${correct}`;
+    launchConfetti();
+    document.getElementById('btnCheck').style.display = 'none';
+    document.getElementById('btnReset').style.display = 'none';
+    document.getElementById('btnSkip').style.display = 'none';
+    document.getElementById('btnNext').style.display = 'flex';
+  } else {
+    disp.className = 'answer-display wrong';
+    const local = document.getElementById('numpadAnswerVal');
+    if (local) { local.className = 'nla-value wrong'; }
+    launchOops();
+    streak = 0;
+    document.getElementById('streakVal').textContent = 0;
+    strip.textContent = `❌ Not quite. The sum is not ${userAns}. Try again!`;
+    setTimeout(() => {
+      answerStr = '';
+      const d = document.getElementById('answerDisplay');
+      if (d && !answered) {
+        d.className = 'answer-display';
+        d.innerHTML = '<span class="answer-placeholder">?</span>';
+      }
+      const loc = document.getElementById('numpadAnswerVal');
+      if (loc && !answered) { loc.className = 'nla-value empty'; loc.textContent = '?'; }
+    }, 800);
+  }
+}
+
+function skipQuestion() {
+  // Generate a fresh question (guaranteed unique this session) to replace current
+  const replacement = generateAddend(maxAddends);
+  questions[currentQ] = replacement;
+  loadQuestion();
+}
+
+function resetQuestion() {
+  // Restore addends to the pristine original (undoes splits and slider moves)
+  questions[currentQ] = [...originalAddends];
+  loadQuestion();
+}
+
+// ─────────────────────────────────────────────────
+//  NEXT
+// ─────────────────────────────────────────────────
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= totalQ) {
+    showResults();
+  } else {
+    loadQuestion();
+  }
+}
+
+// ─────────────────────────────────────────────────
+//  RESULTS
+// ─────────────────────────────────────────────────
+function showResults() {
+  document.getElementById('gameScreen').style.display = 'none';
+  const rs = document.getElementById('resultsScreen');
+  rs.style.display = 'block';
+
+  const pct = score / totalQ;
+  let emoji, title, detail;
+
+  if (pct === 1) {
+    emoji = '🏆'; title = 'Perfect Score!';
+    detail = `You got all ${totalQ} questions right. You're a Number Friend champion!`;
+  } else if (pct >= .8) {
+    emoji = '🌟'; title = 'Fantastic!';
+    detail = `You got ${score} out of ${totalQ}. Almost perfect — so close!`;
+  } else if (pct >= .6) {
+    emoji = '😊'; title = 'Good Job!';
+    detail = `You got ${score} out of ${totalQ}. Keep practicing those friendly numbers!`;
+  } else {
+    emoji = '💪'; title = 'Keep Practicing!';
+    detail = `You got ${score} out of ${totalQ}. Try making the numbers into 5s and 10s — it really helps!`;
+  }
+
+  document.getElementById('resultsEmoji').textContent = emoji;
+  document.getElementById('resultsTitle').textContent = title;
+  document.getElementById('resultsScore').textContent = `${score} / ${totalQ}`;
+  document.getElementById('resultsDetail').textContent = detail;
+
+  document.getElementById('progressBar').style.width = '100%';
+}
+</script>
+<script>
+// Prevent double-tap zoom on iOS Safari / embedded browsers
+let lastTap = 0;
+document.addEventListener('touchend', function(e) {
+  const now = Date.now();
+  if (now - lastTap < 300) {
+    e.preventDefault();
+  }
+  lastTap = now;
+}, { passive: false });
+</script>
+</body>
+</html>
