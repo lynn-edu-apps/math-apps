@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Blast! 🚀</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&family=Roboto+Mono:wght@700&display=swap');
+
+:root {
+  --sky:#4FC3F7; --sun:#FFD54F; --grass:#66BB6A; --coral:#FF7043;
+  --purple:#9575CD; --pink:#F06292; --teal:#26C6DA; --bg:#FFF8E7;
+  --card:#FFFFFF; --text:#37474F;
+  --shadow:0 4px 0px rgba(0,0,0,0.15); --shadow-lg:0 8px 0px rgba(0,0,0,0.15);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);min-height:100vh;color:var(--text);overflow-x:hidden;}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at 10% 20%,rgba(79,195,247,.15) 0%,transparent 40%),
+             radial-gradient(circle at 90% 80%,rgba(255,213,79,.15) 0%,transparent 40%),
+             radial-gradient(circle at 50% 50%,rgba(102,187,106,.08) 0%,transparent 60%);
+  pointer-events:none;z-index:0;}
+.screen{display:none;position:relative;z-index:1;}
+.screen.active{display:block;min-height:100vh;overflow-y:auto;}
+
+/* ── APP HEADER ── */
+.app-header{text-align:center;padding:24px 16px 8px;}
+.app-title{font-family:'Fredoka One',cursive;font-size:clamp(2.2rem,6vw,3.5rem);color:var(--coral);text-shadow:3px 3px 0 rgba(255,112,67,.25);letter-spacing:2px;}
+.app-subtitle{font-size:1rem;font-weight:700;color:var(--purple);margin-top:2px;}
+
+/* ── SETUP ── */
+.setup-container{max-width:680px;margin:0 auto;padding:16px 20px 80px;}
+.section-card{background:var(--card);border-radius:20px;padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow-lg);border:3px solid transparent;}
+.section-label{font-family:'Fredoka One',cursive;font-size:1.15rem;color:var(--purple);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+
+/* op buttons */
+.op-buttons{display:flex;gap:12px;flex-wrap:wrap;}
+.op-btn{width:72px;height:72px;border-radius:18px;border:4px solid #E0E0E0;background:#F5F5F5;
+  font-family:'Fredoka One',cursive;font-size:2rem;cursor:pointer;transition:all .15s;
+  box-shadow:0 4px 0 #BDBDBD;display:flex;align-items:center;justify-content:center;
+  user-select:none;position:relative;top:0;color:#757575;}
+.op-btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 #BDBDBD;}
+.op-btn.selected{border-color:var(--coral);background:linear-gradient(135deg,#FF8A65,#FF5722);color:white;box-shadow:0 4px 0 #BF360C;}
+.op-btn.selected:hover{transform:translateY(-2px);box-shadow:0 6px 0 #BF360C;}
+.op-btn:active{top:3px;box-shadow:0 1px 0 #BDBDBD;}
+.op-btn.selected:active{box-shadow:0 1px 0 #BF360C;}
+
+/* orientation */
+.orient-row{display:flex;gap:16px;flex-wrap:wrap;}
+.orient-card{flex:1;min-width:160px;border:4px solid #E0E0E0;border-radius:16px;padding:14px;cursor:pointer;background:#F9F9F9;transition:all .15s;text-align:center;box-shadow:0 4px 0 #BDBDBD;position:relative;top:0;}
+.orient-card:hover{transform:translateY(-2px);box-shadow:0 6px 0 #BDBDBD;}
+.orient-card.selected{border-color:var(--teal);background:linear-gradient(135deg,#4DD0E1,#00ACC1);color:white;box-shadow:0 4px 0 #00838F;}
+.orient-card:active{top:3px;box-shadow:0 1px 0 #BDBDBD;}
+.orient-label{font-family:'Fredoka One',cursive;font-size:1rem;margin-bottom:10px;}
+.orient-preview{font-family:'Courier New',monospace;font-size:.9rem;font-weight:700;line-height:1.6;background:rgba(255,255,255,.35);border-radius:10px;padding:8px 12px;display:inline-block;}
+.orient-card.selected .orient-preview{background:rgba(255,255,255,.25);color:white;}
+
+/* q-buttons */
+.q-buttons{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.q-btn{min-width:54px;height:48px;border-radius:14px;border:3px solid #E0E0E0;background:#F5F5F5;
+  font-family:'Fredoka One',cursive;font-size:1.1rem;color:#757575;cursor:pointer;transition:all .15s;
+  box-shadow:0 4px 0 #BDBDBD;position:relative;top:0;padding:0 14px;}
+.q-btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 #BDBDBD;}
+.q-btn.selected{border-color:var(--grass);background:linear-gradient(135deg,#81C784,#43A047);color:white;box-shadow:0 4px 0 #2E7D32;}
+.q-btn:active{top:3px;box-shadow:0 1px 0 #BDBDBD;}
+.q-btn.selected:active{box-shadow:0 1px 0 #2E7D32;}
+.or-divider{font-family:'Fredoka One',cursive;color:#BDBDBD;font-size:.95rem;padding:0 4px;}
+.time-row{display:flex;align-items:center;gap:10px;margin-top:2px;}
+.time-select{font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;padding:8px 14px;border:3px solid #E0E0E0;border-radius:12px;background:#F5F5F5;cursor:pointer;color:var(--text);box-shadow:0 3px 0 #BDBDBD;outline:none;transition:border-color .15s;}
+.time-select.active-mode{border-color:var(--pink);background:#FFF0F5;box-shadow:0 3px 0 #C2185B;}
+
+/* primary button */
+.btn-primary{display:block;width:100%;padding:18px;font-family:'Fredoka One',cursive;font-size:1.6rem;color:white;background:linear-gradient(135deg,#FF7043,#E64A19);border:none;border-radius:20px;cursor:pointer;box-shadow:0 6px 0 #BF360C;transition:all .15s;position:relative;top:0;letter-spacing:1px;margin-top:8px;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 0 #BF360C;}
+.btn-primary:active{top:4px;box-shadow:0 2px 0 #BF360C;}
+.btn-advanced{display:block;width:100%;padding:12px;font-family:'Fredoka One',cursive;font-size:1rem;color:#9E9E9E;background:#F5F5F5;border:3px dashed #E0E0E0;border-radius:16px;cursor:pointer;transition:all .15s;margin-bottom:14px;}
+.btn-advanced:hover{background:#FAFAFA;border-color:#BDBDBD;color:#757575;}
+
+/* ── QUESTION SCREEN ── */
+.question-container{max-width:560px;margin:0 auto;padding:8px 20px 30px;}
+.q-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.progress-area{flex:1;}
+.progress-text{font-family:'Fredoka One',cursive;font-size:1rem;color:var(--purple);margin-bottom:5px;}
+.progress-bar{height:12px;background:#E0E0E0;border-radius:20px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--sky),var(--teal));border-radius:20px;transition:width .4s ease;}
+.timer-badge{font-family:'Fredoka One',cursive;font-size:1.1rem;background:var(--sun);color:#5D4037;padding:6px 14px;border-radius:20px;box-shadow:0 3px 0 #F9A825;min-width:65px;text-align:center;}
+.timer-badge.warning{background:var(--coral);color:white;box-shadow:0 3px 0 #BF360C;}
+.problem-card{background:white;border-radius:24px;padding:28px 24px;box-shadow:var(--shadow-lg);border:3px solid #E0E0E0;margin-bottom:16px;text-align:center;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+
+/* horizontal */
+.horiz-problem{display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center;}
+.horiz-num{font-family:'Fredoka One',cursive;font-size:clamp(3rem,10vw,5rem);color:var(--text);line-height:1;}
+.horiz-op{font-family:'Fredoka One',cursive;font-size:clamp(2.5rem,8vw,4rem);color:var(--coral);line-height:1;}
+.answer-box-horiz{font-family:'Fredoka One',cursive;font-size:clamp(2.5rem,8vw,4.5rem);min-width:100px;height:80px;border:4px solid #E0E0E0;border-radius:14px;background:#FAFAFA;display:flex;align-items:center;justify-content:center;color:var(--purple);transition:border-color .2s;padding:0 12px;}
+.answer-box-horiz.has-input{border-color:var(--purple);background:#F3E5F5;}
+.answer-box-horiz.correct{border-color:var(--grass);background:#E8F5E9;color:var(--grass);}
+.answer-box-horiz.wrong{border-color:var(--coral);background:#FBE9E7;color:var(--coral);}
+
+/* vertical */
+.vert-problem{font-family:'Roboto Mono',monospace;font-size:clamp(2.2rem,8vw,4rem);line-height:1.3;display:inline-block;text-align:right;}
+.vert-op-row{display:flex;align-items:baseline;gap:12px;}
+.vert-op-sym{color:var(--coral);font-family:'Fredoka One',cursive;}
+.vert-line{height:4px;background:var(--text);border-radius:2px;margin:8px 0;width:100%;}
+.vert-answer-row{display:flex;align-items:center;gap:8px;justify-content:flex-end;}
+.answer-box-vert{font-family:'Roboto Mono',monospace;font-size:clamp(2.2rem,8vw,4rem);min-width:90px;line-height:1.3;border:4px solid #E0E0E0;border-radius:14px;background:#FAFAFA;display:flex;align-items:center;justify-content:flex-end;color:var(--purple);transition:border-color .2s;padding:.15em 10px;margin-right:-14px;}
+.answer-box-vert.has-input{border-color:var(--purple);background:#F3E5F5;}
+.answer-box-vert.correct{border-color:var(--grass);background:#E8F5E9;color:var(--grass);}
+.answer-box-vert.wrong{border-color:var(--coral);background:#FBE9E7;color:var(--coral);}
+
+/* division house */
+.division-house{display:inline-block;position:relative;font-family:'Roboto Mono',monospace;}
+.div-inner{display:flex;align-items:stretch;}
+.div-divisor{padding-right:10px;display:flex;align-items:center;color:var(--text);font-size:clamp(2rem,7vw,3.5rem);font-family:'Roboto Mono',monospace;font-weight:700;}
+.div-bracket{border-left:5px solid var(--text);border-top:5px solid var(--text);border-top-left-radius:4px;padding:4px 14px 4px 10px;display:flex;flex-direction:column;align-items:flex-end;}
+.div-dividend{color:var(--text);font-size:clamp(2rem,7vw,3.5rem);font-family:'Roboto Mono',monospace;font-weight:700;}
+
+/* remainder */
+.remainder-label{font-family:'Roboto Mono',monospace;font-size:clamp(1.4rem,5vw,2.2rem);color:#9E9E9E;font-weight:700;}
+.answer-box-remainder{font-family:'Roboto Mono',monospace;font-size:clamp(1.4rem,5vw,2.2rem);min-width:60px;line-height:1.3;border:4px solid #E0E0E0;border-radius:14px;background:#FAFAFA;display:flex;align-items:center;justify-content:flex-end;color:var(--teal);transition:border-color .2s;padding:.15em 10px;}
+.answer-box-remainder.has-input{border-color:var(--teal);background:#E0F7FA;}
+.answer-box-remainder.correct{border-color:var(--grass);background:#E8F5E9;color:var(--grass);}
+.answer-box-remainder.wrong{border-color:var(--coral);background:#FBE9E7;color:var(--coral);}
+.answer-box-horiz.active-field,.answer-box-vert.active-field{border-color:var(--purple)!important;box-shadow:0 0 0 3px rgba(149,117,205,.25);}
+.answer-box-remainder.active-field{border-color:var(--teal)!important;box-shadow:0 0 0 3px rgba(38,198,218,.25);}
+
+/* numpad */
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;margin:16px auto 16px;}
+.np-btn{height:62px;border-radius:16px;border:3px solid #E0E0E0;background:white;font-family:'Fredoka One',cursive;font-size:1.6rem;color:var(--text);cursor:pointer;box-shadow:0 4px 0 #BDBDBD;transition:all .12s;position:relative;top:0;}
+.np-btn:hover{background:#F5F5F5;transform:translateY(-1px);box-shadow:0 5px 0 #BDBDBD;}
+.np-btn:active{top:3px;box-shadow:0 1px 0 #BDBDBD;}
+.np-btn.del{background:#EEEEEE;border-color:#E0E0E0;color:#9E9E9E;box-shadow:0 4px 0 #BDBDBD;font-size:.9rem;}
+.np-btn.del:hover{background:#E0E0E0;color:#616161;}
+.np-btn.del:hover svg{stroke:#616161;}
+.np-btn.del:active{box-shadow:0 1px 0 #BDBDBD;}
+
+/* action buttons */
+.action-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;}
+.btn-check{flex:2;min-width:130px;padding:14px;font-family:'Fredoka One',cursive;font-size:1.2rem;color:white;background:linear-gradient(135deg,#66BB6A,#388E3C);border:none;border-radius:16px;cursor:pointer;box-shadow:0 5px 0 #1B5E20;transition:all .12s;position:relative;top:0;}
+.btn-check:hover{transform:translateY(-2px);box-shadow:0 7px 0 #1B5E20;}
+.btn-check:active{top:3px;box-shadow:0 2px 0 #1B5E20;}
+.btn-check:disabled{background:#BDBDBD;box-shadow:0 4px 0 #9E9E9E;cursor:not-allowed;transform:none;}
+.btn-skip{flex:1;min-width:90px;padding:14px;font-family:'Fredoka One',cursive;font-size:1rem;color:white;background:linear-gradient(135deg,#FFB74D,#F57C00);border:none;border-radius:16px;cursor:pointer;box-shadow:0 5px 0 #E65100;transition:all .12s;position:relative;top:0;}
+.btn-skip:hover{transform:translateY(-2px);box-shadow:0 7px 0 #E65100;}
+.btn-skip:active{top:3px;box-shadow:0 2px 0 #E65100;}
+.btn-show-ans{flex:1;min-width:90px;padding:14px;font-family:'Fredoka One',cursive;font-size:1rem;color:#757575;background:#F5F5F5;border:3px solid #E0E0E0;border-radius:16px;cursor:pointer;box-shadow:0 4px 0 #BDBDBD;transition:all .12s;position:relative;top:0;}
+.btn-show-ans:hover{background:#EEE;}
+.btn-show-ans:active{top:3px;box-shadow:0 1px 0 #BDBDBD;}
+.subtle-row{display:flex;align-items:center;justify-content:space-between;margin-top:18px;gap:10px;padding:0 2px;}
+.btn-quit{font-family:'Fredoka One',cursive;font-size:.85rem;color:#BDBDBD;background:transparent;border:2px dashed #E0E0E0;border-radius:12px;cursor:pointer;transition:all .12s;padding:7px 18px;white-space:nowrap;flex-shrink:0;}
+.btn-quit:hover{border-color:var(--coral);color:var(--coral);background:#FBE9E7;}
+
+/* RTL toggle */
+#rtl-toggle-wrap{display:none;align-items:center;}
+#rtl-toggle-wrap.visible{display:flex;}
+.rtl-toggle-row{display:flex;align-items:center;gap:10px;margin-top:6px;padding:7px 10px;border-radius:12px;background:rgba(0,0,0,.03);border:1.5px solid #EEE;width:fit-content;cursor:pointer;user-select:none;transition:background .15s;}
+.rtl-toggle-row:hover{background:rgba(149,117,205,.08);border-color:#CE93D8;}
+.rtl-toggle-track{width:36px;height:20px;border-radius:20px;background:#E0E0E0;position:relative;transition:background .2s;flex-shrink:0;}
+.rtl-toggle-track::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:white;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.rtl-toggle-row.on .rtl-toggle-track{background:var(--purple);}
+.rtl-toggle-row.on .rtl-toggle-track::after{transform:translateX(16px);}
+.rtl-toggle-label{font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:800;color:#9E9E9E;letter-spacing:.3px;}
+.rtl-toggle-row.on .rtl-toggle-label{color:var(--purple);}
+
+/* feedback */
+.feedback-msg{text-align:center;padding:10px;border-radius:16px;margin-bottom:16px;margin-top:4px;font-family:'Fredoka One',cursive;font-size:1.4rem;display:none;}
+.feedback-msg.correct-msg{background:#E8F5E9;color:var(--grass);border:3px solid var(--grass);display:block;}
+.feedback-msg.wrong-msg{background:#FBE9E7;color:var(--coral);border:3px solid var(--coral);display:block;}
+.feedback-msg.show-ans-msg{background:#E3F2FD;color:#1565C0;border:3px solid #1565C0;display:block;font-size:1.2rem;}
+.try-again-btn{margin:8px auto 16px;display:block;padding:10px 28px;font-family:'Fredoka One',cursive;font-size:1.1rem;color:white;background:linear-gradient(135deg,#FF7043,#E64A19);border:none;border-radius:14px;cursor:pointer;box-shadow:0 4px 0 #BF360C;transition:all .12s;}
+.try-again-btn:hover{transform:translateY(-2px);}
+
+/* confetti & sad */
+.confetti-container,.sad-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1000;overflow:hidden;}
+.confetti-piece{position:absolute;top:-20px;width:12px;height:12px;border-radius:2px;animation:confettiFall linear forwards;}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}80%{opacity:1;}100%{transform:translateY(110vh) rotate(720deg);opacity:0;}}
+.sad-piece{position:absolute;font-size:2.5rem;animation:sadFloat ease-out forwards;opacity:0;}
+@keyframes sadFloat{0%{transform:translate(0,0) scale(.5);opacity:0;}15%{opacity:1;}70%{opacity:.9;}100%{transform:translate(var(--dx),var(--dy)) scale(1.2);opacity:0;}}
+
+/* ── RESULTS ── */
+.results-container{max-width:720px;margin:0 auto;padding:8px 20px 40px;}
+.results-title{font-family:'Fredoka One',cursive;font-size:2.2rem;text-align:center;color:var(--coral);margin-bottom:20px;}
+.score-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px;}
+.score-card{background:white;border-radius:18px;padding:16px 12px;text-align:center;box-shadow:var(--shadow);border-bottom:5px solid #E0E0E0;}
+.score-card.total{border-color:var(--purple);} .score-card.correct{border-color:var(--grass);}
+.score-card.fixed{border-color:var(--sky);}    .score-card.wrong{border-color:var(--coral);}
+.score-card.skipped{border-color:var(--sun);}  .score-card.time{border-color:var(--pink);}
+.score-num{font-family:'Fredoka One',cursive;font-size:2.4rem;line-height:1;color:var(--text);}
+.score-card.total .score-num{color:var(--purple);} .score-card.correct .score-num{color:var(--grass);}
+.score-card.fixed .score-num{color:var(--sky);}    .score-card.wrong .score-num{color:var(--coral);}
+.score-card.skipped .score-num{color:#F9A825;}      .score-card.time .score-num{color:var(--pink);}
+.score-lbl{font-size:.75rem;font-weight:800;text-transform:uppercase;color:#9E9E9E;margin-top:4px;letter-spacing:.5px;}
+.history-section{background:white;border-radius:20px;padding:18px;box-shadow:var(--shadow);margin-bottom:20px;}
+.history-title{font-family:'Fredoka One',cursive;font-size:1.2rem;color:var(--purple);margin-bottom:14px;}
+.history-scroll{overflow-x:auto;padding-bottom:8px;}
+.history-items{display:flex;gap:10px;width:max-content;}
+.history-item{background:#F5F5F5;border-radius:14px;padding:10px 12px;min-width:90px;text-align:center;font-size:.8rem;border-top:4px solid #E0E0E0;flex-shrink:0;}
+.history-item.correct-item{border-color:var(--grass);background:#E8F5E9;}
+.history-item.wrong-item{border-color:var(--coral);background:#FBE9E7;}
+.history-item.fixed-item{border-color:var(--sky);background:#E1F5FE;}
+.history-item.skipped-item{border-color:var(--sun);background:#FFFDE7;}
+.history-q{font-family:'Fredoka One',cursive;font-size:.9rem;color:var(--text);margin-bottom:4px;}
+.history-ans{font-family:'Fredoka One',cursive;font-size:1rem;}
+.history-ans.ans-correct{color:var(--grass);} .history-ans.ans-wrong{color:var(--coral);} .history-ans.ans-skipped{color:#F9A825;}
+.history-correct-ans{font-size:.7rem;color:#9E9E9E;font-weight:700;}
+.history-time{font-size:.7rem;color:#9E9E9E;font-weight:700;margin-top:3px;}
+.history-prev-ans{font-size:.7rem;color:var(--coral);font-weight:700;text-decoration:line-through;}
+.btn-play-again{display:block;width:100%;padding:18px;font-family:'Fredoka One',cursive;font-size:1.5rem;color:white;background:linear-gradient(135deg,#9575CD,#512DA8);border:none;border-radius:20px;cursor:pointer;box-shadow:0 6px 0 #311B92;transition:all .15s;position:relative;top:0;}
+.btn-play-again:hover{transform:translateY(-2px);box-shadow:0 8px 0 #311B92;}
+.btn-play-again:active{top:4px;box-shadow:0 2px 0 #311B92;}
+.emoji-row{text-align:center;font-size:2rem;margin:10px 0;}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(55,71,79,.55);backdrop-filter:blur(3px);z-index:500;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;animation:fadeInOverlay .2s ease;}
+@keyframes fadeInOverlay{from{opacity:0;}to{opacity:1;}}
+.modal-panel{background:var(--bg);border-radius:28px;padding:0;width:100%;max-width:420px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25);border:3px solid #FFE0B2;animation:slideUpModal .25s cubic-bezier(.34,1.56,.64,1);position:relative;}
+@keyframes slideUpModal{from{transform:translateY(40px) scale(.95);opacity:0;}to{transform:translateY(0) scale(1);opacity:1;}}
+.modal-header{padding:24px 26px 0;flex-shrink:0;}
+.modal-body{padding:0 26px 20px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;min-height:0;}
+.modal-footer{padding:16px 26px 24px;flex-shrink:0;background:var(--bg);border-top:2px solid #F0F0F0;}
+.modal-title{font-family:'Fredoka One',cursive;font-size:1.5rem;color:var(--purple);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.modal-subtitle{font-size:.82rem;font-weight:700;color:#BDBDBD;letter-spacing:.5px;text-transform:uppercase;margin-bottom:22px;}
+.modal-close{position:absolute;top:16px;right:18px;background:#F5F5F5;border:none;width:34px;height:34px;border-radius:50%;font-size:1.1rem;cursor:pointer;color:#9E9E9E;line-height:1;transition:background .15s,color .15s;z-index:1;}
+.modal-close:hover{background:var(--coral);color:white;}
+.modal-field{margin-bottom:20px;}
+.modal-field-label{font-family:'Fredoka One',cursive;font-size:1rem;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.modal-field-hint{font-size:.78rem;font-weight:600;color:#BDBDBD;margin-left:4px;}
+.modal-input{width:100%;padding:12px 16px;font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text);background:white;border:3px solid #E0E0E0;border-radius:14px;outline:none;transition:border-color .2s,box-shadow .2s;box-shadow:0 3px 0 #E0E0E0;}
+.modal-input:focus{border-color:var(--purple);box-shadow:0 3px 0 #7B1FA2,0 0 0 4px rgba(149,117,205,.15);}
+.modal-input::placeholder{color:#BDBDBD;font-weight:600;}
+.modal-divider{height:1px;background:#F0F0F0;margin:16px 0;}
+.modal-section-label{font-size:.7rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#BDBDBD;margin-bottom:10px;}
+.modal-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;cursor:pointer;user-select:none;}
+.modal-toggle-row-label{font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;}
+.modal-toggle-row-hint{font-size:.75rem;color:#9E9E9E;font-weight:600;display:block;margin-top:1px;}
+.modal-switch-track{width:44px;height:24px;border-radius:24px;background:#E0E0E0;position:relative;flex-shrink:0;transition:background .2s;}
+.modal-switch-track::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:white;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+.modal-toggle-row.on .modal-switch-track{background:var(--purple);}
+.modal-toggle-row.on .modal-switch-track::after{transform:translateX(20px);}
+.modal-radio-group{display:flex;flex-direction:column;gap:8px;margin-top:6px;}
+.modal-radio-option{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;border:2.5px solid #E0E0E0;background:#FAFAFA;cursor:pointer;transition:all .15s;user-select:none;}
+.modal-radio-option:hover{border-color:#CE93D8;background:#F3E5F5;}
+.modal-radio-option.selected{border-color:var(--purple);background:#EDE7F6;}
+.modal-radio-dot{width:18px;height:18px;border-radius:50%;border:3px solid #BDBDBD;flex-shrink:0;transition:all .15s;display:flex;align-items:center;justify-content:center;}
+.modal-radio-option.selected .modal-radio-dot{border-color:var(--purple);background:var(--purple);box-shadow:inset 0 0 0 3px white;}
+.modal-radio-text{font-size:.88rem;font-weight:700;color:var(--text);}
+.modal-radio-hint{font-size:.73rem;color:#9E9E9E;font-weight:600;display:block;}
+.modal-radio-option.selected .modal-radio-text{color:var(--purple);}
+.ops-fixed-btn{width:52px;height:52px;border-radius:14px;border:3px solid #E0E0E0;background:#F5F5F5;font-family:'Fredoka One',cursive;font-size:1.5rem;cursor:pointer;transition:all .15s;box-shadow:0 3px 0 #BDBDBD;display:flex;align-items:center;justify-content:center;color:#9E9E9E;position:relative;top:0;}
+.ops-fixed-btn:hover{transform:translateY(-2px);box-shadow:0 5px 0 #BDBDBD;}
+.ops-fixed-btn.selected{border-color:var(--coral);background:linear-gradient(135deg,#FF8A65,#FF5722);color:white;box-shadow:0 3px 0 #BF360C;}
+.ops-fixed-btn:active{top:2px;}
+.speed-btn{flex:1;min-width:64px;padding:7px 6px;border-radius:10px;border:2.5px solid #E0E0E0;background:white;font-family:'Fredoka One',cursive;font-size:.82rem;color:#9E9E9E;cursor:pointer;text-align:center;line-height:1.3;transition:all .12s;}
+.speed-btn:hover{border-color:#CE93D8;color:var(--purple);}
+.speed-btn.selected{border-color:var(--purple);background:var(--purple);color:white;}
+
+/* operand constraints */
+.op-constraint-section{margin-bottom:6px;}
+.op-constraint-header{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#F5F5F5;border-radius:12px;cursor:pointer;border:2px solid #E8E8E8;transition:background .15s;user-select:none;}
+.op-constraint-header:hover{background:#EEEEEE;}
+.op-constraint-header.has-rules{background:#EDE7F6;border-color:#CE93D8;}
+.op-constraint-title{font-family:'Fredoka One',cursive;font-size:1rem;color:var(--text);display:flex;align-items:center;gap:6px;}
+.op-constraint-header.has-rules .op-constraint-title{color:var(--purple);}
+.op-constraint-chevron{font-size:.75rem;color:#9E9E9E;transition:transform .2s;}
+.op-constraint-header.open .op-constraint-chevron{transform:rotate(180deg);}
+.op-constraint-body{display:none;padding:12px 12px 4px;border:2px solid #E8E8E8;border-top:none;border-radius:0 0 12px 12px;background:#FAFAFA;margin-bottom:4px;}
+.op-constraint-body.open{display:block;}
+.operand-block{margin-bottom:14px;}
+.operand-block-label{font-size:.75rem;font-weight:900;letter-spacing:.8px;text-transform:uppercase;color:#9E9E9E;margin-bottom:8px;}
+.constraint-mode-tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;}
+.c-tab{padding:4px 10px;border-radius:8px;border:2px solid #E0E0E0;background:white;font-size:.72rem;font-weight:800;color:#9E9E9E;cursor:pointer;transition:all .12s;}
+.c-tab:hover{border-color:#CE93D8;color:var(--purple);}
+.c-tab.active{border-color:var(--purple);background:var(--purple);color:white;}
+.constraint-panel{display:none;}
+.constraint-panel.active{display:block;}
+.c-input-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;}
+.c-input{width:72px;padding:5px 8px;font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:700;border:2px solid #E0E0E0;border-radius:8px;outline:none;color:var(--text);transition:border-color .15s;}
+.c-input:focus{border-color:var(--purple);}
+.c-input-label{font-size:.78rem;font-weight:700;color:#9E9E9E;}
+.c-hint{font-size:.72rem;color:#BDBDBD;font-weight:600;margin-top:3px;}
+.c-disallow{margin-top:6px;}
+
+/* decimal places */
+.dp-row{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;background:#F0F4FF;border-radius:10px;border:1.5px solid #C5CAE9;flex-wrap:wrap;}
+.dp-label{font-size:.75rem;font-weight:900;color:#5C6BC0;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;}
+.dp-btn{width:36px;height:30px;border-radius:8px;border:2px solid #C5CAE9;background:white;font-family:'Fredoka One',cursive;font-size:.85rem;color:#9E9E9E;cursor:pointer;transition:all .12s;}
+.dp-btn:hover{border-color:#7986CB;color:#3F51B5;}
+.dp-btn.selected{border-color:#3F51B5;background:#3F51B5;color:white;}
+.always-dec-row{display:flex;align-items:center;gap:8px;margin-top:8px;padding:7px 10px;background:#F0F4FF;border-radius:10px;border:1.5px solid #C5CAE9;cursor:pointer;user-select:none;}
+.always-dec-track{width:32px;height:18px;border-radius:18px;background:#C5CAE9;position:relative;flex-shrink:0;transition:background .2s;}
+.always-dec-track::after{content:'';position:absolute;width:12px;height:12px;border-radius:50%;background:white;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.always-dec-row.on .always-dec-track{background:#3F51B5;}
+.always-dec-row.on .always-dec-track::after{transform:translateX(14px);}
+.always-dec-text{font-size:.78rem;font-weight:800;color:#7986CB;}
+.always-dec-row.on .always-dec-text{color:#3F51B5;}
+
+/* decimal point numpad button */
+.np-btn.np-dot{background:#E8EAF6;border-color:#C5CAE9;color:#3F51B5;font-size:1.4rem;}
+.np-btn.np-dot:hover{background:#C5CAE9;}
+
+@media(max-width:480px){.op-btn{width:60px;height:60px;font-size:1.6rem;}.numpad{gap:8px;max-width:240px;}.np-btn{height:54px;font-size:1.4rem;}}
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div id="screen-setup" class="screen active">
+  <div class="app-header">
+    <div class="app-title">🚀 Math Blast!</div>
+    <div class="app-subtitle">Train your math brain!</div>
+  </div>
+  <div class="setup-container">
+    <div class="section-card" id="ops-section-card">
+      <div class="section-label">🧮 Choose Your Operations</div>
+      <div class="op-buttons" id="op-buttons">
+        <button class="op-btn" data-op="+">+</button>
+        <button class="op-btn" data-op="-">−</button>
+        <button class="op-btn" data-op="×">×</button>
+        <button class="op-btn" data-op="÷">÷</button>
+      </div>
+    </div>
+    <div class="section-card" id="orient-section-card">
+      <div class="section-label">📐 How Should Problems Look?</div>
+      <div class="orient-row">
+        <div class="orient-card" data-orient="horizontal" onclick="selectOrientation('horizontal')">
+          <div class="orient-label">Side by Side</div>
+          <div class="orient-preview">25 + 13 = ___</div>
+        </div>
+        <div class="orient-card" data-orient="vertical" onclick="selectOrientation('vertical')">
+          <div class="orient-label">Stacked Up</div>
+          <div class="orient-preview">&nbsp;&nbsp;25<br>+&nbsp;13<br>────<br>&nbsp;___</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-label">🎯 How Many Questions?</div>
+      <div class="q-buttons">
+        <button class="q-btn" data-q="3">3</button>
+        <button class="q-btn" data-q="5">5</button>
+        <button class="q-btn" data-q="10">10</button>
+        <button class="q-btn" data-q="15">15</button>
+        <button class="q-btn" data-q="20">20</button>
+        <button class="q-btn" data-q="30">30</button>
+      </div>
+      <div class="time-row" style="margin-top:14px;">
+        <span class="or-divider">— OR time me for</span>
+        <select class="time-select" id="time-select" onchange="selectTimeMode(this)">
+          <option value="">⏱ Pick minutes...</option>
+          <option value="1">1 minute</option>
+          <option value="2">2 minutes</option>
+          <option value="3">3 minutes</option>
+          <option value="4">4 minutes</option>
+          <option value="5">5 minutes</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-advanced" onclick="openAdvanced()">⚙️ Advanced Settings</button>
+    <button class="btn-primary" id="letsgo-btn" onclick="startSession()">🚀 Let's Go!</button>
+  </div>
+</div>
+
+<!-- ══ ADVANCED SETTINGS MODAL ══ -->
+<div class="modal-overlay" id="advanced-modal" onclick="overlayClick(event)">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <button class="modal-close" onclick="closeAdvanced()">✕</button>
+      <div class="modal-title">⚙️ Advanced Settings</div>
+      <div class="modal-subtitle">Customize your math session</div>
+    </div>
+    <div class="modal-body">
+
+      <!-- Student Name -->
+      <div class="modal-field">
+        <div class="modal-field-label">🧒 Student First Name <span class="modal-field-hint">(optional)</span></div>
+        <input class="modal-input" type="text" id="adv-student-name" placeholder="e.g. Alex" maxlength="30" autocomplete="off" spellcheck="false"/>
+      </div>
+
+      <div class="modal-divider"></div>
+      <div class="modal-section-label">👩‍🏫 Parent or Teacher Controls</div>
+
+      <!-- Allowed Operations -->
+      <div class="modal-field" style="margin-bottom:16px;">
+        <div class="modal-field-label">🧮 Allowed Operations</div>
+        <div class="modal-radio-group" id="ops-mode-group">
+          <div class="modal-radio-option" data-opsmode="student" onclick="selectOpsMode('student')">
+            <div class="modal-radio-dot"></div>
+            <div><span class="modal-radio-text">Student chooses</span><span class="modal-radio-hint">Operation buttons shown on the Start screen</span></div>
+          </div>
+          <div class="modal-radio-option" data-opsmode="fixed" onclick="selectOpsMode('fixed')">
+            <div class="modal-radio-dot"></div>
+            <div><span class="modal-radio-text">Parent or Teacher fixes the operations</span><span class="modal-radio-hint">Choose which operations are allowed below</span></div>
+          </div>
+        </div>
+        <div id="ops-fixed-picker" style="display:none;margin-top:10px;">
+          <div style="font-size:.75rem;font-weight:800;color:#9E9E9E;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;">Allowed operations (select one or more)</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="ops-fixed-btn" data-op="+" onclick="toggleFixedOp('+')">+</button>
+            <button class="ops-fixed-btn" data-op="-" onclick="toggleFixedOp('-')">−</button>
+            <button class="ops-fixed-btn" data-op="×" onclick="toggleFixedOp('×')">×</button>
+            <button class="ops-fixed-btn" data-op="÷" onclick="toggleFixedOp('÷')">÷</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orientation -->
+      <div class="modal-field" style="margin-bottom:16px;">
+        <div class="modal-field-label">📐 Problem Orientation</div>
+        <div class="modal-radio-group" id="orient-mode-group">
+          <div class="modal-radio-option" data-omode="student" onclick="selectOrientMode('student')">
+            <div class="modal-radio-dot"></div>
+            <div><span class="modal-radio-text">Student chooses</span><span class="modal-radio-hint">Orientation selector shown on Start screen</span></div>
+          </div>
+          <div class="modal-radio-option" data-omode="horizontal" onclick="selectOrientMode('horizontal')">
+            <div class="modal-radio-dot"></div>
+            <div><span class="modal-radio-text">Always horizontal</span><span class="modal-radio-hint">All problems shown side by side</span></div>
+          </div>
+          <div class="modal-radio-option" data-omode="vertical" onclick="selectOrientMode('vertical')">
+            <div class="modal-radio-dot"></div>
+            <div><span class="modal-radio-text">Always vertical (stacked)</span><span class="modal-radio-hint">All problems shown stacked with place value columns</span></div>
+          </div>
+          <div class="modal-radio-option" data-omode="random" onclick="selectOrientMode('random')">
+            <div class="modal-radio-dot"></div>
+            <div><span class="modal-radio-text">Mix it up randomly</span><span class="modal-radio-hint">Each question randomly horizontal or vertical</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carry/Borrow -->
+      <div class="modal-field" style="margin-bottom:16px;">
+        <div class="modal-field-label">➕➖ Addition &amp; Subtraction</div>
+        <div class="modal-toggle-row on" id="adv-carryborrow-toggle" onclick="toggleCarryBorrow()">
+          <div><span class="modal-toggle-row-label">Allow carrying &amp; borrowing</span><span class="modal-toggle-row-hint">When off, only problems needing no carrying or borrowing are shown</span></div>
+          <div class="modal-switch-track"></div>
+        </div>
+      </div>
+
+      <!-- Division remainder -->
+      <div class="modal-field" style="margin-bottom:16px;">
+        <div class="modal-field-label">➗ Division</div>
+        <div class="modal-toggle-row" id="adv-remainder-toggle" onclick="toggleRemainder()">
+          <div><span class="modal-toggle-row-label">Allow remainders</span><span class="modal-toggle-row-hint">Vertical division only — student enters quotient and remainder separately</span></div>
+          <div class="modal-switch-track"></div>
+        </div>
+      </div>
+
+      <div class="modal-divider"></div>
+      <div class="modal-section-label">🎛️ Question Screen Options</div>
+
+      <div class="modal-field" style="margin-bottom:16px;">
+        <div class="modal-toggle-row" id="adv-qopts-toggle" onclick="toggleAdvQOpts()">
+          <div><span class="modal-toggle-row-label">Show advanced input options</span><span class="modal-toggle-row-hint">Reveals a right-to-left digit entry toggle during questions</span></div>
+          <div class="modal-switch-track"></div>
+        </div>
+        <div class="modal-toggle-row" id="adv-anim-toggle" onclick="toggleAdvAnim()" style="margin-top:10px;">
+          <div><span class="modal-toggle-row-label">🎉 Show answer animations</span><span class="modal-toggle-row-hint">Confetti on correct answers · emoji burst on wrong answers</span></div>
+          <div class="modal-switch-track"></div>
+        </div>
+        <div class="modal-toggle-row" id="adv-autocheck-toggle" onclick="toggleAutoCheck()" style="margin-top:10px;">
+          <div><span class="modal-toggle-row-label">⚡ Auto-check answer</span><span class="modal-toggle-row-hint">Checks automatically once enough digits are entered</span></div>
+          <div class="modal-switch-track"></div>
+        </div>
+        <div id="autocheck-speed-row" style="display:none;margin-top:10px;padding:10px 12px;background:#F5F5F5;border-radius:12px;border:2px solid #E8E8E8;">
+          <div style="font-size:.75rem;font-weight:900;color:#9E9E9E;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;">⏱ Pause before next question</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="speed-btn" data-speed="normal" onclick="selectAutoCheckSpeed('normal')">🐢 Normal<span style="display:block;font-size:.65rem;font-weight:700;opacity:.75">1.8 sec</span></button>
+            <button class="speed-btn" data-speed="fast" onclick="selectAutoCheckSpeed('fast')">🐇 Fast<span style="display:block;font-size:.65rem;font-weight:700;opacity:.75">1.0 sec</span></button>
+            <button class="speed-btn" data-speed="faster" onclick="selectAutoCheckSpeed('faster')">⚡ Faster<span style="display:block;font-size:.65rem;font-weight:700;opacity:.75">0.5 sec</span></button>
+            <button class="speed-btn" data-speed="fastest" onclick="selectAutoCheckSpeed('fastest')">🚀 Fastest<span style="display:block;font-size:.65rem;font-weight:700;opacity:.75">0.2 sec</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-divider"></div>
+      <div class="modal-section-label">🔢 Operand Constraints (per operation)</div>
+      <div id="op-constraints-wrap">
+        <!-- Addition -->
+        <div class="op-constraint-section" id="opc-+">
+          <div class="op-constraint-header" onclick="toggleOpConstraint('+')"><span class="op-constraint-title">➕ Addition</span><span class="op-constraint-chevron">▼</span></div>
+          <div class="op-constraint-body" id="opc-body-+">
+            <div class="operand-block"><div class="operand-block-label">First Addend</div>
+              <div class="constraint-mode-tabs">
+                <div class="c-tab active" data-op="+" data-side="a" data-mode="free" onclick="setCMode('+','a','free',this)">Any</div>
+                <div class="c-tab" data-op="+" data-side="a" data-mode="fixed" onclick="setCMode('+','a','fixed',this)">Fixed values</div>
+                <div class="c-tab" data-op="+" data-side="a" data-mode="range" onclick="setCMode('+','a','range',this)">Range</div>
+                <div class="c-tab" data-op="+" data-side="a" data-mode="multiples" onclick="setCMode('+','a','multiples',this)">Multiples</div>
+              </div>
+              <div class="constraint-panel" id="cp-+-a-fixed"><div class="c-input-row"><span class="c-input-label">Values:</span><input class="c-input" style="width:140px" placeholder="e.g. 9, 11, 99" id="cv-+-a-vals" oninput="saveCVal('+','a','vals',this.value)"></div><div class="c-hint">Comma-separated list</div></div>
+              <div class="constraint-panel" id="cp-+-a-range"><div class="c-input-row"><span class="c-input-label">Min:</span><input class="c-input" type="number" id="cv-+-a-min" oninput="saveCVal('+','a','min',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv-+-a-max" oninput="saveCVal('+','a','max',this.value)"></div></div>
+              <div class="constraint-panel" id="cp-+-a-multiples"><div class="c-input-row"><span class="c-input-label">Multiple of:</span><input class="c-input" type="number" id="cv-+-a-multipleOf" value="10" oninput="saveCVal('+','a','multipleOf',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv-+-a-max2" oninput="saveCVal('+','a','max',this.value)"></div></div>
+              <div class="c-disallow"><div class="c-input-row"><span class="c-input-label">Disallow:</span><input class="c-input" style="width:140px" placeholder="e.g. 0, 1" id="cv-+-a-disallow" oninput="saveCVal('+','a','disallow',this.value)"></div></div>
+              <div class="dp-row"><span class="dp-label">Decimal places:</span><button class="dp-btn" data-op="+" data-side="a" data-dp="0" onclick="setDP('+','a',0,this)">0</button><button class="dp-btn" data-op="+" data-side="a" data-dp="1" onclick="setDP('+','a',1,this)">1</button><button class="dp-btn" data-op="+" data-side="a" data-dp="2" onclick="setDP('+','a',2,this)">2</button></div>
+            </div>
+            <div class="operand-block"><div class="operand-block-label">Second Addend</div>
+              <div class="constraint-mode-tabs">
+                <div class="c-tab active" data-op="+" data-side="b" data-mode="free" onclick="setCMode('+','b','free',this)">Any</div>
+                <div class="c-tab" data-op="+" data-side="b" data-mode="fixed" onclick="setCMode('+','b','fixed',this)">Fixed values</div>
+                <div class="c-tab" data-op="+" data-side="b" data-mode="range" onclick="setCMode('+','b','range',this)">Range</div>
+                <div class="c-tab" data-op="+" data-side="b" data-mode="multiples" onclick="setCMode('+','b','multiples',this)">Multiples</div>
+              </div>
+              <div class="constraint-panel" id="cp-+-b-fixed"><div class="c-input-row"><span class="c-input-label">Values:</span><input class="c-input" style="width:140px" placeholder="e.g. 9, 11, 99" id="cv-+-b-vals" oninput="saveCVal('+','b','vals',this.value)"></div><div class="c-hint">Comma-separated list</div></div>
+              <div class="constraint-panel" id="cp-+-b-range"><div class="c-input-row"><span class="c-input-label">Min:</span><input class="c-input" type="number" id="cv-+-b-min" oninput="saveCVal('+','b','min',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv-+-b-max" oninput="saveCVal('+','b','max',this.value)"></div></div>
+              <div class="constraint-panel" id="cp-+-b-multiples"><div class="c-input-row"><span class="c-input-label">Multiple of:</span><input class="c-input" type="number" id="cv-+-b-multipleOf" value="10" oninput="saveCVal('+','b','multipleOf',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv-+-b-max2" oninput="saveCVal('+','b','max',this.value)"></div></div>
+              <div class="c-disallow"><div class="c-input-row"><span class="c-input-label">Disallow:</span><input class="c-input" style="width:140px" placeholder="e.g. 0, 1" id="cv-+-b-disallow" oninput="saveCVal('+','b','disallow',this.value)"></div></div>
+              <div class="dp-row"><span class="dp-label">Decimal places:</span><button class="dp-btn" data-op="+" data-side="b" data-dp="0" onclick="setDP('+','b',0,this)">0</button><button class="dp-btn" data-op="+" data-side="b" data-dp="1" onclick="setDP('+','b',1,this)">1</button><button class="dp-btn" data-op="+" data-side="b" data-dp="2" onclick="setDP('+','b',2,this)">2</button></div>
+            </div>
+            <div class="always-dec-row" id="always-dec-+" onclick="toggleAlwaysDec('+')"><div class="always-dec-track"></div><span class="always-dec-text">Always use decimals (never all-integer questions)</span></div>
+          </div>
+        </div>
+        <!-- Subtraction -->
+        <div class="op-constraint-section" id="opc--">
+          <div class="op-constraint-header" onclick="toggleOpConstraint('-')"><span class="op-constraint-title">➖ Subtraction</span><span class="op-constraint-chevron">▼</span></div>
+          <div class="op-constraint-body" id="opc-body--">
+            <div class="operand-block"><div class="operand-block-label">Subtrahend (number being subtracted)</div>
+              <div class="constraint-mode-tabs">
+                <div class="c-tab active" data-op="-" data-side="b" data-mode="free" onclick="setCMode('-','b','free',this)">Any</div>
+                <div class="c-tab" data-op="-" data-side="b" data-mode="fixed" onclick="setCMode('-','b','fixed',this)">Fixed values</div>
+                <div class="c-tab" data-op="-" data-side="b" data-mode="range" onclick="setCMode('-','b','range',this)">Range</div>
+                <div class="c-tab" data-op="-" data-side="b" data-mode="multiples" onclick="setCMode('-','b','multiples',this)">Multiples</div>
+              </div>
+              <div class="constraint-panel" id="cp---b-fixed"><div class="c-input-row"><span class="c-input-label">Values:</span><input class="c-input" style="width:140px" placeholder="e.g. 5, 10, 25" id="cv---b-vals" oninput="saveCVal('-','b','vals',this.value)"></div><div class="c-hint">Comma-separated list</div></div>
+              <div class="constraint-panel" id="cp---b-range"><div class="c-input-row"><span class="c-input-label">Min:</span><input class="c-input" type="number" id="cv---b-min" oninput="saveCVal('-','b','min',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv---b-max" oninput="saveCVal('-','b','max',this.value)"></div></div>
+              <div class="constraint-panel" id="cp---b-multiples"><div class="c-input-row"><span class="c-input-label">Multiple of:</span><input class="c-input" type="number" id="cv---b-multipleOf" value="10" oninput="saveCVal('-','b','multipleOf',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv---b-max2" oninput="saveCVal('-','b','max',this.value)"></div></div>
+              <div class="c-disallow"><div class="c-input-row"><span class="c-input-label">Disallow:</span><input class="c-input" style="width:140px" placeholder="e.g. 0, 1" id="cv---b-disallow" oninput="saveCVal('-','b','disallow',this.value)"></div></div>
+              <div class="dp-row"><span class="dp-label">Decimal places:</span><button class="dp-btn" data-op="-" data-side="b" data-dp="0" onclick="setDP('-','b',0,this)">0</button><button class="dp-btn" data-op="-" data-side="b" data-dp="1" onclick="setDP('-','b',1,this)">1</button><button class="dp-btn" data-op="-" data-side="b" data-dp="2" onclick="setDP('-','b',2,this)">2</button></div>
+            </div>
+            <div class="operand-block" style="margin-bottom:0"><div class="operand-block-label">Minuend (top number)</div>
+              <div class="dp-row"><span class="dp-label">Decimal places:</span><button class="dp-btn" data-op="-" data-side="a" data-dp="0" onclick="setDP('-','a',0,this)">0</button><button class="dp-btn" data-op="-" data-side="a" data-dp="1" onclick="setDP('-','a',1,this)">1</button><button class="dp-btn" data-op="-" data-side="a" data-dp="2" onclick="setDP('-','a',2,this)">2</button></div>
+            </div>
+            <div class="always-dec-row" id="always-dec--" onclick="toggleAlwaysDec('-')"><div class="always-dec-track"></div><span class="always-dec-text">Always use decimals (never all-integer questions)</span></div>
+          </div>
+        </div>
+        <!-- Multiplication -->
+        <div class="op-constraint-section" id="opc-×">
+          <div class="op-constraint-header" onclick="toggleOpConstraint('×')"><span class="op-constraint-title">✖️ Multiplication</span><span class="op-constraint-chevron">▼</span></div>
+          <div class="op-constraint-body" id="opc-body-×">
+            <div class="operand-block"><div class="operand-block-label">First Factor</div>
+              <div class="constraint-mode-tabs">
+                <div class="c-tab active" data-op="×" data-side="a" data-mode="free" onclick="setCMode('×','a','free',this)">Any</div>
+                <div class="c-tab" data-op="×" data-side="a" data-mode="fixed" onclick="setCMode('×','a','fixed',this)">Fixed values</div>
+                <div class="c-tab" data-op="×" data-side="a" data-mode="range" onclick="setCMode('×','a','range',this)">Range</div>
+                <div class="c-tab" data-op="×" data-side="a" data-mode="multiples" onclick="setCMode('×','a','multiples',this)">Multiples</div>
+              </div>
+              <div class="constraint-panel" id="cp-×-a-fixed"><div class="c-input-row"><span class="c-input-label">Values:</span><input class="c-input" style="width:140px" placeholder="e.g. 6, 7, 8" id="cv-×-a-vals" oninput="saveCVal('×','a','vals',this.value)"></div><div class="c-hint">Comma-separated list</div></div>
+              <div class="constraint-panel" id="cp-×-a-range"><div class="c-input-row"><span class="c-input-label">Min:</span><input class="c-input" type="number" id="cv-×-a-min" oninput="saveCVal('×','a','min',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv-×-a-max" oninput="saveCVal('×','a','max',this.value)"></div></div>
+              <div class="constraint-panel" id="cp-×-a-multiples"><div class="c-input-row"><span class="c-input-label">Multiple of:</span><input class="c-input" type="number" id="cv-×-a-multipleOf" value="10" oninput="saveCVal('×','a','multipleOf',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv-×-a-max2" oninput="saveCVal('×','a','max',this.value)"></div></div>
+              <div class="c-disallow"><div class="c-input-row"><span class="c-input-label">Disallow:</span><input class="c-input" style="width:140px" placeholder="e.g. 0, 1" id="cv-×-a-disallow" oninput="saveCVal('×','a','disallow',this.value)"></div></div>
+              <div class="dp-row"><span class="dp-label">Decimal places:</span><button class="dp-btn" data-op="×" data-side="a" data-dp="0" onclick="setDP('×','a',0,this)">0</button><button class="dp-btn" data-op="×" data-side="a" data-dp="1" onclick="setDP('×','a',1,this)">1</button><button class="dp-btn" data-op="×" data-side="a" data-dp="2" onclick="setDP('×','a',2,this)">2</button></div>
+            </div>
+            <div class="operand-block"><div class="operand-block-label">Second Factor</div>
+              <div class="constraint-mode-tabs">
+                <div class="c-tab active" data-op="×" data-side="b" data-mode="free" onclick="setCMode('×','b','free',this)">Any</div>
+                <div class="c-tab" data-op="×" data-side="b" data-mode="fixed" onclick="setCMode('×','b','fixed',this)">Fixed values</div>
+                <div class="c-tab" data-op="×" data-side="b" data-mode="range" onclick="setCMode('×','b','range',this)">Range</div>
+                <div class="c-tab" data-op="×" data-side="b" data-mode="multiples" onclick="setCMode('×','b','multiples',this)">Multiples</div>
+              </div>
+              <div class="constraint-panel" id="cp-×-b-fixed"><div class="c-input-row"><span class="c-input-label">Values:</span><input class="c-input" style="width:140px" placeholder="e.g. 6, 7, 8" id="cv-×-b-vals" oninput="saveCVal('×','b','vals',this.value)"></div><div class="c-hint">Comma-separated list</div></div>
+              <div class="constraint-panel" id="cp-×-b-range"><div class="c-input-row"><span class="c-input-label">Min:</span><input class="c-input" type="number" id="cv-×-b-min" oninput="saveCVal('×','b','min',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv-×-b-max" oninput="saveCVal('×','b','max',this.value)"></div></div>
+              <div class="constraint-panel" id="cp-×-b-multiples"><div class="c-input-row"><span class="c-input-label">Multiple of:</span><input class="c-input" type="number" id="cv-×-b-multipleOf" value="10" oninput="saveCVal('×','b','multipleOf',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv-×-b-max2" oninput="saveCVal('×','b','max',this.value)"></div></div>
+              <div class="c-disallow"><div class="c-input-row"><span class="c-input-label">Disallow:</span><input class="c-input" style="width:140px" placeholder="e.g. 0, 1" id="cv-×-b-disallow" oninput="saveCVal('×','b','disallow',this.value)"></div></div>
+              <div class="dp-row"><span class="dp-label">Decimal places:</span><button class="dp-btn" data-op="×" data-side="b" data-dp="0" onclick="setDP('×','b',0,this)">0</button><button class="dp-btn" data-op="×" data-side="b" data-dp="1" onclick="setDP('×','b',1,this)">1</button><button class="dp-btn" data-op="×" data-side="b" data-dp="2" onclick="setDP('×','b',2,this)">2</button></div>
+            </div>
+            <div class="always-dec-row" id="always-dec-×" onclick="toggleAlwaysDec('×')"><div class="always-dec-track"></div><span class="always-dec-text">Always use decimals (never all-integer questions)</span></div>
+          </div>
+        </div>
+        <!-- Division -->
+        <div class="op-constraint-section" id="opc-÷">
+          <div class="op-constraint-header" onclick="toggleOpConstraint('÷')"><span class="op-constraint-title">➗ Division</span><span class="op-constraint-chevron">▼</span></div>
+          <div class="op-constraint-body" id="opc-body-÷">
+            <div class="operand-block"><div class="operand-block-label">Divisor</div>
+              <div class="constraint-mode-tabs">
+                <div class="c-tab active" data-op="÷" data-side="b" data-mode="free" onclick="setCMode('÷','b','free',this)">Any</div>
+                <div class="c-tab" data-op="÷" data-side="b" data-mode="fixed" onclick="setCMode('÷','b','fixed',this)">Fixed values</div>
+                <div class="c-tab" data-op="÷" data-side="b" data-mode="range" onclick="setCMode('÷','b','range',this)">Range</div>
+                <div class="c-tab" data-op="÷" data-side="b" data-mode="multiples" onclick="setCMode('÷','b','multiples',this)">Multiples</div>
+              </div>
+              <div class="constraint-panel" id="cp-÷-b-fixed"><div class="c-input-row"><span class="c-input-label">Values:</span><input class="c-input" style="width:140px" placeholder="e.g. 3, 6, 9" id="cv-÷-b-vals" oninput="saveCVal('÷','b','vals',this.value)"></div><div class="c-hint">Comma-separated list (not zero)</div></div>
+              <div class="constraint-panel" id="cp-÷-b-range"><div class="c-input-row"><span class="c-input-label">Min:</span><input class="c-input" type="number" min="1" id="cv-÷-b-min" oninput="saveCVal('÷','b','min',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv-÷-b-max" oninput="saveCVal('÷','b','max',this.value)"></div></div>
+              <div class="constraint-panel" id="cp-÷-b-multiples"><div class="c-input-row"><span class="c-input-label">Multiple of:</span><input class="c-input" type="number" id="cv-÷-b-multipleOf" value="10" oninput="saveCVal('÷','b','multipleOf',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv-÷-b-max2" oninput="saveCVal('÷','b','max',this.value)"></div></div>
+              <div class="c-disallow"><div class="c-input-row"><span class="c-input-label">Disallow:</span><input class="c-input" style="width:140px" placeholder="e.g. 1" id="cv-÷-b-disallow" oninput="saveCVal('÷','b','disallow',this.value)"></div></div>
+              <div class="dp-row"><span class="dp-label">Decimal places (divisor):</span><button class="dp-btn" data-op="÷" data-side="b" data-dp="0" onclick="setDP('÷','b',0,this)">0</button><button class="dp-btn" data-op="÷" data-side="b" data-dp="1" onclick="setDP('÷','b',1,this)">1</button><button class="dp-btn" data-op="÷" data-side="b" data-dp="2" onclick="setDP('÷','b',2,this)">2</button></div>
+              <div class="dp-row" style="margin-top:4px;"><span class="dp-label">Decimal places (dividend):</span><button class="dp-btn" data-op="÷" data-side="a" data-dp="0" onclick="setDP('÷','a',0,this)">0</button><button class="dp-btn" data-op="÷" data-side="a" data-dp="1" onclick="setDP('÷','a',1,this)">1</button><button class="dp-btn" data-op="÷" data-side="a" data-dp="2" onclick="setDP('÷','a',2,this)">2</button></div>
+            </div>
+            <div class="always-dec-row" id="always-dec-÷" onclick="toggleAlwaysDec('÷')"><div class="always-dec-track"></div><span class="always-dec-text">Always use decimals (never all-integer questions)</span></div>
+            <div id="div-dec-rem-note" style="display:none;margin-top:6px;font-size:.75rem;font-weight:700;color:#E65100;background:#FFF3E0;border-radius:8px;padding:6px 10px;">⚠️ Decimals and remainders cannot both be on for division. Remainders have been turned off.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end modal-body -->
+    <div class="modal-footer">
+      <div id="adv-error-msg" style="display:none;background:#FBE9E7;color:#BF360C;border:2px solid #FFCCBC;border-radius:10px;padding:8px 12px;font-size:.82rem;font-weight:700;margin-bottom:10px;line-height:1.4;"></div>
+      <button class="btn-modal-save" onclick="saveAdvanced()">✅ Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ QUESTION SCREEN ══ -->
+<div id="screen-question" class="screen">
+  <div class="app-header" style="padding-bottom:0;"><div class="app-title" style="font-size:1.8rem;">🚀 Math Blast!</div></div>
+  <div class="question-container">
+    <div class="q-header">
+      <div class="progress-area">
+        <div class="progress-text" id="progress-text">Question 1 of 10</div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      </div>
+      <div class="timer-badge" id="timer-badge">0:00</div>
+    </div>
+    <div class="problem-card" id="problem-card"></div>
+    <div class="feedback-msg" id="feedback-msg"></div>
+    <div class="numpad" id="numpad">
+      <button class="np-btn" onclick="numpadPress('7')">7</button>
+      <button class="np-btn" onclick="numpadPress('8')">8</button>
+      <button class="np-btn" onclick="numpadPress('9')">9</button>
+      <button class="np-btn" onclick="numpadPress('4')">4</button>
+      <button class="np-btn" onclick="numpadPress('5')">5</button>
+      <button class="np-btn" onclick="numpadPress('6')">6</button>
+      <button class="np-btn" onclick="numpadPress('1')">1</button>
+      <button class="np-btn" onclick="numpadPress('2')">2</button>
+      <button class="np-btn" onclick="numpadPress('3')">3</button>
+      <button class="np-btn" onclick="numpadPress('0')">0</button>
+      <button class="np-btn np-dot" id="np-dot-btn" style="display:none" onclick="numpadPress('.')">•</button>
+      <button class="np-btn del" onclick="numpadPress('del')" title="Delete" id="np-del-btn" style="grid-column:2/4">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#9E9E9E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+      </button>
+    </div>
+    <div class="action-btns">
+      <button class="btn-check" id="check-btn" onclick="checkAnswer()">✅ Check Answer</button>
+      <button class="btn-skip" onclick="skipQuestion()">⏭ Skip</button>
+      <button class="btn-show-ans" onclick="showAnswer()">💡 Show Answer</button>
+    </div>
+    <div class="subtle-row">
+      <div id="rtl-toggle-wrap">
+        <label class="rtl-toggle-row" id="rtl-toggle" onclick="toggleRTL()">
+          <div class="rtl-toggle-track"></div>
+          <span class="rtl-toggle-label">Right-to-left digits</span>
+        </label>
+      </div>
+      <button class="btn-quit" onclick="quitSession()">Quit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESULTS SCREEN ══ -->
+<div id="screen-results" class="screen">
+  <div class="app-header"><div class="app-title">🏆 Great Session!</div></div>
+  <div class="results-container">
+    <div class="emoji-row" id="results-emoji">⭐⭐⭐</div>
+    <div class="score-cards" id="score-cards"></div>
+    <div class="history-section">
+      <div class="history-title">📋 Question History</div>
+      <div class="history-scroll"><div class="history-items" id="history-items"></div></div>
+    </div>
+    <button class="btn-play-again" onclick="playAgain()">🎮 Play Again!</button>
+  </div>
+</div>
+
+<style>
+.btn-modal-save{display:block;width:100%;padding:14px;font-family:'Fredoka One',cursive;font-size:1.2rem;color:white;background:linear-gradient(135deg,#9575CD,#512DA8);border:none;border-radius:16px;cursor:pointer;box-shadow:0 5px 0 #311B92;transition:all .12s;position:relative;top:0;}
+.btn-modal-save:hover{transform:translateY(-2px);box-shadow:0 7px 0 #311B92;}
+.btn-modal-save:active{top:3px;box-shadow:0 2px 0 #311B92;}
+</style>
+
+<script>
+// ── PREFS ──
+const STORAGE_KEY = 'mathblast_prefs';
+let prefs = {
+  ops:['+'], orient:'vertical', numQ:10, timeMin:0, studentName:'',
+  showAdvQOpts:false, showAnimations:true, autoCheck:false, autoCheckDelay:'normal',
+  allowCarryBorrow:true, allowRemainder:false,
+  orientMode:'student', opsMode:'student', fixedOps:['+','-','×','÷'],
+  operandRules:{
+    '+':{a:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''},b:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''}},
+    '-':{b:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''}},
+    '×':{a:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''},b:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''}},
+    '÷':{b:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''}}
+  },
+  decimalPlaces:{
+    '+':{a:0,b:0}, '-':{a:0,b:0}, '×':{a:0,b:0}, '÷':{a:0,b:0}
+  },
+  alwaysDecimal:{'+':false,'-':false,'×':false,'÷':false}
+};
+function loadPrefs(){
+  try{
+    const s=localStorage.getItem(STORAGE_KEY);
+    if(s){
+      const saved=JSON.parse(s);
+      prefs={...prefs,...saved};
+      // Deep-merge nested objects so new keys aren't lost on old saves
+      if(saved.operandRules){prefs.operandRules={...prefs.operandRules};for(const op of['+','-','×','÷']){if(saved.operandRules[op])prefs.operandRules[op]={...prefs.operandRules[op],...saved.operandRules[op]};}}
+      if(saved.decimalPlaces){prefs.decimalPlaces={...prefs.decimalPlaces};for(const op of['+','-','×','÷']){if(saved.decimalPlaces[op])prefs.decimalPlaces[op]={...prefs.decimalPlaces[op],...saved.decimalPlaces[op]};}}
+      if(saved.alwaysDecimal)prefs.alwaysDecimal={...prefs.alwaysDecimal,...saved.alwaysDecimal};
+    }
+  }catch(e){}
+}
+function savePrefs(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(prefs));}catch(e){}}
+
+// ── SESSION ──
+let session={
+  rtlMode:false, activeField:'quotient',
+  questions:[], current:0, correctFirst:0, fixed:0, wrong:0, skipped:0,
+  timerId:null, countdownId:null, qStartTime:null,
+  answered:false, revealed:false, timerMode:false, secondsLeft:0
+};
+
+// ── HAPPY MESSAGES ──
+const happyMsgPool=[
+  n=>n?`🎉 Great job, ${n}!`:`🎉 Great job!`,
+  n=>`⭐ Awesome!`,
+  n=>n?`🌟 You rock, ${n}!`:`🌟 You rock!`,
+  n=>`🎊 Fantastic!`,
+  n=>n?`💥 Nailed it, ${n}!`:`💥 Nailed it!`,
+  n=>`🚀 Blast off!`,
+  n=>n?`🎯 Bullseye, ${n}!`:`🎯 Bullseye!`,
+  n=>`🌈 Amazing!`,
+  n=>n?`🏆 Champion, ${n}!`:`🏆 Champion!`,
+  n=>`👏 Super!`,
+  n=>n?`🦸 You are a star, ${n}!`:`🌟 You are a star!`,
+  n=>`💫 Brilliant!`,
+  n=>n?`🥳 Woohoo, ${n}!`:`🥳 Woohoo!`,
+  n=>`🔥 On fire!`,
+];
+let lastHappyUsedName=false;
+function randomHappyMsg(){
+  const name=prefs.studentName||'';
+  let idx=Math.floor(Math.random()*happyMsgPool.length);
+  const wouldUseName=name&&happyMsgPool[idx](name)!==happyMsgPool[idx]('');
+  if(wouldUseName&&lastHappyUsedName)idx=Math.floor(Math.random()*happyMsgPool.length);
+  const msg=happyMsgPool[idx](name);
+  lastHappyUsedName=name&&msg.includes(name);
+  return msg;
+}
+const sadMsgs=[`😢 Oops, not quite!`,`😬 Not quite right!`,`😅 Almost — try again!`,`🤔 Hmm, not this time!`,`😮 So close!`,`🙈 Not correct — give it another go!`,`💭 Not quite — have another try!`];
+
+// ── SETUP ──
+function initSetup(){
+  loadPrefs();
+  document.querySelectorAll('.op-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const op=btn.dataset.op;
+      if(prefs.ops.includes(op)){if(prefs.ops.length>1)prefs.ops=prefs.ops.filter(o=>o!==op);}
+      else prefs.ops.push(op);
+      btn.classList.toggle('selected',prefs.ops.includes(op));
+    });
+  });
+  document.querySelectorAll('.q-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      prefs.numQ=parseInt(btn.dataset.q); prefs.timeMin=0;
+      document.querySelectorAll('.q-btn').forEach(b=>b.classList.toggle('selected',parseInt(b.dataset.q)===prefs.numQ));
+      document.getElementById('time-select').value='';
+      document.getElementById('time-select').classList.remove('active-mode');
+    });
+  });
+  syncSetup();
+}
+
+function syncSetup(){
+  document.querySelectorAll('.op-btn').forEach(btn=>btn.classList.toggle('selected',prefs.ops.includes(btn.dataset.op)));
+  selectOrientation(prefs.orient,false);
+  document.querySelectorAll('.q-btn').forEach(btn=>btn.classList.toggle('selected',parseInt(btn.dataset.q)===prefs.numQ&&!prefs.timeMin));
+  const ts=document.getElementById('time-select');
+  if(prefs.timeMin){ts.value=prefs.timeMin;ts.classList.add('active-mode');}
+  else{ts.value='';ts.classList.remove('active-mode');}
+  const advBtn=document.querySelector('.btn-advanced');
+  if(advBtn)advBtn.textContent=prefs.studentName?`⚙️ Advanced Settings  ·  👤 ${prefs.studentName}`:`⚙️ Advanced Settings`;
+  syncOrientSectionVisibility();
+  syncOpsSectionVisibility();
+}
+
+function selectOrientation(orient,save=true){
+  prefs.orient=orient;
+  document.querySelectorAll('.orient-card').forEach(c=>c.classList.toggle('selected',c.dataset.orient===orient));
+}
+function selectTimeMode(sel){
+  prefs.timeMin=parseInt(sel.value)||0;
+  if(prefs.timeMin){sel.classList.add('active-mode');document.querySelectorAll('.q-btn').forEach(b=>b.classList.remove('selected'));}
+  else{sel.classList.remove('active-mode');document.querySelectorAll('.q-btn').forEach(b=>b.classList.toggle('selected',parseInt(b.dataset.q)===prefs.numQ));}
+}
+
+// ── ADVANCED MODAL ──
+function openAdvanced(){
+  document.getElementById('adv-student-name').value=prefs.studentName||'';
+  document.querySelectorAll('#ops-mode-group .modal-radio-option').forEach(el=>el.classList.toggle('selected',el.dataset.opsmode===(prefs.opsMode||'student')));
+  document.getElementById('ops-fixed-picker').style.display=(prefs.opsMode==='fixed')?'':'none';
+  if(!prefs.fixedOps)prefs.fixedOps=['+','-','×','÷'];
+  syncFixedOpButtons();
+  document.querySelectorAll('#orient-mode-group .modal-radio-option').forEach(el=>el.classList.toggle('selected',el.dataset.omode===(prefs.orientMode||'student')));
+  const cbEl=document.getElementById('adv-carryborrow-toggle');if(cbEl)cbEl.classList.toggle('on',prefs.allowCarryBorrow!==false);
+  const remEl=document.getElementById('adv-remainder-toggle');if(remEl)remEl.classList.toggle('on',!!prefs.allowRemainder);
+  const qEl=document.getElementById('adv-qopts-toggle');if(qEl)qEl.classList.toggle('on',!!prefs.showAdvQOpts);
+  const animEl=document.getElementById('adv-anim-toggle');if(animEl)animEl.classList.toggle('on',prefs.showAnimations!==false);
+  const acEl=document.getElementById('adv-autocheck-toggle');if(acEl)acEl.classList.toggle('on',!!prefs.autoCheck);
+  syncAutoCheckSpeedRow(); syncSpeedButtons(); syncConstraintUI(); syncAllDecimalUI();
+  document.getElementById('advanced-modal').classList.add('open');
+}
+function closeAdvanced(){
+  document.getElementById('advanced-modal').classList.remove('open');
+  const e=document.getElementById('adv-error-msg');if(e)e.style.display='none';
+}
+function overlayClick(e){if(e.target===document.getElementById('advanced-modal'))closeAdvanced();}
+
+function saveAdvanced(){
+  const errors=validateAdvancedSettings();
+  const errEl=document.getElementById('adv-error-msg');
+  if(errors.length){errEl.innerHTML='⚠️ '+errors.join('<br>⚠️ ');errEl.style.display='block';errEl.scrollIntoView({behavior:'smooth',block:'nearest'});return;}
+  errEl.style.display='none';
+  prefs.studentName=document.getElementById('adv-student-name').value.trim();
+  savePrefs(); closeAdvanced();
+  const btn=document.querySelector('.btn-advanced');
+  btn.textContent=prefs.studentName?`⚙️ Advanced Settings  ·  👤 ${prefs.studentName}`:`⚙️ Advanced Settings`;
+}
+
+function validateAdvancedSettings(){
+  const errors=[];
+  const opLabels={'+':`Addition`,'-':`Subtraction`,'×':`Multiplication`,'÷':`Division`};
+  const sideLabels={'+':{a:'First Addend',b:'Second Addend'},'-':{b:'Subtrahend'},'×':{a:'First Factor',b:'Second Factor'},'÷':{b:'Divisor'}};
+  Object.entries(prefs.operandRules).forEach(([op,sides])=>{
+    Object.entries(sides).forEach(([side,r])=>{
+      const label=`${opLabels[op]} › ${sideLabels[op][side]}`;
+      if(r.mode==='fixed'){
+        const raw=(r.vals||'').trim();
+        if(!raw)return;
+        const nums=raw.split(',').map(s=>Number(s.trim()));
+        if(nums.some(n=>isNaN(n))){errors.push(`${label}: Fixed values contains non-numeric entries.`);return;}
+        if(op==='÷'&&side==='b'&&nums.includes(0))errors.push(`Division › Divisor: Fixed values cannot include zero.`);
+        if(nums.some(n=>n<0))errors.push(`${label}: Fixed values cannot include negative numbers.`);
+      }
+      if(r.mode==='range'){
+        const mn=r.min!==''?Number(r.min):null,mx=r.max!==''?Number(r.max):null;
+        if(mn===null||mx===null||isNaN(mn)||isNaN(mx))errors.push(`${label}: Range mode requires both Min and Max.`);
+        else if(mn>mx)errors.push(`${label}: Range Min (${mn}) cannot be greater than Max (${mx}).`);
+        else if(op==='÷'&&side==='b'&&mn<=0)errors.push(`Division › Divisor: Range minimum must be at least 1.`);
+      }
+      if(r.mode==='multiples'){
+        const m=Number(r.multipleOf),mx=r.max!==''?Number(r.max):null;
+        if(!m||isNaN(m)||m<=0)errors.push(`${label}: Multiple of value must be positive.`);
+        if(mx===null||isNaN(mx))errors.push(`${label}: Multiples mode requires a Max value.`);
+        else if(mx<m)errors.push(`${label}: Max (${mx}) must be at least as large as the multiple (${m}).`);
+      }
+      if(r.disallow&&r.disallow.trim()){const d=r.disallow.split(',').map(s=>Number(s.trim()));if(d.some(n=>isNaN(n)))errors.push(`${label}: Disallow list contains non-numeric entries.`);}
+    });
+  });
+  if(prefs.opsMode==='fixed'&&(!prefs.fixedOps||prefs.fixedOps.length===0))errors.push(`Allowed Operations: At least one operation must be selected.`);
+  if(prefs.allowRemainder&&(getOperandDP('÷','a')>0||getOperandDP('÷','b')>0))errors.push(`Division: Remainders and decimals cannot both be enabled. Please turn off one.`);
+  return errors;
+}
+
+// ── TOGGLE FUNCTIONS ──
+function toggleAdvQOpts(){prefs.showAdvQOpts=!prefs.showAdvQOpts;const e=document.getElementById('adv-qopts-toggle');if(e)e.classList.toggle('on',prefs.showAdvQOpts);}
+function toggleAdvAnim(){prefs.showAnimations=!prefs.showAnimations;const e=document.getElementById('adv-anim-toggle');if(e)e.classList.toggle('on',prefs.showAnimations);}
+function toggleCarryBorrow(){prefs.allowCarryBorrow=!prefs.allowCarryBorrow;const e=document.getElementById('adv-carryborrow-toggle');if(e)e.classList.toggle('on',prefs.allowCarryBorrow);}
+function toggleRemainder(){
+  prefs.allowRemainder=!prefs.allowRemainder;
+  const e=document.getElementById('adv-remainder-toggle');if(e)e.classList.toggle('on',prefs.allowRemainder);
+  // If remainders just turned on, clear division decimal places
+  if(prefs.allowRemainder){
+    if(prefs.decimalPlaces['÷']){prefs.decimalPlaces['÷']={a:0,b:0};}
+    syncAllDecimalUI();
+  }
+}
+function toggleAutoCheck(){prefs.autoCheck=!prefs.autoCheck;const e=document.getElementById('adv-autocheck-toggle');if(e)e.classList.toggle('on',prefs.autoCheck);syncAutoCheckSpeedRow();}
+function selectAutoCheckSpeed(s){prefs.autoCheckDelay=s;syncSpeedButtons();}
+function syncSpeedButtons(){document.querySelectorAll('.speed-btn').forEach(b=>b.classList.toggle('selected',b.dataset.speed===(prefs.autoCheckDelay||'normal')));}
+function syncAutoCheckSpeedRow(){const r=document.getElementById('autocheck-speed-row');if(r)r.style.display=prefs.autoCheck?'':'none';}
+const AUTO_CHECK_DELAYS={normal:1800,fast:1000,faster:500,fastest:200};
+function getAutoCheckDelay(){return AUTO_CHECK_DELAYS[prefs.autoCheckDelay||'normal']||1800;}
+
+function selectOpsMode(mode){
+  prefs.opsMode=mode;
+  document.querySelectorAll('#ops-mode-group .modal-radio-option').forEach(el=>el.classList.toggle('selected',el.dataset.opsmode===mode));
+  document.getElementById('ops-fixed-picker').style.display=mode==='fixed'?'':'none';
+  syncOpsSectionVisibility();
+}
+function toggleFixedOp(op){
+  if(!prefs.fixedOps)prefs.fixedOps=['+','-','×','÷'];
+  const idx=prefs.fixedOps.indexOf(op);
+  if(idx>=0){if(prefs.fixedOps.length>1)prefs.fixedOps.splice(idx,1);}
+  else prefs.fixedOps.push(op);
+  syncFixedOpButtons();
+}
+function syncFixedOpButtons(){document.querySelectorAll('.ops-fixed-btn').forEach(b=>b.classList.toggle('selected',(prefs.fixedOps||[]).includes(b.dataset.op)));}
+function syncOpsSectionVisibility(){const c=document.getElementById('ops-section-card');if(c)c.style.display=(prefs.opsMode==='student')?'':'none';}
+
+function selectOrientMode(mode){
+  prefs.orientMode=mode;
+  document.querySelectorAll('#orient-mode-group .modal-radio-option').forEach(el=>el.classList.toggle('selected',el.dataset.omode===mode));
+  syncOrientSectionVisibility();
+}
+function syncOrientSectionVisibility(){const c=document.getElementById('orient-section-card');if(c)c.style.display=(prefs.orientMode==='student')?'':'none';}
+
+function toggleRTL(){
+  session.rtlMode=!session.rtlMode;
+  const q=session.questions[session.current];if(q){q.userAnswer='';updateAnswerDisplay(q);}
+  syncRTLToggle();
+}
+function syncRTLToggle(){const e=document.getElementById('rtl-toggle');if(e)e.classList.toggle('on',session.rtlMode);}
+
+// ── CONSTRAINT FUNCTIONS ──
+function toggleOpConstraint(op){
+  const body=document.getElementById(`opc-body-${op}`);
+  const header=body.previousElementSibling;
+  const open=body.classList.contains('open');
+  body.classList.toggle('open',!open); header.classList.toggle('open',!open);
+}
+function setCMode(op,side,mode,tabEl){
+  prefs.operandRules[op][side].mode=mode;
+  tabEl.closest('.constraint-mode-tabs').querySelectorAll('.c-tab').forEach(t=>t.classList.toggle('active',t===tabEl));
+  tabEl.closest('.operand-block').querySelectorAll('.constraint-panel').forEach(p=>p.classList.toggle('active',p.id===`cp-${op}-${side}-${mode}`));
+  updateOpConstraintHeader(op);
+}
+function saveCVal(op,side,field,val){
+  prefs.operandRules[op][side][field]=val;
+  updateOpConstraintHeader(op);
+  const errors=validateAdvancedSettings();
+  const errEl=document.getElementById('adv-error-msg');
+  if(errEl){if(errors.length){errEl.innerHTML='⚠️ '+errors.join('<br>⚠️ ');errEl.style.display='block';}else{errEl.style.display='none';}}
+}
+function updateOpConstraintHeader(op){
+  const header=document.querySelector(`#opc-${op} .op-constraint-header`);if(!header)return;
+  const rules=prefs.operandRules[op];
+  const has=Object.values(rules).some(r=>r.mode!=='free'||(r.disallow&&r.disallow.trim()));
+  header.classList.toggle('has-rules',has);
+}
+function syncConstraintUI(){
+  const ops=['+','-','×','÷'];
+  ops.forEach(op=>{
+    const rules=prefs.operandRules[op];if(!rules)return;
+    Object.entries(rules).forEach(([side,r])=>{
+      document.querySelectorAll(`.c-tab[data-op="${op}"][data-side="${side}"]`).forEach(t=>t.classList.toggle('active',t.dataset.mode===r.mode));
+      ['fixed','range','multiples'].forEach(m=>{const p=document.getElementById(`cp-${op}-${side}-${m}`);if(p)p.classList.toggle('active',r.mode===m);});
+      const sv=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v||'';};
+      sv(`cv-${op}-${side}-vals`,r.vals); sv(`cv-${op}-${side}-min`,r.min); sv(`cv-${op}-${side}-max`,r.max);
+      sv(`cv-${op}-${side}-max2`,r.max); sv(`cv-${op}-${side}-multipleOf`,r.multipleOf||10); sv(`cv-${op}-${side}-disallow`,r.disallow);
+    });
+    updateOpConstraintHeader(op);
+  });
+}
+function parseIntList(s){if(!s||!s.trim())return[];return s.split(',').map(x=>parseInt(x.trim())).filter(n=>!isNaN(n)&&n>0);}
+function parseIntListAllowZero(s){if(!s||!s.trim())return[];return s.split(',').map(x=>parseInt(x.trim())).filter(n=>!isNaN(n)&&n>=0);}
+
+// ── DECIMAL HELPERS ──
+function opHasDecimals(op){
+  if(!prefs.decimalPlaces||!prefs.decimalPlaces[op])return false;
+  const d=prefs.decimalPlaces[op];
+  if(op==='-'||op==='+')return(d.a||0)>0||(d.b||0)>0;
+  if(op==='×')return(d.a||0)>0||(d.b||0)>0;
+  if(op==='÷')return(d.a||0)>0||(d.b||0)>0;
+  return false;
+}
+function anyOpHasDecimals(){return['+','-','×','÷'].some(op=>opHasDecimals(op));}
+function sessionHasDecimals(){
+  if(!session||!session.questions||!session.questions.length)return anyOpHasDecimals();
+  return session.questions.some(q=>String(q.a).includes('.')||String(q.b).includes('.')||String(q.answer).includes('.'));
+}
+function roundToDP(n,dp){
+  if(dp===0)return Math.round(n);
+  const factor=Math.pow(10,dp);
+  return Math.round(n*factor)/factor;
+}
+function addDecimalToOperand(intVal,dp){
+  if(dp===0)return intVal;
+  // Attach a fractional part: pick random fraction, round to dp
+  const frac=Math.random();
+  return roundToDP(intVal+frac,dp);
+}
+function shouldUseDecimal(op){
+  // Returns true if this question instance should use decimals
+  const d=prefs.decimalPlaces[op];
+  const anyDp=(d.a||0)>0||(d.b||0)>0;
+  if(!anyDp)return false;
+  if(prefs.alwaysDecimal[op])return true;
+  return Math.random()<0.5; // sometimes
+}
+function getOperandDP(op,side){
+  if(!prefs.decimalPlaces||!prefs.decimalPlaces[op])return 0;
+  return prefs.decimalPlaces[op][side]||0;
+}
+
+// ── DECIMAL CONSTRAINT FUNCTIONS ──
+function setDP(op,side,dp,btn){
+  if(!prefs.decimalPlaces[op])prefs.decimalPlaces[op]={a:0,b:0};
+  prefs.decimalPlaces[op][side]=dp;
+  // Sync button states
+  document.querySelectorAll(`.dp-btn[data-op="${op}"][data-side="${side}"]`).forEach(b=>b.classList.toggle('selected',parseInt(b.dataset.dp)===dp));
+  // If decimals enabled for division, turn off remainders
+  if(op==='÷'&&(dp>0||getOperandDP('÷','a')>0||getOperandDP('÷','b')>0)){
+    if(prefs.allowRemainder){prefs.allowRemainder=false;const e=document.getElementById('adv-remainder-toggle');if(e)e.classList.remove('on');}
+    const note=document.getElementById('div-dec-rem-note');if(note)note.style.display=(getOperandDP('÷','a')>0||getOperandDP('÷','b')>0)?'':'none';
+  }else{const note=document.getElementById('div-dec-rem-note');if(note)note.style.display='none';}
+  syncAlwaysDecRow(op);
+}
+function toggleAlwaysDec(op){
+  prefs.alwaysDecimal[op]=!prefs.alwaysDecimal[op];
+  syncAlwaysDecRow(op);
+}
+function syncAlwaysDecRow(op){
+  const row=document.getElementById('always-dec-'+op);if(!row)return;
+  const hasDp=opHasDecimals(op);
+  row.style.display=hasDp?'':'none';
+  row.classList.toggle('on',!!prefs.alwaysDecimal[op]);
+}
+function syncAllDecimalUI(){
+  ['+','-','×','÷'].forEach(op=>{
+    const d=prefs.decimalPlaces[op]||{a:0,b:0};
+    ['a','b'].forEach(side=>{
+      const dp=d[side]||0;
+      document.querySelectorAll(`.dp-btn[data-op="${op}"][data-side="${side}"]`).forEach(b=>b.classList.toggle('selected',parseInt(b.dataset.dp)===dp));
+    });
+    syncAlwaysDecRow(op);
+  });
+  // Show/hide division remainder conflict note
+  const divHasDec=(getOperandDP('÷','a')>0||getOperandDP('÷','b')>0);
+  const note=document.getElementById('div-dec-rem-note');if(note)note.style.display=divHasDec&&prefs.allowRemainder===false&&divHasDec?'':'none';
+}
+function pickConstrained(op,side){
+  const rules=prefs.operandRules[op];if(!rules||!rules[side])return null;
+  const r=rules[side];const disallow=parseIntListAllowZero(r.disallow);
+  let candidates=[];
+  if(r.mode==='free')return null;
+  if(r.mode==='fixed'){candidates=parseIntList(r.vals).filter(v=>!disallow.includes(v));}
+  else if(r.mode==='range'){
+    const mn=parseInt(r.min)||1,mx=parseInt(r.max)||100;
+    if(mx-mn<=200){for(let v=mn;v<=mx;v++)if(!disallow.includes(v))candidates.push(v);}
+    else{for(let i=0;i<50;i++){const v=mn+Math.floor(Math.random()*(mx-mn+1));if(!disallow.includes(v))candidates.push(v);}}
+  }else if(r.mode==='multiples'){
+    const m=parseInt(r.multipleOf)||10,mx=parseInt(r.max)||1000;
+    for(let v=m;v<=mx;v+=m)if(!disallow.includes(v))candidates.push(v);
+  }
+  if(op==='÷'&&side==='b')candidates=candidates.filter(v=>v>0);
+  if(!candidates.length)return null;
+  return candidates[Math.floor(Math.random()*candidates.length)];
+}
+
+// ── CARRY / BORROW DETECTION ──
+function requiresCarry(a,b){let carry=0;while(a>0||b>0||carry>0){const s=(a%10)+(b%10)+carry;if(s>=10)return true;carry=Math.floor(s/10);a=Math.floor(a/10);b=Math.floor(b/10);}return false;}
+function requiresBorrow(a,b){while(b>0){if((a%10)<(b%10))return true;a=Math.floor(a/10);b=Math.floor(b/10);}return false;}
+
+// ── QUESTION GENERATION ──
+function generateQuestion(ops){
+  const op=ops[Math.floor(Math.random()*ops.length)];
+  let a,b,answer;let tries=0;
+  // Decide if this question uses decimals
+  const useDecimal=shouldUseDecimal(op);
+  const dpA=useDecimal?getOperandDP(op,'a'):0;
+  const dpB=useDecimal?getOperandDP(op,'b'):0;
+
+  while(true){
+    tries++;
+    if(op==='+'){
+      const ca=pickConstrained('+','a'),cb=pickConstrained('+','b');
+      let ia=ca!==null?ca:Math.floor(Math.random()*100)+1;
+      let ib=cb!==null?cb:Math.floor(Math.random()*100)+1;
+      a=dpA>0?roundToDP(ia+Math.random(),dpA):ia;
+      b=dpB>0?roundToDP(ib+Math.random(),dpB):ib;
+      const dpAns=Math.max(dpA,dpB);
+      answer=roundToDP(a+b,dpAns);
+    }else if(op==='-'){
+      let ia=Math.floor(Math.random()*100)+1;
+      const cb=pickConstrained('-','b');
+      let ib=cb!==null?Math.min(cb,ia):Math.floor(Math.random()*(ia+1));
+      // Apply decimals — ensure a >= b after decimals
+      a=dpA>0?roundToDP(ia+Math.random(),dpA):ia;
+      b=dpB>0?roundToDP(ib+Math.random(),dpB):ib;
+      if(b>a){const tmp=a;a=b;b=tmp;}
+      const dpAns=Math.max(dpA,dpB);
+      answer=roundToDP(a-b,dpAns);
+    }else if(op==='×'){
+      const ca=pickConstrained('×','a'),cb=pickConstrained('×','b');
+      let ia=ca!==null?ca:Math.floor(Math.random()*12)+1;
+      let ib=cb!==null?cb:Math.floor(Math.random()*12)+1;
+      a=dpA>0?roundToDP(ia+Math.random(),dpA):ia;
+      b=dpB>0?roundToDP(ib+Math.random(),dpB):ib;
+      const dpAns=dpA+dpB; // product decimal places = sum of factors' places
+      answer=roundToDP(a*b,dpAns);
+    }else{
+      const cb=pickConstrained('÷','b');
+      let ib=cb!==null?cb:Math.floor(Math.random()*11)+2;
+      if(ib===0)ib=2;
+      if(!useDecimal&&prefs.allowRemainder){
+        // Whole-number division with remainder (existing logic)
+        const quotient=Math.floor(Math.random()*12)+1;
+        const rem=Math.floor(Math.random()*ib);
+        a=ib*quotient+rem; b=ib; answer=quotient;
+      }else if(!useDecimal){
+        b=ib; a=ib*(Math.floor(Math.random()*12)+1); answer=a/b;
+      }else{
+        // Decimal division: pick a clean quotient with decimals, build dividend
+        b=dpB>0?roundToDP(ib+Math.random(),dpB):ib;
+        if(b===0)b=dpB>0?roundToDP(1+Math.random(),dpB):1;
+        const quotient=roundToDP((Math.floor(Math.random()*12)+1)+(dpA>0?Math.random():0),dpA);
+        a=roundToDP(b*quotient,Math.max(dpA,dpB)+1);
+        answer=roundToDP(a/b,Math.max(dpA,dpB));
+      }
+    }
+    if(answer<0)continue;
+    if(!useDecimal&&!Number.isInteger(answer))continue;
+    if(!prefs.allowCarryBorrow){
+      // Scale both operands to integers so carry/borrow detection works for decimals too
+      // e.g. 80.28 - 71.61 → 8028 - 7161
+      const maxDP=Math.max(
+        (String(a).split('.')[1]||'').length,
+        (String(b).split('.')[1]||'').length
+      );
+      const scale=Math.pow(10,maxDP);
+      const ia=Math.round(a*scale), ib=Math.round(b*scale);
+      if(op==='+'&&requiresCarry(ia,ib))continue;
+      if(op==='-'&&requiresBorrow(ia,ib))continue;
+    }
+    if(tries>500)break;
+    break;
+  }
+  const remainder=(op==='÷'&&!useDecimal&&prefs.allowRemainder)?(Math.round(a)%Math.round(b)):null;
+  return{a,b,op,answer,remainder,userAnswer:'',userRemainder:'',firstAnswer:'',firstRemainder:'',attempts:0,skipped:false,time:null,startTime:null,useDecimal};
+}
+
+function generateQuestions(ops,count){
+  const set=new Set(),qs=[];let safety=0;
+  while(qs.length<count&&safety<5000){
+    safety++;
+    const q=generateQuestion(ops);
+    const key=`${q.a}${q.op}${q.b}`;
+    if(!set.has(key)){set.add(key);qs.push(q);}
+  }
+  return qs;
+}
+
+// ── SESSION ──
+function startSession(){
+  savePrefs();
+  const activeOps=(prefs.opsMode==='fixed'&&prefs.fixedOps&&prefs.fixedOps.length)?prefs.fixedOps:prefs.ops;
+  session.questions=generateQuestions(activeOps,prefs.timeMin?999:prefs.numQ);
+  session.current=0; session.correctFirst=0; session.fixed=0; session.wrong=0; session.skipped=0;
+  session.answered=false; session.revealed=false; session.rtlMode=false; session.activeField='quotient';
+  session.timerMode=!!prefs.timeMin; session.secondsLeft=prefs.timeMin*60;
+  clearInterval(session.countdownId); clearInterval(session.timerId);
+  showScreen('question'); showQuestion();
+  if(session.timerMode)startCountdown();
+}
+
+function startCountdown(){
+  updateTimerBadge();
+  session.countdownId=setInterval(()=>{
+    session.secondsLeft--;updateTimerBadge();
+    if(session.secondsLeft<=0){clearInterval(session.countdownId);endSession();}
+  },1000);
+}
+
+function updateTimerBadge(){
+  const el=document.getElementById('timer-badge');
+  if(session.timerMode){const m=Math.floor(session.secondsLeft/60),s=session.secondsLeft%60;el.textContent=`${m}:${s.toString().padStart(2,'0')}`;el.classList.toggle('warning',session.secondsLeft<=10);}
+  else{const e=session.qStartTime?((Date.now()-session.qStartTime)/1000).toFixed(0):0;el.textContent=`${e}s`;}
+}
+
+function showQuestion(){
+  if(!session.timerMode&&session.current>=session.questions.length){endSession();return;}
+  if(session.timerMode&&session.current>=session.questions.length){
+    const extra=generateQuestions(prefs.opsMode==='fixed'?prefs.fixedOps:prefs.ops,50);
+    const keys=new Set(session.questions.map(q=>`${q.a}${q.op}${q.b}`));
+    for(const q of extra){const k=`${q.a}${q.op}${q.b}`;if(!keys.has(k)){keys.add(k);session.questions.push(q);}if(session.questions.length>=session.current+50)break;}
+  }
+  const q=session.questions[session.current];
+  q.startTime=Date.now(); session.qStartTime=q.startTime;
+  session.answered=false; session.revealed=false; session.activeField='quotient';
+  document.getElementById('progress-text').textContent=session.timerMode?`Question ${session.current+1}`:`Question ${session.current+1} of ${session.questions.length}`;
+  document.getElementById('progress-fill').style.width=session.timerMode?0:((session.current)/session.questions.length*100)+'%';
+  const fb=document.getElementById('feedback-msg');fb.className='feedback-msg';fb.textContent='';fb.style.display='none';
+  document.querySelector('.try-again-btn')&&document.querySelector('.try-again-btn').remove();
+  document.getElementById('check-btn').disabled=false;
+  const rtlWrap=document.getElementById('rtl-toggle-wrap');
+  if(rtlWrap)rtlWrap.classList.toggle('visible',!!prefs.showAdvQOpts);
+  syncRTLToggle();
+  // Show decimal point button if this question uses decimals
+  const dotBtn=document.getElementById('np-dot-btn');
+  const delBtn=document.getElementById('np-del-btn');
+  const showDot=!!(q&&q.useDecimal);
+  if(dotBtn)dotBtn.style.display=showDot?'':'none';
+  if(delBtn)delBtn.style.gridColumn=showDot?'3/4':'2/4';
+  renderProblem(q);
+  clearInterval(session.timerId);
+  if(!session.timerMode)session.timerId=setInterval(updateTimerBadge,500);
+}
+
+// ── RENDER ──
+function getOrient(q){
+  // Decimals are always vertical
+  if(q.useDecimal)return'vertical';
+  if(prefs.orientMode==='horizontal')return'horizontal';
+  if(prefs.orientMode==='vertical')return'vertical';
+  if(prefs.orientMode==='random'){if(!q.orient)q.orient=Math.random()<.5?'horizontal':'vertical';return q.orient;}
+  return prefs.orient;
+}
+function renderProblem(q){
+  const card=document.getElementById('problem-card');
+  card.innerHTML='';
+  const orient=getOrient(q);
+  if(orient==='horizontal')renderHorizontal(card,q);
+  else renderVertical(card,q);
+}
+function fmtOp(op){if(op==='+')return'+';if(op==='-')return'−';if(op==='×')return'×';if(op==='÷')return'÷';return op;}
+
+function renderHorizontal(card,q){
+  const val=q.userAnswer||'',state=q.attempts>0?(q.userAnswer==q.answer?'correct':'wrong'):'';
+  card.innerHTML=`<div class="horiz-problem">
+    <span class="horiz-num">${q.a}</span>
+    <span class="horiz-op">${fmtOp(q.op)}</span>
+    <span class="horiz-num">${q.b}</span>
+    <span class="horiz-op" style="color:var(--text)">=</span>
+    <div class="answer-box-horiz ${val?'has-input':''} ${state}" id="ans-display">
+      ${val||'<span style="color:#E0E0E0">?</span>'}
+    </div>
+  </div>`;
+}
+
+function renderVertical(card,q){
+  const val=q.userAnswer||'',state=q.attempts>0?(parseFloat(q.userAnswer)===q.answer?'correct':'wrong'):'';
+  if(q.op==='÷'){renderLongDivision(card,q,val,state);return;}
+  let top,bot;
+  if(q.op==='-'){top=q.a;bot=q.b;}
+  else{const aFirst=String(q.a).length>String(q.b).length||(String(q.a).length===String(q.b).length&&q.a>=q.b);top=aFirst?q.a:q.b;bot=aFirst?q.b:q.a;}
+  // Normalize decimal places so the decimal points stack vertically
+  const dpTop=(String(top).split('.')[1]||'').length;
+  const dpBot=(String(bot).split('.')[1]||'').length;
+  const maxDP=Math.max(dpTop,dpBot);
+  const strTop=maxDP>0?Number(top).toFixed(maxDP):String(top);
+  const strBot=maxDP>0?Number(bot).toFixed(maxDP):String(bot);
+  const ansStr=val||'?';
+  const width=Math.max(strTop.length,strBot.length,ansStr.length)+1;
+  card.innerHTML=`<div class="vert-problem">
+    <div style="text-align:right;min-width:${width*.7}em">${strTop}</div>
+    <div class="vert-op-row"><span class="vert-op-sym">${fmtOp(q.op)}</span><span style="flex:1;text-align:right">${strBot}</span></div>
+    <div class="vert-line"></div>
+    <div class="vert-answer-row">
+      <div class="answer-box-vert ${val?'has-input':''} ${state}" id="ans-display">
+        ${val||'<span style="color:#E0E0E0">?</span>'}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderLongDivision(card,q,val,state){
+  const hasRem = q.remainder !== null && q.remainder !== undefined;
+  const remVal = q.userRemainder || '';
+  const remState = q.attempts > 0 ? (parseInt(q.userRemainder) === q.remainder ? 'correct' : 'wrong') : '';
+  const quotActive = session.activeField !== 'remainder';
+  const remActive  = session.activeField === 'remainder';
+
+  // Colors for quotient box
+  const qBg    = state==='correct' ? '#E8F5E9' : state==='wrong' ? '#FBE9E7' : val ? '#F3E5F5' : '#FAFAFA';
+  const qClr   = state==='correct' ? 'var(--grass)' : state==='wrong' ? 'var(--coral)' : 'var(--purple)';
+  const qBrd   = state==='correct' ? 'var(--grass)' : state==='wrong' ? 'var(--coral)' : '#E0E0E0';
+  const qShadow = (hasRem && quotActive) ? '0 0 0 3px rgba(149,117,205,0.25)' : 'none';
+
+  // Colors for remainder box
+  const rBg    = remState==='correct' ? '#E8F5E9' : remState==='wrong' ? '#FBE9E7' : remVal ? '#E0F7FA' : '#FAFAFA';
+  const rClr   = remState==='correct' ? 'var(--grass)' : remState==='wrong' ? 'var(--coral)' : 'var(--teal)';
+  const rBrd   = remState==='correct' ? 'var(--grass)' : remState==='wrong' ? 'var(--coral)' : '#E0E0E0';
+  const rShadow = remActive ? '0 0 0 3px rgba(38,198,218,0.25)' : 'none';
+
+  const MONO = "font-family:'Roboto Mono',monospace;font-weight:700";
+  const FS   = "font-size:clamp(2rem,7vw,3.5rem)";
+  const qContent = val || '<span style="color:#E0E0E0">?</span>';
+  const rContent = remVal || '<span style="color:#E0E0E0">?</span>';
+
+  const quotBox =
+    '<div id="ans-display"' +
+    ' onclick="if(session.questions[session.current].remainder!=null)setActiveField(&quot;quotient&quot;)"' +
+    ' style="display:flex;align-items:center;justify-content:' + (val ? 'flex-end' : 'center') + ';' +
+           MONO + ';' + FS + ';' +
+           'border:4px solid ' + qBrd + ';border-radius:14px;' +
+           'background:' + qBg + ';color:' + qClr + ';' +
+           'padding:0.1em 10px;min-width:1.5em;' +
+           'cursor:' + (hasRem ? 'pointer' : 'default') + ';' +
+           'box-shadow:' + qShadow + ';' +
+           // margin-right offsets the bracket right-padding so digits align with dividend
+           'margin-right:-5px;">' +
+    qContent + '</div>';
+
+  const remBlock = hasRem
+    ? '<div style="grid-row:1;grid-column:3;display:flex;align-items:center;gap:8px;padding-left:14px;">' +
+        '<span style="' + MONO + ';font-size:clamp(1.6rem,5vw,2.4rem);color:#9E9E9E;font-weight:700;">R</span>' +
+        '<div id="rem-display"' +
+        ' onclick="setActiveField(&quot;remainder&quot;)"' +
+        ' style="display:flex;align-items:center;justify-content:' + (remVal ? 'flex-end' : 'center') + ';' +
+               MONO + ';' + FS + ';' +
+               'border:4px solid ' + rBrd + ';border-radius:14px;' +
+               'background:' + rBg + ';color:' + rClr + ';' +
+               'padding:0.1em 10px;min-width:1.5em;cursor:pointer;' +
+               'box-shadow:' + rShadow + ';">' +
+        rContent + '</div>' +
+      '</div>'
+    : '';
+
+  // CSS grid: 2 rows x 3 cols
+  // Row 1: [spacer]  [quotient]   [R+rem]
+  // Row 2: [divisor] [bracket/dividend] []
+  card.innerHTML =
+    '<div style="display:inline-grid;' +
+                'grid-template-columns:auto auto ' + (hasRem ? 'auto' : '0') + ';' +
+                'grid-template-rows:auto auto;' +
+                'align-items:end;column-gap:0;row-gap:2px;">' +
+
+      // Row 1 Col 1: empty
+      '<div style="grid-row:1;grid-column:1;"></div>' +
+
+      // Row 1 Col 2: quotient box (same column as dividend — ensures digit alignment)
+      '<div style="grid-row:1;grid-column:2;display:flex;justify-content:flex-end;">' +
+        quotBox +
+      '</div>' +
+
+      // Row 1 Col 3: remainder
+      remBlock +
+
+      // Row 2 Col 1: divisor — vertically centred relative to its row
+      '<div class="div-divisor" style="grid-row:2;grid-column:1;padding-right:10px;align-self:center;">' +
+        q.b +
+      '</div>' +
+
+      // Row 2 Col 2: the house (border-left + border-top) with dividend inside
+      '<div class="div-bracket" style="grid-row:2;grid-column:2;' + FS + ';">' +
+        '<div class="div-dividend">' + q.a + '</div>' +
+      '</div>' +
+
+      (hasRem ? '<div style="grid-row:2;grid-column:3;"></div>' : '') +
+
+    '</div>';
+}
+
+
+// ── NUMPAD / INPUT ──
+function setActiveField(f){session.activeField=f;renderProblem(session.questions[session.current]);}
+
+function numpadPress(key){
+  if(session.answered&&session.revealed)return;
+  const q=session.questions[session.current];
+  const isRem=session.activeField==='remainder'&&q.remainder!==null&&q.remainder!==undefined;
+  if(key==='del'){
+    if(isRem)q.userRemainder=q.userRemainder.slice(0,-1);
+    else q.userAnswer=q.userAnswer.slice(0,-1);
+  }else if(key==='.'){
+    if(!isRem){
+      if(q.userAnswer.includes('.'))return; // only one decimal point
+      if(q.userAnswer.length>=6)return;
+      q.userAnswer=session.rtlMode?('.'+q.userAnswer):(q.userAnswer+'.');
+    }
+  }else{
+    if(isRem){if(q.userRemainder.length>=4)return;q.userRemainder+=key;}
+    else if(session.rtlMode){if(q.userAnswer.length>=6)return;q.userAnswer=key+q.userAnswer;}
+    else{if(q.userAnswer.length>=6)return;q.userAnswer+=key;}
+  }
+  updateAnswerDisplay(q);
+  if(prefs.autoCheck&&!session.answered){
+    const expectedStr=String(q.answer);
+    const qOk=q.userAnswer===expectedStr||(parseFloat(q.userAnswer)===q.answer&&!q.userAnswer.endsWith('.'));
+    const rOk=(q.remainder===null||q.remainder===undefined)?true:q.userRemainder.length===String(q.remainder).length;
+    if(qOk&&rOk)checkAnswer();
+  }
+}
+
+function updateAnswerDisplay(q){
+  const el=document.getElementById('ans-display');
+  if(el){
+    const v=q.userAnswer;
+    el.innerHTML=v?v:'<span style="color:#E0E0E0">?</span>';
+    el.style.justifyContent=v?'flex-end':'center';
+    el.className=el.className.replace(/ has-input| correct| wrong| active-field/g,'');
+    if(v)el.classList.add('has-input');
+    if(q.remainder!==null&&q.remainder!==undefined&&session.activeField!=='remainder')el.classList.add('active-field');
+  }
+  const rem=document.getElementById('rem-display');
+  if(rem){
+    const rv=q.userRemainder||'';
+    rem.innerHTML=rv?rv:'<span style="color:#E0E0E0">?</span>';
+    if(rem)rem.style.justifyContent=rv?'flex-end':'center';
+    rem.className=rem.className.replace(/ has-input| correct| wrong| active-field/g,'');
+    if(rv)rem.classList.add('has-input');
+    if(session.activeField==='remainder')rem.classList.add('active-field');
+  }
+}
+
+// ── CHECK / ANSWER ──
+function tryAgain(){
+  const q=session.questions[session.current];
+  q.userAnswer=''; q.userRemainder=''; session.activeField='quotient';
+  updateAnswerDisplay(q);
+  const fb=document.getElementById('feedback-msg');fb.style.display='none';
+  const btn=document.querySelector('.try-again-btn');if(btn)btn.remove();
+  session.answered=false;
+  q.startTime=Date.now(); session.qStartTime=q.startTime;
+  clearInterval(session.timerId);
+  if(!session.timerMode)session.timerId=setInterval(updateTimerBadge,500);
+  document.getElementById('check-btn').disabled=false;
+}
+
+function checkAnswer(){
+  const q=session.questions[session.current];
+  if(!q.userAnswer)return;
+  const hasRem=q.remainder!==null&&q.remainder!==undefined;
+  clearInterval(session.timerId);
+  q.time=(Date.now()-q.startTime)/1000;
+  // Use parseFloat for all comparisons — works for both integers and decimals
+  const userNum=parseFloat(q.userAnswer);
+  const quotOk=Math.abs(userNum-q.answer)<0.0001;
+  const remOk=!hasRem||(q.remainder===0&&q.userRemainder==='')||parseInt(q.userRemainder)===q.remainder;
+  const correct=quotOk&&remOk;
+  if(q.attempts===0){q.firstAnswer=q.userAnswer;q.firstRemainder=q.userRemainder||'';}
+  q.attempts++; session.answered=true;
+  const ansEl=document.getElementById('ans-display');
+  if(ansEl){ansEl.classList.remove('has-input','correct','wrong');ansEl.classList.add(correct?'correct':'wrong');}
+  const remEl=document.getElementById('rem-display');
+  if(remEl){remEl.classList.remove('has-input','correct','wrong');remEl.classList.add(remOk?'correct':'wrong');}
+  const fb=document.getElementById('feedback-msg');
+  if(correct){
+    fb.textContent=randomHappyMsg();fb.className='feedback-msg correct-msg';fb.style.display='block';
+    if(prefs.showAnimations)launchConfetti();
+    if(q.attempts===1)session.correctFirst++;else session.fixed++;
+    document.getElementById('check-btn').disabled=true;
+    setTimeout(()=>nextQuestion(),prefs.autoCheck?getAutoCheckDelay():1800);
+  }else{
+    const forgotRem = hasRem && q.userRemainder === '' && q.remainder !== 0;
+    fb.textContent = sadMsgs[Math.floor(Math.random()*sadMsgs.length)] + (forgotRem ? ' Do you need a remainder here?' : '');
+    fb.className='feedback-msg wrong-msg';fb.style.display='block';
+    if(prefs.showAnimations)launchSadExplosion();
+    const existing=document.querySelector('.try-again-btn');
+    if(!existing){const btn=document.createElement('button');btn.className='try-again-btn';btn.textContent='🔄 Try Again';btn.onclick=tryAgain;fb.after(btn);}
+  }
+}
+
+function showAnswer(){
+  const q=session.questions[session.current];
+  clearInterval(session.timerId);
+  if(!q.time)q.time=(Date.now()-q.startTime)/1000;
+  q.userAnswer=String(q.answer);
+  if(q.remainder!==null&&q.remainder!==undefined)q.userRemainder=String(q.remainder);
+  q.skipped=false;q.revealed=true;
+  if(q.attempts===0){q.attempts=1;q.firstAnswer='?';q.firstRemainder='?';session.wrong++;}
+  session.revealed=true;session.answered=true;
+  updateAnswerDisplay(q);
+  const el=document.getElementById('ans-display');if(el){el.classList.remove('has-input','wrong');el.classList.add('correct');}
+  const hasRem=q.remainder!==null&&q.remainder!==undefined;
+  const fb=document.getElementById('feedback-msg');
+  fb.innerHTML=hasRem?`💡 The answer is <strong>${q.answer}</strong> remainder <strong>${q.remainder}</strong>`:`💡 The answer is <strong>${q.answer}</strong>`;
+  fb.className='feedback-msg show-ans-msg';fb.style.display='block';
+  document.getElementById('check-btn').disabled=true;
+  document.querySelector('.try-again-btn')&&document.querySelector('.try-again-btn').remove();
+  setTimeout(()=>nextQuestion(),2200);
+}
+
+function skipQuestion(){
+  const q=session.questions[session.current];
+  clearInterval(session.timerId);q.time=null;q.skipped=true;
+  if(q.attempts===0)session.skipped++;else if(parseInt(q.userAnswer)!==q.answer)session.wrong++;
+  nextQuestion();
+}
+
+function nextQuestion(){
+  session.questions[session.current].done=true;session.current++;
+  if(!session.timerMode&&session.current>=session.questions.length){endSession();return;}
+  if(session.timerMode&&session.secondsLeft<=0){endSession();return;}
+  showQuestion();
+}
+
+function quitSession(){clearInterval(session.timerId);clearInterval(session.countdownId);showScreen('setup');}
+
+// ── END SESSION ──
+function endSession(){
+  clearInterval(session.timerId);clearInterval(session.countdownId);
+  const done=session.questions.filter(q=>q.done);
+  const correctFirst=done.filter(q=>!q.skipped&&parseFloat(q.firstAnswer)===q.answer);
+  const fixed=done.filter(q=>!q.skipped&&parseFloat(q.firstAnswer)!==q.answer&&Math.abs(parseFloat(q.userAnswer)-q.answer)<0.0001&&!q.revealed);
+  const wrong=done.filter(q=>!q.skipped&&Math.abs(parseFloat(q.userAnswer)-q.answer)>=0.0001);
+  const skipped=done.filter(q=>q.skipped);
+  const timed=done.filter(q=>!q.skipped&&q.time);
+  const avgTime=timed.length?(timed.reduce((s,q)=>s+q.time,0)/timed.length).toFixed(1):'—';
+  document.getElementById('score-cards').innerHTML=`
+    <div class="score-card total"><div class="score-num">${done.length}</div><div class="score-lbl">Total</div></div>
+    <div class="score-card correct"><div class="score-num">${correctFirst.length}</div><div class="score-lbl">First Try ✅</div></div>
+    <div class="score-card fixed"><div class="score-num">${fixed.length}</div><div class="score-lbl">Fixed it 🔧</div></div>
+    <div class="score-card wrong"><div class="score-num">${wrong.length}</div><div class="score-lbl">Missed ❌</div></div>
+    <div class="score-card skipped"><div class="score-num">${skipped.length}</div><div class="score-lbl">Skipped ⏭</div></div>
+    <div class="score-card time"><div class="score-num">${avgTime}s</div><div class="score-lbl">Avg Time ⏱</div></div>`;
+  const pct=done.length?correctFirst.length/done.length:0;
+  document.getElementById('results-emoji').textContent=pct>=.9?'🌟🌟🌟 Perfect!':pct>=.7?'⭐⭐ Great job!':pct>=.5?'⭐ Keep practicing!':'💪 You can do it!';
+  const hi=document.getElementById('history-items');hi.innerHTML='';
+  done.forEach(q=>{
+    const firstCorr=Math.abs(parseFloat(q.firstAnswer)-q.answer)<0.0001,finalCorr=Math.abs(parseFloat(q.userAnswer)-q.answer)<0.0001,isSkip=q.skipped;
+    const cls=isSkip?'skipped-item':finalCorr?(firstCorr?'correct-item':'fixed-item'):'wrong-item';
+    const qStr=`${q.a} ${fmtOp(q.op)} ${q.b}`;
+    const ansCls=isSkip?'ans-skipped':finalCorr?'ans-correct':'ans-wrong';
+    const ansDisplay=isSkip?'—':(q.userAnswer||'?')+(q.remainder!==null&&q.remainder!==undefined?` R${q.userRemainder||'?'}`:'');
+    const prev=(!firstCorr&&!isSkip&&q.firstAnswer&&q.firstAnswer!==q.userAnswer)?`<div class="history-prev-ans">1st: ${q.firstAnswer}</div>`:'';
+    const hint=(!finalCorr&&!isSkip)?`<div class="history-correct-ans">✓ ${q.answer}${q.remainder!==null&&q.remainder!==undefined?` R${q.remainder}`:''}</div>`:'';
+    hi.innerHTML+=`<div class="history-item ${cls}"><div class="history-q">${qStr}</div>${prev}<div class="history-ans ${ansCls}">${ansDisplay}</div>${hint}<div class="history-time">${q.time?q.time.toFixed(1)+'s':'—'}</div></div>`;
+  });
+  showScreen('results');
+}
+
+function playAgain(){showScreen('setup');syncSetup();}
+
+// ── ANIMATIONS ──
+function launchConfetti(){
+  const colors=['#FF7043','#FFD54F','#66BB6A','#4FC3F7','#9575CD','#F06292','#26C6DA'];
+  const c=document.createElement('div');c.className='confetti-container';document.body.appendChild(c);
+  for(let i=0;i<80;i++){
+    const p=document.createElement('div');p.className='confetti-piece';
+    p.style.left=Math.random()*100+'%';p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.width=(8+Math.random()*10)+'px';p.style.height=(8+Math.random()*10)+'px';
+    p.style.borderRadius=Math.random()>.5?'50%':'2px';
+    const dur=.6+Math.random()*.6;p.style.animation=`confettiFall ${dur}s linear forwards`;
+    p.style.animationDelay=Math.random()*.3+'s';c.appendChild(p);
+  }
+  setTimeout(()=>c.remove(),1800);
+}
+
+function launchSadExplosion(){
+  const emojis=['😢','😭','😬','😅','💔','😮','🙈'];
+  const c=document.createElement('div');c.className='sad-container';document.body.appendChild(c);
+  const cx=window.innerWidth/2,cy=window.innerHeight/2;
+  for(let i=0;i<12;i++){
+    const p=document.createElement('div');p.className='sad-piece';
+    const angle=(i/12)*Math.PI*2,dist=120+Math.random()*180;
+    p.style.left=cx+'px';p.style.top=cy+'px';
+    p.style.setProperty('--dx',Math.cos(angle)*dist+'px');
+    p.style.setProperty('--dy',Math.sin(angle)*dist-200+'px');
+    p.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    const dur=1.5+Math.random()*1.5;p.style.animation=`sadFloat ${dur}s ease-out forwards`;
+    p.style.animationDelay=Math.random()*.3+'s';c.appendChild(p);
+  }
+  setTimeout(()=>c.remove(),3500);
+}
+
+function showScreen(n){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+n).classList.add('active');}
+
+window.addEventListener('DOMContentLoaded',()=>initSetup());
+</script>
+</body>
+</html>
