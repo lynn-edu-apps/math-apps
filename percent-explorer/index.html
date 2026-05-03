@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Percent Explorer 🎉</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #38bdf8;
+    --sun: #fbbf24;
+    --lime: #84cc16;
+    --coral: #fb7185;
+    --purple: #a78bfa;
+    --bg: #fff7ed;
+    --card: #ffffff;
+    --text: #1e293b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    padding: 24px 16px 40px;
+    background-image: radial-gradient(circle at 15% 20%, #fde68a55 0%, transparent 40%),
+                      radial-gradient(circle at 85% 70%, #bfdbfe55 0%, transparent 40%);
+  }
+
+  h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    text-align: center;
+    color: #7c3aed;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    text-shadow: 3px 3px 0 #ddd6fe;
+  }
+
+  .subtitle {
+    text-align: center;
+    font-size: 1rem;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 28px;
+  }
+
+  .slider-card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 24px;
+    max-width: 680px;
+    margin: 0 auto 32px;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.08);
+    border: 3px solid #e2e8f0;
+  }
+
+  .slider-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.3rem;
+    color: #475569;
+    margin-bottom: 14px;
+  }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 14px;
+    border-radius: 99px;
+    background: linear-gradient(to right, #a78bfa var(--pct, 50%), #e2e8f0 var(--pct, 50%));
+    outline: none;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: #7c3aed;
+    border: 4px solid white;
+    box-shadow: 0 3px 12px rgba(124,58,237,0.4);
+    cursor: pointer;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: #7c3aed;
+    border: 4px solid white;
+    box-shadow: 0 3px 12px rgba(124,58,237,0.4);
+    cursor: pointer;
+  }
+
+  .pct-bubble {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.2rem;
+    color: #7c3aed;
+    min-width: 90px;
+    text-align: right;
+    line-height: 1;
+  }
+
+  .bar-section {
+    max-width: 680px;
+    margin: 0 auto 32px;
+  }
+
+  .bar-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    color: #475569;
+    margin-bottom: 10px;
+  }
+
+  .bar-track {
+    width: 100%;
+    height: 52px;
+    background: #e2e8f0;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 3px solid #cbd5e1;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 13px;
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+    transition: width 0.35s cubic-bezier(.34,1.56,.64,1);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 10px;
+    min-width: 0;
+  }
+
+  .bar-fill-text {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    color: white;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .bar-fill.wide .bar-fill-text { opacity: 1; }
+
+  .bar-markers {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    padding: 0 2px;
+  }
+  .bar-markers span {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #94a3b8;
+  }
+
+  .visuals-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 680px;
+    margin: 0 auto 32px;
+  }
+
+  @media (max-width: 480px) {
+    .visuals-row { grid-template-columns: 1fr; }
+  }
+
+  .vis-card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    border: 3px solid #e2e8f0;
+    text-align: center;
+  }
+
+  .vis-card h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: #475569;
+    margin-bottom: 14px;
+  }
+
+  svg { overflow: visible; }
+
+  .blocks-card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 14px 18px;
+    max-width: 680px;
+    margin: 0 auto 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    border: 3px solid #e2e8f0;
+  }
+
+  .blocks-card h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: #475569;
+    margin-bottom: 12px;
+  }
+
+  .blocks-grid-wrapper {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 3px;
+    position: relative;
+  }
+
+  .block {
+    aspect-ratio: 1;
+    width: 100%;
+    max-width: 28px;
+    border-radius: 4px;
+    background: #e2e8f0;
+    transition: background 0.15s, transform 0.15s;
+  }
+
+  .block.filled {
+    background: linear-gradient(135deg, #7c3aed, #a78bfa);
+    transform: scale(1.04);
+    box-shadow: 0 1px 4px rgba(124,58,237,0.3);
+  }
+
+  #grid-midline {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #b0b7c3;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .examples-card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 20px 24px;
+    max-width: 680px;
+    margin: 0 auto 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    border: 3px solid #e2e8f0;
+  }
+
+  .examples-card h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: #475569;
+    margin-bottom: 14px;
+  }
+
+  .example-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: #f8fafc;
+    margin-bottom: 10px;
+    border: 2px solid #e2e8f0;
+    transition: border-color 0.3s, background 0.3s;
+  }
+
+  .example-icon { font-size: 1.6rem; }
+  .example-text { font-size: 0.9rem; font-weight: 700; color: #475569; flex: 1; }
+
+  .example-highlight {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    color: #7c3aed;
+  }
+
+  .fact-badge {
+    max-width: 680px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    border-radius: 20px;
+    padding: 16px 22px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: white;
+  }
+
+  .fact-badge .emoji { font-size: 2rem; }
+  .fact-badge p { font-size: 0.95rem; font-weight: 700; line-height: 1.5; }
+  .fact-badge strong { font-family: 'Fredoka One', cursive; font-size: 1.1rem; }
+
+  /* ─── VISIBILITY CONTROLS ─── */
+  .controls-card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 20px 24px;
+    max-width: 680px;
+    margin: 32px auto 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    border: 3px solid #e2e8f0;
+  }
+
+  .controls-card h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: #475569;
+    margin-bottom: 14px;
+  }
+
+  .controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  .control-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    user-select: none;
+  }
+
+  .control-item:hover { border-color: #a78bfa; background: #faf5ff; }
+
+  .control-item input[type=checkbox] {
+    width: 20px; height: 20px;
+    accent-color: #7c3aed;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .control-label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  .hidden-section { display: none !important; }
+</style>
+</head>
+<body>
+
+<h1>🎉 Percent Explorer!</h1>
+<p class="subtitle">Drag the slider and watch everything change!</p>
+
+<div class="slider-card">
+  <div class="slider-label">Choose a percent:</div>
+  <div class="slider-row">
+    <input type="range" id="slider" min="0" max="100" value="50">
+    <div class="pct-bubble" id="pct-display">50%</div>
+  </div>
+</div>
+
+<div class="bar-section" id="section-bar">
+  <div class="bar-title">📊 Progress Bar (out of 100)</div>
+  <div class="bar-track">
+    <div class="bar-fill" id="bar-fill">
+      <span class="bar-fill-text" id="bar-text">50%</span>
+    </div>
+  </div>
+  <div class="bar-markers">
+    <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+  </div>
+</div>
+
+<div class="visuals-row" id="section-pie">
+  <div class="vis-card">
+    <h3>🍕 Pie Chart</h3>
+    <svg id="pie-svg" viewBox="-55 -55 110 110" width="140" height="140">
+      <circle cx="0" cy="0" r="50" fill="#e2e8f0"/>
+      <path id="pie-slice" d="" fill="#7c3aed" />
+      <circle cx="0" cy="0" r="50" fill="none" stroke="white" stroke-width="3"/>
+    </svg>
+  </div>
+  <div class="vis-card">
+    <h3>🔢 As a Fraction</h3>
+    <div style="margin-top:10px;">
+      <div style="font-family:'Fredoka One',cursive; font-size:2.8rem; color:#7c3aed; line-height:1;" id="frac-num">50</div>
+      <div style="height:5px; background:#7c3aed; border-radius:4px; margin:6px auto; width:70px;"></div>
+      <div style="font-family:'Fredoka One',cursive; font-size:2.8rem; color:#475569; line-height:1;">100</div>
+      <div style="margin-top:10px; font-size:0.85rem; font-weight:700; color:#94a3b8;" id="frac-simplified"></div>
+    </div>
+  </div>
+</div>
+
+<div class="blocks-card" id="section-blocks">
+  <h3>🟪 100 Squares — <span id="blocks-label">50</span> are filled!</h3>
+  <div class="blocks-grid-wrapper" id="blocks-grid">
+    <div id="grid-midline"></div>
+  </div>
+</div>
+
+<div class="examples-card" id="section-examples">
+  <h3>🌍 Real Life Examples</h3>
+  <div class="example-item" id="ex-pizza">
+    <span class="example-icon">🍕</span>
+    <span class="example-text">You ate <span class="example-highlight" id="ex-pizza-val"></span> of a pizza</span>
+  </div>
+  <div class="example-item" id="ex-class">
+    <span class="example-icon">🧑‍🏫</span>
+    <span class="example-text"><span class="example-highlight" id="ex-class-val"></span> of 30 students got an A</span>
+  </div>
+  <div class="example-item" id="ex-battery">
+    <span class="example-icon">🔋</span>
+    <span class="example-text">Your phone battery is at <span class="example-highlight" id="ex-battery-val"></span></span>
+  </div>
+  <div class="example-item" id="ex-sale">
+    <span class="example-icon">🛍️</span>
+    <span class="example-text">A $<span id="ex-sale-orig">20</span> toy is on sale! You save <span class="example-highlight" id="ex-sale-val"></span></span>
+  </div>
+</div>
+
+<div class="fact-badge" id="section-fact">
+  <span class="emoji" id="fact-emoji">💡</span>
+  <p id="fact-text"><strong>Did you know?</strong> 50% means exactly half — just like half a sandwich! 🥪</p>
+</div>
+
+<!-- VISIBILITY CONTROLS -->
+<div class="controls-card">
+  <h3>👁️ Show / Hide Sections</h3>
+  <div class="controls-grid">
+    <label class="control-item">
+      <input type="checkbox" checked onchange="toggleSection('section-bar', this.checked)">
+      <span class="control-label">📊 Progress Bar</span>
+    </label>
+    <label class="control-item">
+      <input type="checkbox" checked onchange="toggleSection('section-pie', this.checked)">
+      <span class="control-label">🍕 Pie & Fraction</span>
+    </label>
+    <label class="control-item">
+      <input type="checkbox" checked onchange="toggleSection('section-blocks', this.checked)">
+      <span class="control-label">🟪 100 Squares</span>
+    </label>
+    <label class="control-item">
+      <input type="checkbox" checked onchange="toggleSection('section-examples', this.checked)">
+      <span class="control-label">🌍 Real Life</span>
+    </label>
+    <label class="control-item">
+      <input type="checkbox" checked onchange="toggleSection('section-fact', this.checked)">
+      <span class="control-label">💡 Fun Fact</span>
+    </label>
+  </div>
+</div>
+
+<script>
+  const slider = document.getElementById('slider');
+
+  function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+  function describeArc(pct) {
+    if (pct <= 0) return '';
+    if (pct >= 100) return 'M 0 -50 A 50 50 0 1 1 -0.001 -50 Z';
+    const angle = (pct / 100) * 360;
+    const rad = (angle - 90) * Math.PI / 180;
+    const x = 50 * Math.cos(rad);
+    const y = 50 * Math.sin(rad);
+    const large = angle > 180 ? 1 : 0;
+    return `M 0 0 L 0 -50 A 50 50 0 ${large} 1 ${x} ${y} Z`;
+  }
+
+  function slices(n) {
+    const fracs = ['0 slices','1 slice','2 slices','3 slices','4 slices','5 slices','6 slices','7 slices','8 slices'];
+    const pizzaSlices = Math.round((n / 100) * 8);
+    return fracs[pizzaSlices] || `${pizzaSlices} slices`;
+  }
+
+  const facts = [
+    { range: [0,0],   emoji:'😴', text:'<strong>0%</strong> means nothing at all. Empty! Like an empty lunchbox.' },
+    { range: [1,9],   emoji:'🌱', text:'<strong>Less than 10%</strong> is a tiny amount — like just a few sprinkles on a cupcake!' },
+    { range: [10,24], emoji:'🐣', text:'<strong>10–24%</strong> is like just waking up — you\'ve barely started!' },
+    { range: [25,25], emoji:'🥈', text:'<strong>25%</strong> is one-quarter. Cut a pizza into 4 pieces — that\'s 1 piece!' },
+    { range: [26,49], emoji:'🏃', text:'<strong>Less than half!</strong> You\'re getting there, keep going!' },
+    { range: [50,50], emoji:'🥪', text:'<strong>50%</strong> means exactly half — just like half a sandwich!' },
+    { range: [51,74], emoji:'🌟', text:'<strong>More than half!</strong> Over halfway — great job!' },
+    { range: [75,75], emoji:'🏆', text:'<strong>75%</strong> is three-quarters. 3 out of 4 pieces of pizza!' },
+    { range: [76,99], emoji:'🚀', text:'<strong>Almost there!</strong> So close to 100%!' },
+    { range: [100,100], emoji:'🎊', text:'<strong>100%</strong> means ALL of it — the whole thing, complete, perfect!' },
+  ];
+
+  function getFact(n) {
+    return facts.find(f => n >= f.range[0] && n <= f.range[1]) || facts[0];
+  }
+
+  function update() {
+    const n = parseInt(slider.value);
+    slider.style.setProperty('--pct', n + '%');
+    document.getElementById('pct-display').textContent = n + '%';
+
+    const fill = document.getElementById('bar-fill');
+    fill.style.width = n + '%';
+    document.getElementById('bar-text').textContent = n + '%';
+    fill.classList.toggle('wide', n >= 20);
+
+    document.getElementById('pie-slice').setAttribute('d', describeArc(n));
+
+    document.getElementById('frac-num').textContent = n;
+    const d = gcd(n, 100);
+    if (n === 0) {
+      document.getElementById('frac-simplified').textContent = '= 0';
+    } else if (d > 1 && n !== 100) {
+      document.getElementById('frac-simplified').textContent = `= ${n/d} / ${100/d}`;
+    } else if (n === 100) {
+      document.getElementById('frac-simplified').textContent = '= 1 whole!';
+    } else {
+      document.getElementById('frac-simplified').textContent = '(already simplified)';
+    }
+
+    document.getElementById('blocks-label').textContent = n;
+    document.getElementById('blocks-grid').querySelectorAll('.block').forEach((b, i) => {
+      b.classList.toggle('filled', i < n);
+    });
+
+    document.getElementById('ex-pizza-val').textContent = slices(n);
+    document.getElementById('ex-class-val').textContent = Math.round((n / 100) * 30) + ' students';
+    document.getElementById('ex-battery-val').textContent = n + '%';
+    document.getElementById('ex-sale-val').textContent = '$' + ((n / 100) * 20).toFixed(2);
+
+    const fact = getFact(n);
+    document.getElementById('fact-emoji').textContent = fact.emoji;
+    document.getElementById('fact-text').innerHTML = fact.text;
+  }
+
+  const grid = document.getElementById('blocks-grid');
+  for (let i = 0; i < 100; i++) {
+    const b = document.createElement('div');
+    b.className = 'block';
+    grid.appendChild(b);
+  }
+
+  function positionMidline() {
+    const blocks = grid.querySelectorAll('.block');
+    const b5 = blocks[4];  // 5th block, last in left half
+    const b6 = blocks[5];  // 6th block, first in right half
+    const gridRect = grid.getBoundingClientRect();
+    const b5Right = b5.getBoundingClientRect().right;
+    const b6Left  = b6.getBoundingClientRect().left;
+    const midX = (b5Right + b6Left) / 2 - gridRect.left;
+    const ml = document.getElementById('grid-midline');
+    ml.style.left = (midX - 1) + 'px';
+  }
+
+  // Measure after fonts/layout settle
+  requestAnimationFrame(() => requestAnimationFrame(positionMidline));
+  window.addEventListener('resize', positionMidline);
+
+  slider.addEventListener('input', update);
+  update();
+
+  function toggleSection(id, visible) {
+    document.getElementById(id).classList.toggle('hidden-section', !visible);
+  }
+</script>
+</body>
+</html>
