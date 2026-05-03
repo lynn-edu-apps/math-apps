@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Pie Math Explorer v10</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crust:    #d4882a;
+    --accent:   #c84010;
+    --accent2:  #e8a020;
+    --mr-color: #1a6a9e;
+    --mr-dark:  #0e4a74;
+    --green:    #2e7d46;
+    --green-dk: #1e5530;
+    --tray-bg:  #fef4e4;
+    --tray-bdr: #f0d8a8;
+    --bg:       #fdf6ec;
+    --panel:    #ffffff;
+    --ink:      #2c1a0e;
+    --muted:    #9b7b5e;
+    --radius:   22px;
+    --radius-sm:12px;
+    --shadow:   0 6px 24px rgba(0,0,0,.12);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background:#fdf6ec; font-family:'Nunito',sans-serif;
+    color:var(--ink); min-height:100vh;
+  }
+  .app{
+    position:relative; z-index:1; max-width:800px;
+    margin:0 auto; padding:24px 18px 80px;
+  }
+
+  /* HEADER */
+  header{ text-align:center; margin-bottom:22px; }
+  .hicon{ font-size:2.4rem; line-height:1; display:block; margin-bottom:2px;
+    filter:drop-shadow(0 3px 6px rgba(0,0,0,.15)); }
+  header h1{
+    font-family:'Baloo 2',cursive; font-size:clamp(1.7rem,5vw,2.6rem);
+    font-weight:800; color:var(--accent); line-height:1.05;
+    text-shadow:2px 3px 0 #f5c84228; letter-spacing:-.5px;
+  }
+  header .sub{ font-size:.88rem; color:var(--muted); font-weight:700; margin-top:4px; }
+  .version{ font-size:.7rem; color:#ccc; text-align:center; margin-top:2px; }
+
+  /* CARD */
+  .card{
+    background:var(--panel); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:24px 26px;
+    margin-bottom:16px; border:2px solid #f0e0cc;
+    position:relative; overflow:hidden;
+  }
+  .card::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:4px;
+    background:linear-gradient(90deg,var(--crust),var(--accent2),var(--crust));
+    border-radius:var(--radius) var(--radius) 0 0;
+  }
+  .card.blue-top::before{ background:linear-gradient(90deg,var(--mr-color),#4ab0e8,var(--mr-color)); }
+  .card.green-top::before{ background:linear-gradient(90deg,var(--green),#60c080,var(--green)); }
+
+  /* START */
+  #startScreen{ text-align:center; }
+  .start-title{ font-family:'Baloo 2',cursive; font-size:1.4rem; font-weight:800; margin-bottom:5px; }
+  .start-desc{ font-size:.9rem; color:var(--muted); font-weight:600; margin-bottom:22px; line-height:1.5; }
+  .setting-block{ margin-bottom:22px; }
+  .setting-title{ font-size:.75rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:1.5px; color:var(--muted); margin-bottom:8px; }
+  .shape-toggle{
+    display:inline-flex; background:#f5ece0; border-radius:50px;
+    padding:5px; gap:4px; box-shadow:inset 0 2px 6px rgba(0,0,0,.08);
+  }
+  .shape-btn{
+    border:none; background:transparent; border-radius:50px; padding:9px 26px;
+    font-family:'Nunito',sans-serif; font-size:.92rem; font-weight:800;
+    cursor:pointer; color:var(--muted); transition:all .2s;
+    display:flex; align-items:center; gap:7px;
+  }
+  .sp{ display:inline-block; width:18px; height:18px; flex-shrink:0; }
+  .shape-btn.active{ background:var(--accent); color:#fff; box-shadow:0 3px 10px rgba(200,64,16,.35); }
+
+  /* ACTION BUTTONS */
+  .action-btn{
+    display:inline-flex; align-items:center; gap:9px; color:#fff;
+    font-family:'Baloo 2',cursive; font-size:1.3rem; font-weight:800;
+    border:none; border-radius:50px; padding:14px 46px; cursor:pointer;
+    transition:transform .1s,box-shadow .1s; position:relative; top:0;
+  }
+  .action-btn.green{ background:var(--green); box-shadow:0 6px 0 var(--green-dk),0 8px 20px rgba(0,0,0,.18); }
+  .action-btn.green:hover { transform:translateY(-3px); box-shadow:0 9px 0 var(--green-dk),0 12px 28px rgba(0,0,0,.2); }
+  .action-btn.green:active{ transform:translateY(4px);  box-shadow:0 2px 0 var(--green-dk),0 4px 10px rgba(0,0,0,.15); }
+  .action-btn.blue{ background:var(--mr-color); box-shadow:0 6px 0 var(--mr-dark),0 8px 20px rgba(0,0,0,.18); }
+  .action-btn.blue:hover { transform:translateY(-3px); box-shadow:0 9px 0 var(--mr-dark),0 12px 28px rgba(0,0,0,.2); }
+  .action-btn.blue:active{ transform:translateY(4px);  box-shadow:0 2px 0 var(--mr-dark),0 4px 10px rgba(0,0,0,.15); }
+  .action-btn.orange{ background:var(--accent); box-shadow:0 6px 0 #901000,0 8px 20px rgba(0,0,0,.18); }
+  .action-btn.orange:hover { transform:translateY(-3px); box-shadow:0 9px 0 #901000,0 12px 28px rgba(0,0,0,.2); }
+  .action-btn.orange:active{ transform:translateY(4px);  box-shadow:0 2px 0 #901000,0 4px 10px rgba(0,0,0,.15); }
+
+  .back-btn{
+    display:inline-flex; align-items:center; gap:5px; background:none;
+    border:2px solid #e8d8c8; border-radius:50px; padding:6px 16px;
+    font-family:'Nunito',sans-serif; font-weight:800; font-size:.82rem;
+    color:var(--muted); cursor:pointer; transition:all .15s; margin-bottom:14px;
+  }
+  .back-btn:hover{ border-color:var(--accent); color:var(--accent); }
+
+  /* VOCAB */
+  .word-mc{
+    color:var(--accent); font-family:'Baloo 2',cursive; font-weight:800;
+    display:inline-block; border-bottom:3px solid var(--accent2); line-height:1.1;
+  }
+  .word-mr{
+    color:var(--mr-color); font-family:'Baloo 2',cursive; font-weight:800;
+    display:inline-block; border-bottom:3px solid #7ad0f8; line-height:1.1;
+  }
+
+  /* PROMPT */
+  .prompt-box{ text-align:center; margin-bottom:18px; }
+  .prompt-box .line1{ font-size:.97rem; font-weight:700; color:var(--muted); margin-bottom:2px; }
+  .prompt-box .line2{ font-family:'Baloo 2',cursive; font-size:1.5rem; font-weight:800; line-height:1.2; }
+  .prompt-box .line3{ font-size:.84rem; color:var(--muted); font-weight:600; margin-top:5px; line-height:1.5; }
+
+  /* NUMBER BUTTONS */
+  .num-grid{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .num-btn{
+    width:52px; height:52px; border:2.5px solid #e8d8c8; border-radius:var(--radius-sm);
+    background:#fdf6ec; font-family:'Baloo 2',cursive; font-size:1.6rem; font-weight:800;
+    color:var(--ink); cursor:pointer; transition:all .18s;
+    box-shadow:0 3px 0 #e8d8c8; position:relative; top:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .num-btn:hover{ border-color:var(--crust); background:#fff8ee; transform:translateY(-3px); box-shadow:0 6px 0 #e0c090; }
+  .num-btn.sel-mc{ border-color:var(--accent); background:var(--accent); color:#fff; box-shadow:0 4px 0 #901000; transform:translateY(-2px); }
+  .num-btn.sel-mr{ border-color:var(--mr-color); background:var(--mr-color); color:#fff; box-shadow:0 4px 0 var(--mr-dark); transform:translateY(-2px); }
+
+  /* MC DISPLAY */
+  .stage-header{ text-align:center; margin-bottom:16px; }
+  .stage-count{ font-family:'Baloo 2',cursive; font-size:1.25rem; font-weight:800; }
+  .stage-count .big-n{ color:var(--accent); font-size:1.5em; line-height:1; }
+  .stage-sublabel{ font-size:.85rem; font-weight:700; color:var(--muted); margin-top:3px; }
+  #mcStage{ min-height:110px; display:flex; align-items:center; justify-content:center; padding:6px 0 4px; }
+  .pie-grid{ display:grid; }
+  .qty-line{ text-align:center; margin-top:14px; font-size:.9rem; font-weight:700; color:var(--muted); }
+  .qty-line strong{ color:var(--accent); font-family:'Baloo 2',cursive; font-size:1.15em; }
+  .continue-row{ text-align:center; margin-top:20px; padding-top:18px; border-top:2px dashed #f0d8b8; }
+  .continue-row p{ font-size:.88rem; font-weight:700; color:var(--muted); margin-bottom:12px; }
+
+  /* EQUATION */
+  .eq-row{ display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; }
+  .eq-piece{ display:flex; flex-direction:column; align-items:center; }
+  .eq-num{ font-family:'Baloo 2',cursive; font-size:2.5rem; font-weight:800; line-height:1; }
+  .eq-mc{ color:var(--accent); }
+  .eq-mr{ color:var(--mr-color); }
+  .eq-pr{ color:var(--green); }
+  .eq-op,.eq-eq{ font-family:'Baloo 2',cursive; font-size:2.1rem; font-weight:800; color:var(--muted); line-height:1; padding-top:6px; }
+  .eq-lbl{ font-size:.7rem; font-weight:800; letter-spacing:.8px; text-transform:uppercase; margin-top:1px; }
+  .eq-lbl-mc{ color:var(--accent); }
+  .eq-lbl-mr{ color:var(--mr-color); }
+  .eq-lbl-pr{ color:var(--green); }
+
+  /* RESULT */
+  .macro-grid{
+    display:grid;
+    width:100%;
+    align-content:center;
+  }
+  .tray{
+    background:var(--tray-bg); border:2px solid var(--tray-bdr);
+    border-radius:12px; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.07);
+    animation:trayIn .28s ease both;
+    min-width:0;
+  }
+  .tray-inner{ display:grid; }
+  .zero-msg{
+    text-align:center; padding:22px 0;
+    font-family:'Baloo 2',cursive; font-size:1.3rem; font-weight:800; color:var(--muted);
+  }
+  .zero-msg .zing{ font-size:2.6rem; display:block; margin-bottom:6px; }
+  .tiny-wrap{ text-align:center; margin-top:10px; }
+  .tiny-badge{
+    display:inline-block; font-size:.81rem; font-weight:700; color:#a06010;
+    background:#fff8e0; border:1.5px solid #f0d060; border-radius:50px; padding:5px 16px;
+  }
+  .result-sum{ text-align:center; margin-top:12px; font-size:.9rem; font-weight:700; color:var(--muted); }
+  .result-sum strong{ color:var(--green); font-family:'Baloo 2',cursive; font-size:1.15em; }
+
+  /* BIG GROUP STATEMENT */
+  .group-statement{
+    text-align:center;
+    margin-top:20px;
+    padding:16px 12px 12px;
+    border-top:2px solid #f0e0cc;
+  }
+  .group-statement .big-line{
+    font-family:'Baloo 2',cursive;
+    font-size:clamp(2rem,7vw,3.2rem);
+    font-weight:800;
+    color:var(--ink);
+    line-height:1.15;
+    margin-bottom:8px;
+  }
+  .group-statement .big-line .num-mr{ color:var(--mr-color); }
+  .group-statement .big-line .num-mc{ color:var(--accent); }
+
+  .group-statement .detail-line{
+    font-size:clamp(.82rem,2.2vw,1rem);
+    font-weight:700;
+    color:var(--muted);
+    line-height:1.6;
+  }
+  .group-statement .detail-line .how-many{
+    color:var(--mr-color);
+    font-family:'Baloo 2',cursive;
+    font-size:1.1em;
+    font-weight:800;
+    background:#e8f4ff;
+    border-radius:6px;
+    padding:1px 6px;
+  }
+  .group-statement .detail-line .the-what{
+    color:var(--accent);
+    font-family:'Baloo 2',cursive;
+    font-size:1.1em;
+    font-weight:800;
+    background:#fff0e8;
+    border-radius:6px;
+    padding:1px 6px;
+  }
+  .group-statement .detail-line .total{
+    color:var(--green);
+    font-family:'Baloo 2',cursive;
+    font-size:1.15em;
+    font-weight:800;
+  }
+
+  /* RHYME CARD */
+  .rhyme-card{
+    margin-top:16px;
+    background: linear-gradient(135deg,#fff8f0,#f0f8ff);
+    border:2px solid #e8d8f8;
+    border-radius:16px;
+    padding:14px 18px;
+    text-align:center;
+    position:relative;
+  }
+  .rhyme-label{
+    font-size:.72rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:1.5px; color:var(--muted); margin-bottom:8px;
+  }
+  .rhyme-text{
+    font-family:'Baloo 2',cursive;
+    font-size:clamp(.95rem,2.8vw,1.15rem);
+    font-weight:700;
+    color:#4a2a7e;
+    line-height:1.7;
+  }
+  .rhyme-text .rhyme-line{ display:block; }
+  .rhyme-text .rhyme-highlight{ color:var(--accent); }
+  .try-again-row{
+    text-align:center; margin-top:20px; padding-top:16px; border-top:2px dashed #f0d8b8;
+    display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:center;
+  }
+  .try-again-row .divider-word{
+    font-size:.82rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px;
+  }
+
+  /* ANIMATIONS */
+  @keyframes piePop{
+    0%  { transform:scale(0) rotate(-18deg); opacity:0; }
+    65% { transform:scale(1.14) rotate(3deg); opacity:1; }
+    100%{ transform:scale(1) rotate(0); opacity:1; }
+  }
+  .pie-wrap{ animation:piePop .36s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes trayIn{
+    0%  { transform:scale(.72) translateY(10px); opacity:0; }
+    100%{ transform:scale(1) translateY(0); opacity:1; }
+  }
+  @keyframes fadeSlideIn{
+    0%  { opacity:0; transform:translateY(18px); }
+    100%{ opacity:1; transform:translateY(0); }
+  }
+  .fade-in{ animation:fadeSlideIn .35s ease both; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <span class="hicon">🫐</span>
+  <h1>Pie Math Explorer</h1>
+  <p class="sub">Multiplication &amp; Division — one delicious slice at a time</p>
+  <p class="version">v10</p>
+</header>
+
+<!-- PHASE 0 -->
+<div id="phaseStart" class="card">
+  <p class="start-title">Welcome, Math Explorer! 🎉</p>
+  <p class="start-desc">We're going to learn <strong>multiplication</strong> using blueberry pies.<br>First — what kind of pie pan?</p>
+  <div class="setting-block">
+    <p class="setting-title">Pie Pan Shape</p>
+    <div class="shape-toggle">
+      <button class="shape-btn active" id="btnRound" onclick="setShape('round')">
+        <svg class="sp" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#d4882a"/><circle cx="10" cy="10" r="7.5" fill="#3a1a6e"/></svg>Round
+      </button>
+      <button class="shape-btn" id="btnSquare" onclick="setShape('square')">
+        <svg class="sp" viewBox="0 0 20 20"><rect x="1" y="1" width="18" height="18" rx="3.5" fill="#d4882a"/><rect x="3" y="3" width="14" height="14" rx="2" fill="#3a1a6e"/></svg>Square
+      </button>
+    </div>
+  </div>
+  <button class="action-btn green" onclick="goPhase1()">Let's Go! 🚀</button>
+</div>
+
+<!-- PHASE 1 -->
+<div id="phase1" style="display:none;">
+  <button class="back-btn" onclick="goPhase0()">← Change Settings</button>
+  <div class="card" id="mcChooserCard">
+    <div class="prompt-box">
+      <p class="line1">Choose your</p>
+      <p class="line2"><span class="word-mc">multiplicand</span></p>
+      <p class="line3">The <span class="word-mc">multiplicand</span> is <em>how many pies are in one group</em>.<br>Pick a number from 1 to 10!</p>
+    </div>
+    <div class="num-grid" id="mcGrid"></div>
+  </div>
+  <div class="card" id="mcDisplayCard" style="display:none;">
+    <div class="stage-header">
+      <div class="stage-count"><span class="big-n" id="mcBigN"></span> <span id="mcNoun"></span></div>
+      <div class="stage-sublabel">← that's your <span class="word-mc" style="border-bottom:none;">multiplicand</span></div>
+    </div>
+    <div id="mcStage"></div>
+    <div class="qty-line" id="mcQtyLine"></div>
+    <div class="continue-row">
+      <p>Great choice! Ready to multiply?</p>
+      <button class="action-btn blue" onclick="goPhase2()">Now pick a multiplier →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 2 -->
+<div id="phase2" style="display:none;">
+  <button class="back-btn" onclick="goPhase1()">← Change Multiplicand</button>
+  <div class="card blue-top fade-in">
+    <div class="prompt-box">
+      <p class="line1">Now choose your</p>
+      <p class="line2"><span class="word-mr">multiplier</span></p>
+      <p class="line3">The <span class="word-mr">multiplier</span> tells us <em>how many groups to make</em>.<br>Pick a number from 0 to 10!</p>
+    </div>
+    <div class="num-grid" id="mrGrid"></div>
+  </div>
+  <div class="card green-top" id="equationCard" style="display:none;">
+    <div class="eq-row" id="eqDisplay"></div>
+  </div>
+  <div class="card" id="resultCard" style="display:none;">
+    <div id="resultStage"></div>
+    <div class="tiny-wrap" id="tinyWrap" style="display:none;">
+      <span class="tiny-badge">🔍 Lots of pies — they're tiny but they're all there!</span>
+    </div>
+    <div class="group-statement" id="groupStatement" style="display:none;">
+      <div class="big-line" id="bigLine"></div>
+      <div class="detail-line" id="detailLine"></div>
+    </div>
+    <div class="rhyme-card" id="rhymeCard" style="display:none;">
+      <div class="rhyme-label">🎵 A rhyme to help you remember — repeat after me!</div>
+      <div class="rhyme-text">
+        <span class="rhyme-line">The <span class="rhyme-highlight">multiplicand</span> is the thing in your hand.</span>
+        <span class="rhyme-line">The <span class="rhyme-highlight">multiplier</span> says how many were planned!</span>
+      </div>
+    </div>
+    <div class="try-again-row">
+      <button class="action-btn orange" onclick="tryAgain()">Different multiplier 🔄</button>
+      <span class="divider-word">or</span>
+      <button class="action-btn green" onclick="goPhase1()">New multiplicand 🥧</button>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+/* ── STATE ── */
+let pieShape = 'round';
+let mc = null, mr = null;
+const WORDS = ['zero','one','two','three','four','five','six','seven','eight','nine','ten'];
+
+/* ── MICRO LAYOUTS ── */
+const ML = {
+  1:{c:1,r:1,cells:[[0,0]]},
+  2:{c:1,r:2,cells:[[0,0],[0,1]]},
+  3:{c:1,r:3,cells:[[0,0],[0,1],[0,2]]},
+  4:{c:2,r:2,cells:[[0,0],[1,0],[0,1],[1,1]]},
+  5:{c:3,r:3,cells:[[0,0],[2,0],[1,1],[0,2],[2,2]]},
+  6:{c:2,r:3,cells:[[0,0],[1,0],[0,1],[1,1],[0,2],[1,2]]},
+  7:{c:2,r:4,cells:[[0,0],[1,0],[0,1],[1,1],[0,2],[1,2],[0,3]]},
+  8:{c:2,r:4,cells:[[0,0],[1,0],[0,1],[1,1],[0,2],[1,2],[0,3],[1,3]]},
+  9:{c:3,r:3,cells:[[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]]},
+  10:{c:3,r:4,cells:[[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2],[1,3]]},
+};
+
+/* ── MACRO COLS per multiplier ── */
+const MACRO_COLS = [0,1,2,3,2,3,3,4,4,3,5];
+function getMacroDims(n){ const c=MACRO_COLS[n]; return {cols:c,rows:Math.ceil(n/c)}; }
+
+/* ── PIE SIZE TABLE ────────────────────────────────────────────────
+   Indexed by [mCols][microCols].
+   Computed for a conservative 520px usable width (800px max - app
+   padding - card padding - card border - scrollbar - safety margin).
+   Then reduced by a further 10% to ensure pies fit inside 1fr cells
+   which may be slightly narrower than the average on smaller screens.
+──────────────────────────────────────────────────────────────────── */
+const PS_TABLE = {
+  1: {1:108, 2:108, 3:108},
+  2: {1:108, 2:108, 3: 72},
+  3: {1:108, 2: 68, 3: 44},
+  4: {1: 96, 2: 48, 3: 30},
+  5: {1: 74, 2: 36, 3: 24},
+};
+function getPieSize(mCols, lc){
+  return (PS_TABLE[mCols]||{})[lc] || 24;
+}
+
+/* ── PIE SVG ── */
+function makePie(shape, sz){
+  const s=sz, cx=s/2, cy=s/2, r=s/2, v=sz>=42;
+  if(shape==='round'){
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">
+      <circle cx="${cx}" cy="${cy}" r="${r-1}" fill="#d4882a" stroke="#a05a10" stroke-width="${Math.max(.7,s*.016)}"/>
+      <circle cx="${cx}" cy="${cy}" r="${r-1}" fill="none" stroke="#b06818" stroke-width="${s*.082}" stroke-dasharray="${s*.042} ${s*.034}" opacity=".52"/>
+      <circle cx="${cx}" cy="${cy}" r="${r*.815}" fill="#3a1a6e"/>
+      <ellipse cx="${cx-r*.13}" cy="${cy-r*.17}" rx="${r*.26}" ry="${r*.16}" fill="#5a2a9e" opacity=".38" transform="rotate(-22,${cx-r*.13},${cy-r*.17})"/>
+      ${v?`<path d="M${cx-r*.14} ${cy-r*.1} Q${cx} ${cy-r*.24} ${cx+r*.14} ${cy-r*.1}" fill="none" stroke="#1a0840" stroke-width="${Math.max(.9,s*.022)}" stroke-linecap="round"/>
+           <path d="M${cx+r*.06} ${cy+r*.1} Q${cx+r*.2} ${cy-r*.04} ${cx+r*.34} ${cy+r*.1}" fill="none" stroke="#1a0840" stroke-width="${Math.max(.9,s*.022)}" stroke-linecap="round"/>`:''}
+    </svg>`;
+  } else {
+    const pad=s*.024,rx=s*.14,ip=s*.108,irx=s*.075;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">
+      <rect x="${pad}" y="${pad}" width="${s-pad*2}" height="${s-pad*2}" rx="${rx}" fill="#d4882a" stroke="#a05a10" stroke-width="${Math.max(.7,s*.016)}"/>
+      <rect x="${pad}" y="${pad}" width="${s-pad*2}" height="${s-pad*2}" rx="${rx}" fill="none" stroke="#b06818" stroke-width="${s*.082}" stroke-dasharray="${s*.042} ${s*.034}" opacity=".52"/>
+      <rect x="${ip}" y="${ip}" width="${s-ip*2}" height="${s-ip*2}" rx="${irx}" fill="#3a1a6e"/>
+      <ellipse cx="${s*.38}" cy="${s*.36}" rx="${s*.15}" ry="${s*.09}" fill="#5a2a9e" opacity=".38" transform="rotate(-18,${s*.38},${s*.36})"/>
+      ${v?`<path d="M${s*.34} ${s*.42} Q${s*.5} ${s*.28} ${s*.66} ${s*.42}" fill="none" stroke="#1a0840" stroke-width="${Math.max(.9,s*.022)}" stroke-linecap="round"/>
+           <path d="M${s*.52} ${s*.58} Q${s*.66} ${s*.44} ${s*.8} ${s*.58}" fill="none" stroke="#1a0840" stroke-width="${Math.max(.9,s*.022)}" stroke-linecap="round"/>`:''}
+    </svg>`;
+  }
+}
+
+/* ── BUILD PIE GRID ── */
+function buildPieGrid(n, ps, pgap, animate){
+  const layout=ML[n];
+  const grid=document.createElement('div');
+  grid.className='pie-grid';
+  grid.style.cssText=`grid-template-columns:repeat(${layout.c},${ps}px);grid-template-rows:repeat(${layout.r},${ps}px);gap:${pgap}px;`;
+  const occ=new Set(layout.cells.map(([c,r])=>`${r},${c}`));
+  const sorted=[...layout.cells].sort((a,b)=>a[1]-b[1]||a[0]-b[0]);
+  const order={}; sorted.forEach(([c,r],i)=>order[`${r},${c}`]=i);
+  for(let row=0;row<layout.r;row++){
+    for(let col=0;col<layout.c;col++){
+      const cell=document.createElement('div');
+      cell.style.cssText=`width:${ps}px;height:${ps}px;display:flex;align-items:center;justify-content:center;`;
+      if(occ.has(`${row},${col}`)){
+        if(animate){
+          const wrap=document.createElement('div');
+          wrap.className='pie-wrap';
+          wrap.style.animationDelay=`${order[`${row},${col}`]*65}ms`;
+          wrap.innerHTML=makePie(pieShape,ps);
+          cell.appendChild(wrap);
+        } else {
+          cell.innerHTML=makePie(pieShape,ps);
+        }
+      }
+      grid.appendChild(cell);
+    }
+  }
+  return grid;
+}
+
+/* ── NAV ── */
+function show(id){ document.getElementById(id).style.display='block'; }
+function hide(id){ document.getElementById(id).style.display='none'; }
+function setShape(s){
+  pieShape=s;
+  document.getElementById('btnRound').classList.toggle('active',s==='round');
+  document.getElementById('btnSquare').classList.toggle('active',s==='square');
+}
+function goPhase0(){ hide('phase1'); hide('phase2'); show('phaseStart'); mc=mr=null; }
+function goPhase1(){
+  hide('phaseStart'); hide('phase2'); show('phase1');
+  mc=mr=null; hide('mcDisplayCard'); show('mcChooserCard');
+  buildMcGrid(); window.scrollTo({top:0,behavior:'smooth'});
+}
+function goPhase2(){
+  hide('phase1'); show('phase2'); mr=null;
+  hide('equationCard'); hide('resultCard');
+  buildMrGrid(); window.scrollTo({top:0,behavior:'smooth'});
+}
+function tryAgain(){
+  mr=null;
+  document.querySelectorAll('#mrGrid .num-btn').forEach(b=>b.classList.remove('sel-mr'));
+  hide('equationCard'); hide('resultCard');
+}
+
+/* ── PHASE 1 ── */
+function buildMcGrid(){
+  const g=document.getElementById('mcGrid'); g.innerHTML='';
+  for(let i=1;i<=10;i++){
+    const b=document.createElement('button');
+    b.className='num-btn'; b.textContent=i; b.dataset.n=i;
+    b.onclick=()=>pickMc(i); g.appendChild(b);
+  }
+}
+function pickMc(n){
+  mc=n;
+  document.querySelectorAll('#mcGrid .num-btn').forEach(b=>b.classList.toggle('sel-mc',+b.dataset.n===n));
+  renderMcDisplay(n);
+}
+function renderMcDisplay(n){
+  const sizeMap={1:130,2:118,3:110,4:104,5:96,6:94,7:88,8:86,9:80,10:76};
+  const gapMap ={1:16,2:16,3:16,4:16,5:13,6:13,7:12,8:12,9:11,10:11};
+  const ps=sizeMap[n]||80, pg=gapMap[n]||12;
+  document.getElementById('mcBigN').textContent=n;
+  document.getElementById('mcNoun').textContent=n===1?'pie':'pies';
+  const stage=document.getElementById('mcStage');
+  stage.innerHTML='';
+  stage.appendChild(buildPieGrid(n,ps,pg,true));
+  const noun=n===1?'pie':'pies';
+  document.getElementById('mcQtyLine').innerHTML=
+    `Your <strong class="word-mc" style="border-bottom:none;">multiplicand</strong> is <strong>${n}</strong> — ${WORDS[n]} ${noun}!`;
+  show('mcDisplayCard');
+  document.getElementById('mcDisplayCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ── PHASE 2 ── */
+function buildMrGrid(){
+  const g=document.getElementById('mrGrid'); g.innerHTML='';
+  for(let i=0;i<=10;i++){
+    const b=document.createElement('button');
+    b.className='num-btn'; b.textContent=i; b.dataset.n=i;
+    b.onclick=()=>pickMr(i); g.appendChild(b);
+  }
+}
+function pickMr(n){
+  mr=n;
+  document.querySelectorAll('#mrGrid .num-btn').forEach(b=>b.classList.toggle('sel-mr',+b.dataset.n===n));
+  renderResult();
+}
+
+function renderResult(){
+  const product=mc*mr;
+  document.getElementById('eqDisplay').innerHTML=`
+    <div class="eq-piece"><div class="eq-num eq-mr">${mr}</div><div class="eq-lbl eq-lbl-mr">multiplier</div></div>
+    <div class="eq-op">×</div>
+    <div class="eq-piece"><div class="eq-num eq-mc">${mc}</div><div class="eq-lbl eq-lbl-mc">multiplicand</div></div>
+    <div class="eq-eq">=</div>
+    <div class="eq-piece"><div class="eq-num eq-pr">${product}</div><div class="eq-lbl eq-lbl-pr">product</div></div>`;
+  show('equationCard');
+
+  const resultCard=document.getElementById('resultCard');
+  const stage=document.getElementById('resultStage');
+  show('resultCard');
+  stage.innerHTML='';
+  hide('tinyWrap');
+  hide('groupStatement');
+  hide('rhymeCard');
+  document.getElementById('resultSum') && (document.getElementById('resultSum').innerHTML='');
+
+  if(mr===0){
+    stage.innerHTML=`<div class="zero-msg"><span class="zing">🫙</span>Zero groups means <strong>zero pies!</strong><br><span style="font-size:.9rem;font-weight:700;">${mc} × 0 = 0 — multiply by zero, always get nothing!</span></div>`;
+    hide('groupStatement'); hide('rhymeCard');
+    resultCard.scrollIntoView({behavior:'smooth',block:'nearest'});
+    return;
+  }
+
+  const layout=ML[mc];
+  const {cols:mCols}=getMacroDims(mr);
+  const TPAD=8, TGAP=12;
+
+  const ps   = getPieSize(mCols, layout.c);
+  const pgap = Math.max(2, Math.floor(ps*0.12));
+  const tiny = ps <= 26;
+
+  const macroGrid=document.createElement('div');
+  macroGrid.className='macro-grid';
+  /* 1fr columns — CSS distributes width evenly, pies are sized
+     conservatively enough to always fit inside each cell         */
+  macroGrid.style.cssText=`grid-template-columns:repeat(${mCols},1fr);gap:${TGAP}px;`;
+
+  for(let gi=0;gi<mr;gi++){
+    const tray=document.createElement('div');
+    tray.className='tray';
+    tray.style.cssText=`padding:${TPAD}px;animation-delay:${gi*50}ms;`;
+    tray.appendChild(buildPieGrid(mc,ps,pgap,false));
+    macroGrid.appendChild(tray);
+  }
+  stage.appendChild(macroGrid);
+
+  if(tiny) show('tinyWrap');
+
+  const pNoun = product===1?'pie':'pies';
+  const gNoun = mr===1?'group':'groups';
+
+  // Big prominent line: "9 groups of 10"
+  document.getElementById('bigLine').innerHTML =
+    `<span class="num-mr">${mr}</span> ${gNoun} of <span class="num-mc">${mc}</span>`;
+
+  // Detail line
+  document.getElementById('detailLine').innerHTML =
+    `${mr} ${gNoun} (<span class="how-many">the multiplier — the "how many groups"</span>)`+
+    ` of ${mc} ${pNoun} each `+
+    `(<span class="the-what">the multiplicand — the "what"</span>)`+
+    ` = <span class="total">${product} ${pNoun} total</span>`;
+
+  show('groupStatement');
+  show('rhymeCard');
+
+  resultCard.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+</script>
+</body>
+</html>
