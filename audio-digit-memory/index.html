@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DigitMemory</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap');
+
+  :root {
+    --sky:   #4FC3F7;
+    --navy:  #1A237E;
+    --mint:  #A5D6A7;
+    --coral: #FF8A65;
+    --sun:   #FFD54F;
+    --lav:   #CE93D8;
+    --white: #FFFFFF;
+    --card:  #FFFDE7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 50%, #E8F5E9 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .screen { display: none; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+  .screen.active { display: flex; }
+
+  .title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.4rem;
+    color: var(--navy);
+    text-align: center;
+    line-height: 1.1;
+    text-shadow: 3px 3px 0 rgba(79,195,247,0.4);
+  }
+  .title span { color: var(--coral); }
+  .title-sm { font-size: 1.5rem; }
+
+  .card {
+    background: var(--card);
+    border: 3px solid var(--navy);
+    border-radius: 20px;
+    box-shadow: 0 6px 0 var(--navy);
+    padding: 14px 16px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-label {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--navy);
+    text-align: center;
+  }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; }
+
+  .chip {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.15rem;
+    padding: 5px 16px;
+    border-radius: 50px;
+    border: 3px solid var(--navy);
+    cursor: pointer;
+    transition: transform .12s, box-shadow .12s;
+    box-shadow: 0 5px 0 var(--navy);
+    background: var(--white);
+    color: var(--navy);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .chip:hover  { transform: translateY(-2px); }
+  .chip:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--navy); }
+  .chip.d3  { background: #FFF9C4; } .chip.d4  { background: #FCE4EC; }
+  .chip.d5  { background: #E8EAF6; } .chip.d6  { background: #E0F7FA; }
+  .chip.d7  { background: #F1F8E9; } .chip.d8  { background: #FFF3E0; }
+  .chip.d9  { background: #F3E5F5; } .chip.d10 { background: #E0F2F1; }
+  .chip.selected { filter: brightness(.82); outline: 3px solid var(--navy); }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--navy);
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle {
+    position: relative;
+    width: 48px; height: 26px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-track {
+    position: absolute; inset: 0;
+    background: #CFD8DC;
+    border-radius: 50px;
+    border: 2px solid var(--navy);
+    transition: background .2s;
+  }
+  .toggle input:checked + .toggle-track { background: var(--sky); }
+  .toggle-thumb {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    background: var(--white);
+    border-radius: 50%;
+    border: 2px solid var(--navy);
+    transition: transform .2s;
+    pointer-events: none;
+  }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(22px); }
+
+  /* Buttons */
+  .btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    padding: 10px 26px;
+    border-radius: 50px;
+    border: 3px solid var(--navy);
+    cursor: pointer;
+    box-shadow: 0 5px 0 var(--navy);
+    transition: transform .12s, box-shadow .12s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .btn:hover:not(:disabled)  { transform: translateY(-2px); box-shadow: 0 7px 0 var(--navy); }
+  .btn:active:not(:disabled) { transform: translateY(3px);  box-shadow: 0 2px 0 var(--navy); }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .btn-primary { background: var(--sun);  color: var(--navy); }
+  .btn-sky     { background: var(--sky);  color: var(--navy); }
+  .btn-mint    { background: var(--mint); color: var(--navy); }
+  .btn-lav     { background: var(--lav);  color: var(--navy); }
+  .btn-danger  { background: #EF9A9A;     color: var(--navy); }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+  /* Progress */
+  .progress-wrap {
+    width: 100%; background: #CFD8DC;
+    border-radius: 50px; border: 2px solid var(--navy);
+    height: 13px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 50px;
+    background: linear-gradient(90deg, var(--sky), var(--lav));
+    transition: width .5s ease;
+  }
+
+  /* Game top bar */
+  .game-bar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .q-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: .95rem;
+    color: var(--navy);
+    background: var(--sky);
+    border: 2px solid var(--navy);
+    border-radius: 50px;
+    padding: 3px 12px;
+  }
+  .digit-label {
+    font-weight: 800;
+    color: var(--navy);
+    font-size: .88rem;
+  }
+
+  /* Speed slider */
+  .speed-wrap { position: relative; width: 100%; }
+  .speed-pop {
+    position: absolute;
+    top: -34px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--navy);
+    color: #fff;
+    font-family: 'Fredoka One', cursive;
+    font-size: .9rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    pointer-events: none;
+    white-space: nowrap;
+    animation: popfade .15s ease;
+  }
+  .speed-pop::after {
+    content: '';
+    position: absolute;
+    top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--navy);
+  }
+  @keyframes popfade {
+    from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  .speed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    font-family: 'Fredoka One', cursive;
+    font-size: .88rem;
+    color: var(--navy);
+  }
+  .speed-row input[type=range] {
+    flex: 1; height: 6px;
+    border-radius: 50px;
+    accent-color: var(--sky);
+    cursor: pointer;
+  }
+  .speed-label {
+    min-width: 34px;
+    text-align: right;
+    font-size: .85rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+
+  /* Speaker button */
+  .speak-btn {
+    font-size: 2.2rem;
+    background: none; border: none;
+    cursor: pointer; line-height: 1;
+    filter: drop-shadow(2px 2px 0 rgba(0,0,0,.12));
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .speak-btn.playing { animation: bounce 1.2s infinite; }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-5px); }
+  }
+  .speak-btn:active { transform: scale(.85); animation: none; }
+
+  /* Answer display */
+  .answer-display {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.55rem;
+    letter-spacing: 7px;
+    color: var(--navy);
+    background: var(--white);
+    border: 3px dashed var(--sky);
+    border-radius: 11px;
+    padding: 6px 14px;
+    min-height: 44px;
+    min-width: 140px;
+    text-align: center;
+    word-break: break-all;
+    white-space: pre;
+  }
+  .answer-display.placeholder {
+    color: #B0BEC5;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    padding-top: 10px;
+    white-space: normal;
+  }
+  .revealed-answer {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.55rem; letter-spacing: 7px;
+    color: var(--coral); background: #FFF3E0;
+    border: 3px solid var(--coral); border-radius: 11px;
+    padding: 6px 14px;
+    white-space: pre;
+    animation: pop .25s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  /* Feedback */
+  .feedback {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.45rem; text-align: center;
+    padding: 7px 14px; border-radius: 12px;
+    border: 3px solid var(--navy);
+    animation: pop .25s cubic-bezier(.34,1.56,.64,1);
+  }
+  .feedback.correct { background: #C8E6C9; color: #2E7D32; }
+  .feedback.wrong   { background: #FFCDD2; color: #C62828; }
+
+  @keyframes pop {
+    from { transform: scale(.6); opacity: 0; }
+    to   { transform: scale(1);  opacity: 1; }
+  }
+
+  /* Keypad */
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 7px;
+    width: 100%;
+  }
+  .key {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.25rem;
+    padding: 10px 0;
+    border-radius: 11px;
+    border: 2px solid var(--navy);
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--navy);
+    transition: transform .08s, box-shadow .08s;
+    background: var(--white);
+    color: var(--navy);
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .key:hover  { transform: translateY(-2px); box-shadow: 0 6px 0 var(--navy); }
+  .key:active { transform: translateY(3px);  box-shadow: 0 1px 0 var(--navy); }
+  .key:focus,
+  .key:focus:not(:focus-visible) { box-shadow: 0 4px 0 var(--navy); transform: none; }
+  .key.clear { background: #FFCDD2; }
+  .key.enter {
+    grid-column: 1 / -1;
+    font-size: 1.4rem;
+    padding: 13px 0;
+    background: #43A047;
+    color: #fff;
+    border-color: #1B5E20;
+    box-shadow: 0 5px 0 #1B5E20;
+    letter-spacing: 1px;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .key.enter:hover:not(:disabled)  { transform: translateY(-2px); box-shadow: 0 7px 0 #1B5E20; }
+  .key.enter:active:not(:disabled) { transform: translateY(3px);  box-shadow: 0 1px 0 #1B5E20; }
+  .key.enter:focus { box-shadow: 0 5px 0 #1B5E20; transform: none; }
+  .key.enter:disabled { opacity: .38; cursor: default; transform: none; }
+
+  /* Score screen */
+  .score-row {
+    display: flex; justify-content: space-between;
+    width: 100%; font-size: .95rem; font-weight: 700;
+    color: var(--navy); padding: 4px 0;
+    border-bottom: 2px dotted #B0BEC5;
+  }
+  .big-score {
+    font-family: 'Fredoka One', cursive; font-size: 2.8rem;
+    color: var(--coral); text-shadow: 2px 2px 0 rgba(0,0,0,.1);
+  }
+  .stars { font-size: 1.7rem; letter-spacing: 4px; }
+
+  /* Quit overlay */
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(26,35,126,.45);
+    align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .overlay.active { display: flex; animation: fadein .15s; }
+  @keyframes fadein { from{opacity:0} to{opacity:1} }
+  .overlay-card {
+    background: var(--card); border: 3px solid var(--navy);
+    border-radius: 20px; box-shadow: 0 6px 0 var(--navy);
+    padding: 24px 22px; text-align: center; max-width: 290px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="quitOverlay">
+  <div class="overlay-card">
+    <div style="font-size:2.4rem">🚪</div>
+    <div class="card-label" style="font-size:1.15rem">Quit this game?</div>
+    <div style="font-size:.88rem;color:#546E7A;font-weight:600">Your progress will be lost.</div>
+    <div class="btn-row">
+      <button class="btn btn-danger" id="confirmQuitBtn">Yes, Quit</button>
+      <button class="btn btn-mint"   id="keepPlayingBtn">Keep Playing</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- START SCREEN -->
+  <div class="screen active" id="startScreen">
+    <div class="title">🧠 Digit<span>Memory</span></div>
+
+    <div class="card">
+      <div class="card-label">How many digits?</div>
+      <div class="chip-row" id="digitChips"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">How many questions?</div>
+      <div class="chip-row" id="questionChips"></div>
+    </div>
+
+    <div class="card" style="flex-direction:row;justify-content:space-between;padding:12px 18px">
+      <label class="toggle-row" for="pauseToggle">🎵 Speak with pauses</label>
+      <label class="toggle">
+        <input type="checkbox" id="pauseToggle" checked>
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+
+    <button class="btn btn-primary" id="startBtn">🎮 Start!</button>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div class="screen" id="gameScreen">
+    <div class="title title-sm">🧠 Digit<span>Memory</span></div>
+
+    <div class="game-bar">
+      <span class="q-label" id="qLabel">Q 1 / 10</span>
+      <span class="digit-label" id="digitLabel">4 digits</span>
+      <button class="btn btn-danger" style="padding:4px 11px;font-size:.88rem" id="quitBtn">Quit</button>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+
+    <div class="card">
+      <div class="speed-wrap">
+        <div class="speed-pop" id="speedPop" style="display:none">0.8×</div>
+        <div class="speed-row">
+          <span>🐢</span>
+          <input type="range" id="speedSlider" min="0.4" max="1.2" step="0.1" value="0.8">
+          <span>🐇</span>
+          <span class="speed-label" id="speedLabel">norm</span>
+        </div>
+      </div>
+
+      <div class="card-label" id="speakLabel">Tap to hear the number</div>
+      <button class="speak-btn" id="speakBtn">🔊</button>
+
+      <div class="answer-display placeholder" id="answerDisplay">type your answer</div>
+
+      <div id="feedbackArea"></div>
+
+      <div class="keypad" id="keypad">
+        <button class="key" data-key="1">1</button>
+        <button class="key" data-key="2">2</button>
+        <button class="key" data-key="3">3</button>
+        <button class="key" data-key="4">4</button>
+        <button class="key" data-key="5">5</button>
+        <button class="key" data-key="6">6</button>
+        <button class="key" data-key="7">7</button>
+        <button class="key" data-key="8">8</button>
+        <button class="key" data-key="9">9</button>
+        <button class="key clear" id="clearBtn">
+          <svg width="22" height="16" viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 1H20C20.55 1 21 1.45 21 2V14C21 14.55 20.55 15 20 15H8L1 8L8 1Z" stroke="#C62828" stroke-width="1.8" fill="#FFCDD2"/>
+            <line x1="10.5" y1="5.5" x2="17.5" y2="12.5" stroke="#C62828" stroke-width="2" stroke-linecap="round"/>
+            <line x1="17.5" y1="5.5" x2="10.5" y2="12.5" stroke="#C62828" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button class="key" data-key="0">0</button>
+        <button class="key enter" id="checkBtn" disabled>Check ✓</button>
+      </div>
+
+      <div class="btn-row" id="actionBtns"></div>
+    </div>
+  </div>
+
+  <!-- SCORE SCREEN -->
+  <div class="screen" id="scoreScreen">
+    <div class="title">🏆 Great Job!</div>
+    <div class="card">
+      <div class="stars" id="scoreStars"></div>
+      <div class="big-score" id="scoreBig"></div>
+      <div style="font-weight:700;color:#546E7A;font-size:.88rem">first-try correct answers</div>
+      <div style="width:100%;margin-top:2px" id="scoreRows"></div>
+      <div style="font-size:.82rem;color:#78909C;font-weight:600;text-align:center" id="scoreMsg"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="playAgainBtn">🔁 Play Again</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  digits:      4,
+  total:       10,
+  usePauses:   true,
+  speed:       0.8,
+  qIndex:      0,
+  number:      '',
+  input:       '',
+  feedback:    null,   // null | 'correct' | 'wrong'
+  revealed:    false,
+  speaking:    false,
+  retries:     0,
+  results:     [],
+  pendingClear: false,
+  speedPopTimer: null,
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function generateNumber(len) {
+  let n = String(Math.floor(Math.random() * 9) + 1);
+  for (let i = 1; i < len; i++) n += String(Math.floor(Math.random() * 10));
+  return n;
+}
+
+function formatInput(str, len, pauses) {
+  const chars = str.split('');
+  if (!pauses || len <= 4) return chars.join(' ');
+  let breaks;
+  if      (len === 5)  breaks = [3];
+  else if (len === 6)  breaks = [3];
+  else if (len === 7)  breaks = [3];
+  else if (len === 8)  breaks = [4];
+  else if (len === 9)  breaks = [3, 6];
+  else                 breaks = [3, 6];  // 10 digits
+  let result = '';
+  for (let i = 0; i < chars.length; i++) {
+    if (i > 0 && breaks.includes(i)) result += '  ';
+    else if (i > 0) result += ' ';
+    result += chars[i];
+  }
+  return result;
+}
+
+function starsForScore(pct) {
+  if (pct >= 0.9) return '⭐⭐⭐';
+  if (pct >= 0.7) return '⭐⭐';
+  if (pct >= 0.5) return '⭐';
+  return '🌱';
+}
+
+// ── Speech ─────────────────────────────────────────────────────────────────
+function speakNumber(numStr, rate, pauses) {
+  return new Promise(resolve => {
+    if (!window.speechSynthesis) { resolve(); return; }
+    window.speechSynthesis.cancel();
+    const digits = numStr.split('');
+    const len = digits.length;
+    let spaced;
+    if (!pauses || len <= 4) {
+      spaced = digits.join(' ');
+    } else {
+      let groups;
+      if      (len === 5) groups = [digits.slice(0,3), digits.slice(3)];
+      else if (len === 6) groups = [digits.slice(0,3), digits.slice(3)];
+      else if (len === 7) groups = [digits.slice(0,3), digits.slice(3)];
+      else if (len === 8) groups = [digits.slice(0,4), digits.slice(4)];
+      else if (len === 9) groups = [digits.slice(0,3), digits.slice(3,6), digits.slice(6)];
+      else                groups = [digits.slice(0,3), digits.slice(3,6), digits.slice(6)];
+      spaced = groups.map(g => g.join(' ')).join(', ');
+    }
+    const u = new SpeechSynthesisUtterance('... ' + spaced);
+    u.rate = rate; u.pitch = 1.05; u.volume = 1;
+    const voices = window.speechSynthesis.getVoices();
+    const v = voices.find(v => v.lang.startsWith('en') && (
+      v.name.includes('Samantha') || v.name.includes('Google US') || v.name.includes('en-US')
+    )) || voices.find(v => v.lang.startsWith('en')) || voices[0];
+    if (v) u.voice = v;
+    u.onend = resolve;
+    u.onerror = resolve;
+    window.speechSynthesis.speak(u);
+  });
+}
+
+// Preload voices
+window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+window.speechSynthesis.getVoices();
+
+async function doSpeak() {
+  state.speaking = true;
+  updateSpeakBtn();
+  await speakNumber(state.number, state.speed, state.usePauses);
+  state.speaking = false;
+  updateSpeakBtn();
+}
+
+// ── DOM refs ───────────────────────────────────────────────────────────────
+const screens      = { start: document.getElementById('startScreen'), game: document.getElementById('gameScreen'), score: document.getElementById('scoreScreen') };
+const digitChips   = document.getElementById('digitChips');
+const questionChips= document.getElementById('questionChips');
+const pauseToggle  = document.getElementById('pauseToggle');
+const startBtn     = document.getElementById('startBtn');
+const qLabel       = document.getElementById('qLabel');
+const digitLabel   = document.getElementById('digitLabel');
+const progressFill = document.getElementById('progressFill');
+const speedSlider  = document.getElementById('speedSlider');
+const speedLabel   = document.getElementById('speedLabel');
+const speedPop     = document.getElementById('speedPop');
+const speakLabel   = document.getElementById('speakLabel');
+const speakBtn     = document.getElementById('speakBtn');
+const answerDisplay= document.getElementById('answerDisplay');
+const feedbackArea = document.getElementById('feedbackArea');
+const keypad       = document.getElementById('keypad');
+const checkBtn     = document.getElementById('checkBtn');
+const clearBtn     = document.getElementById('clearBtn');
+const actionBtns   = document.getElementById('actionBtns');
+const quitBtn      = document.getElementById('quitBtn');
+const quitOverlay  = document.getElementById('quitOverlay');
+const confirmQuitBtn= document.getElementById('confirmQuitBtn');
+const keepPlayingBtn= document.getElementById('keepPlayingBtn');
+const playAgainBtn = document.getElementById('playAgainBtn');
+const scoreStars   = document.getElementById('scoreStars');
+const scoreBig     = document.getElementById('scoreBig');
+const scoreRows    = document.getElementById('scoreRows');
+const scoreMsg     = document.getElementById('scoreMsg');
+
+// ── Screen switching ───────────────────────────────────────────────────────
+function showScreen(name) {
+  Object.entries(screens).forEach(([k, el]) => el.classList.toggle('active', k === name));
+}
+
+// ── Build start screen chips ───────────────────────────────────────────────
+function buildChips() {
+  // Digit chips
+  digitChips.innerHTML = '';
+  [3,4,5,6,7,8,9,10].forEach(n => {
+    const b = document.createElement('button');
+    b.className = `chip d${n}${state.digits === n ? ' selected' : ''}`;
+    b.textContent = n;
+    b.addEventListener('click', () => {
+      state.digits = n;
+      buildChips();
+    });
+    digitChips.appendChild(b);
+  });
+  // Question chips
+  questionChips.innerHTML = '';
+  [5,10,15,20,30].forEach(n => {
+    const b = document.createElement('button');
+    b.className = `chip${state.total === n ? ' selected' : ''}`;
+    b.textContent = n;
+    b.addEventListener('click', () => {
+      state.total = n;
+      buildChips();
+    });
+    questionChips.appendChild(b);
+  });
+}
+buildChips();
+
+// ── Start game ─────────────────────────────────────────────────────────────
+startBtn.addEventListener('click', startGame);
+playAgainBtn.addEventListener('click', () => { showScreen('start'); buildChips(); });
+
+function startGame() {
+  state.qIndex = 0;
+  state.results = [];
+  showScreen('game');
+  startQuestion();
+}
+
+function startQuestion() {
+  state.number = generateNumber(state.digits);
+  state.input = '';
+  state.feedback = null;
+  state.revealed = false;
+  state.retries = 0;
+  state.pendingClear = false;
+  updateGameUI();
+  setTimeout(doSpeak, 350);
+}
+
+// ── Game UI update ─────────────────────────────────────────────────────────
+function updateGameUI() {
+  qLabel.textContent = `Q ${state.qIndex + 1} / ${state.total}`;
+  digitLabel.textContent = `${state.digits} digits`;
+  progressFill.style.width = `${(state.qIndex / state.total) * 100}%`;
+  updateAnswerDisplay();
+  updateFeedback();
+  updateKeypad();
+  updateActionBtns();
+  updateSpeakBtn();
+}
+
+function updateAnswerDisplay() {
+  if (state.revealed) {
+    answerDisplay.className = 'revealed-answer';
+    answerDisplay.textContent = formatInput(state.number, state.digits, state.usePauses);
+  } else if (state.input.length === 0) {
+    answerDisplay.className = 'answer-display placeholder';
+    answerDisplay.textContent = 'type your answer';
+  } else {
+    answerDisplay.className = 'answer-display';
+    answerDisplay.textContent = formatInput(state.input, state.digits, state.usePauses);
+  }
+}
+
+function updateFeedback() {
+  if (state.feedback === 'correct') {
+    feedbackArea.innerHTML = '<div class="feedback correct">😊 Correct! Well done!</div>';
+  } else if (state.feedback === 'wrong') {
+    feedbackArea.innerHTML = '<div class="feedback wrong">😢 Not quite — try again!</div>';
+  } else {
+    feedbackArea.innerHTML = '';
+  }
+}
+
+function updateKeypad() {
+  keypad.style.display = (state.revealed || state.feedback === 'correct') ? 'none' : 'grid';
+  checkBtn.disabled = state.input.length !== state.digits;
+}
+
+function updateActionBtns() {
+  let html = '';
+  if (state.feedback === 'correct') {
+    const label = state.qIndex + 1 < state.total ? 'Next →' : 'See Score 🏆';
+    html = `<button class="btn btn-primary" id="nextBtn">${label}</button>`;
+  } else if (state.feedback === 'wrong') {
+    html = `<button class="btn btn-sky" id="tryAgainBtn">Try Again</button>
+            <button class="btn btn-lav" id="showAnswerBtn">Show Answer</button>`;
+  } else if (!state.revealed) {
+    html = `<button class="btn btn-lav" style="font-size:.9rem;padding:7px 18px" id="showAnswerBtn">Show Answer</button>`;
+  } else {
+    const label = state.qIndex + 1 < state.total ? 'Next →' : 'See Score 🏆';
+    html = `<button class="btn btn-primary" id="nextBtn">${label}</button>`;
+  }
+  actionBtns.innerHTML = html;
+
+  document.getElementById('nextBtn')?.addEventListener('click', nextQuestion);
+  document.getElementById('tryAgainBtn')?.addEventListener('click', tryAgain);
+  document.getElementById('showAnswerBtn')?.addEventListener('click', showAnswer);
+}
+
+function updateSpeakBtn() {
+  speakBtn.textContent = state.speaking ? '🔈' : '🔊';
+  speakBtn.classList.toggle('playing', state.speaking);
+  speakLabel.textContent = state.speaking ? 'Playing…' : 'Tap to hear the number';
+}
+
+// ── Key input ──────────────────────────────────────────────────────────────
+keypad.addEventListener('click', e => {
+  const key = e.target.closest('[data-key]');
+  if (key) handleKey(key.dataset.key);
+});
+
+clearBtn.addEventListener('click', handleClear);
+checkBtn.addEventListener('click', handleEnter);
+
+function handleKey(k) {
+  if (state.feedback === 'correct' || state.revealed) return;
+  if (state.feedback === 'wrong') {
+    state.feedback = null;
+    state.pendingClear = true;
+  }
+  if (state.pendingClear) {
+    state.pendingClear = false;
+    state.input = k;
+    updateFeedback();
+    updateAnswerDisplay();
+    updateKeypad();
+    updateActionBtns();
+    return;
+  }
+  if (state.input.length < state.digits) {
+    state.input += k;
+    updateAnswerDisplay();
+    updateKeypad();
+  }
+}
+
+function handleClear() {
+  if (state.feedback === 'correct' || state.revealed) return;
+  if (state.feedback === 'wrong') { state.feedback = null; updateFeedback(); updateActionBtns(); }
+  if (state.pendingClear) state.pendingClear = false;
+  state.input = state.input.slice(0, -1);
+  updateAnswerDisplay();
+  updateKeypad();
+}
+
+function handleEnter() {
+  if (!state.input || state.input.length !== state.digits || state.feedback === 'correct' || state.revealed) return;
+  if (state.input === state.number) {
+    state.feedback = 'correct';
+  } else {
+    state.feedback = 'wrong';
+    state.retries++;
+  }
+  updateFeedback();
+  updateKeypad();
+  updateActionBtns();
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function nextQuestion() {
+  state.results.push({ retries: state.retries, counted: true });
+  const ni = state.qIndex + 1;
+  if (ni >= state.total) { showScore(); return; }
+  state.qIndex = ni;
+  startQuestion();
+}
+
+function showAnswer() {
+  window.speechSynthesis.cancel();
+  state.revealed = true;
+  state.feedback = null;
+  updateAnswerDisplay();
+  updateFeedback();
+  updateKeypad();
+  updateActionBtns();
+}
+
+function tryAgain() {
+  window.speechSynthesis.cancel();
+  state.speaking = false;
+  state.feedback = null;
+  state.pendingClear = true;
+  updateFeedback();
+  updateSpeakBtn();
+  updateActionBtns();
+  setTimeout(doSpeak, 300);
+}
+
+// ── Speaker button ─────────────────────────────────────────────────────────
+speakBtn.addEventListener('click', async () => {
+  if (state.feedback === 'wrong') { state.feedback = null; state.pendingClear = true; updateFeedback(); updateActionBtns(); }
+  if (state.pendingClear) { state.pendingClear = false; state.input = ''; updateAnswerDisplay(); updateKeypad(); }
+  window.speechSynthesis.cancel();
+  state.speaking = false;
+  updateSpeakBtn();
+  await new Promise(r => setTimeout(r, 80));
+  doSpeak();
+});
+
+// ── Quit ───────────────────────────────────────────────────────────────────
+quitBtn.addEventListener('click', () => quitOverlay.classList.add('active'));
+keepPlayingBtn.addEventListener('click', () => quitOverlay.classList.remove('active'));
+confirmQuitBtn.addEventListener('click', () => {
+  window.speechSynthesis.cancel();
+  quitOverlay.classList.remove('active');
+  showScreen('start');
+  buildChips();
+});
+
+// ── Score ──────────────────────────────────────────────────────────────────
+function showScore() {
+  window.speechSynthesis.cancel();
+  const counted      = state.results.filter(r => r.counted);
+  const skipped      = state.results.filter(r => !r.counted).length;
+  const totalRetries = counted.reduce((a, r) => a + r.retries, 0);
+  const perfect      = counted.filter(r => r.retries === 0).length;
+  const attempted    = counted.length;
+  const pct          = attempted ? perfect / attempted : 0;
+
+  scoreStars.textContent = starsForScore(pct);
+  scoreBig.textContent   = `${perfect}/${attempted}`;
+  scoreRows.innerHTML = `
+    <div class="score-row"><span>Questions attempted</span><span>${attempted}</span></div>
+    <div class="score-row"><span>Skipped (answer shown)</span><span>${skipped}</span></div>
+    <div class="score-row"><span>First-try correct</span><span>${perfect}</span></div>
+    <div class="score-row"><span>Total extra tries</span><span>${totalRetries}</span></div>
+    <div class="score-row"><span>Digit length</span><span>${state.digits}</span></div>
+  `;
+  scoreMsg.textContent =
+    pct >= 0.9 ? 'Amazing memory! 🌟' :
+    pct >= 0.7 ? 'Great work! Keep it up! 💪' :
+    pct >= 0.5 ? 'Good effort! Practice makes perfect! 📚' :
+                 'Keep practicing — you\'ll get there! 🚀';
+  showScreen('score');
+}
+
+// ── Speed slider ───────────────────────────────────────────────────────────
+speedSlider.addEventListener('input', () => {
+  state.speed = parseFloat(speedSlider.value);
+  speedLabel.textContent = state.speed < 0.75 ? 'slow' : state.speed > 0.85 ? 'fast' : 'norm';
+  speedPop.textContent = state.speed.toFixed(1) + '×';
+  speedPop.style.display = 'block';
+  // Re-render pop with fresh animation
+  speedPop.style.animation = 'none';
+  speedPop.offsetHeight; // reflow
+  speedPop.style.animation = '';
+  clearTimeout(state.speedPopTimer);
+  state.speedPopTimer = setTimeout(() => { speedPop.style.display = 'none'; }, 1200);
+});
+
+// ── Pauses toggle ──────────────────────────────────────────────────────────
+pauseToggle.addEventListener('change', () => {
+  state.usePauses = pauseToggle.checked;
+});
+</script>
+</body>
+</html>
