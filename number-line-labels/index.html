@@ -1,0 +1,1193 @@
+import { useState, useRef, useCallback, useEffect } from "react";
+
+/* ─────────────────────────────────────────────
+   CONSTANTS & HELPERS
+───────────────────────────────────────────── */
+const DOT_COLOR   = "#7c3aed"; // all dots start purple
+const COLOR_GREEN  = "#16a34a";
+const COLOR_ORANGE = "#e07b00";
+const COLOR_RED    = "#dc2626";
+const COLOR_GREEN_LIGHT  = "#dcfce7";
+const COLOR_ORANGE_LIGHT = "#fff3cd";
+const COLOR_RED_LIGHT    = "#fee2e2";
+const COLOR_GREEN_BORDER  = "#86efac";
+const COLOR_ORANGE_BORDER = "#ffc107";
+const COLOR_RED_BORDER    = "#fca5a5";
+// LINE_Y is now computed dynamically inside GameScreen
+const BELL_PEAK = 100;       // px the hill rises above LINE_Y base
+const DOT_R = 10;
+const DRAG_OFFSET_Y = 52;  // dot floats this many px above finger while dragging
+const MIN_DOT_GAP = 68;      // min px between dots
+
+function bellY(x, x0, x1) {
+  // Gaussian bell that starts/ends at 0 at x0,x1, peaks in middle
+  const mid = (x0 + x1) / 2;
+  const sigma = (x1 - x0) / 5.5;
+  return -BELL_PEAK * Math.exp(-0.5 * ((x - mid) / sigma) ** 2);
+}
+
+function xToValue(px, lineX0, lineX1, valStart, valEnd) {
+  return valStart + ((px - lineX0) / (lineX1 - lineX0)) * (valEnd - valStart);
+}
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+// Add thousands commas to the integer part of a number string, e.g. "1234.5" -> "1,234.5"
+function addCommas(str) {
+  const neg = str.startsWith("-");
+  const s = neg ? str.slice(1) : str;
+  const [intPart, decPart] = s.split(".");
+  const intWithCommas = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return (neg ? "-" : "") + (decPart !== undefined ? intWithCommas + "." + decPart : intWithCommas);
+}
+
+function formatValue(val, decimals, useFraction, usePercent) {
+  const num = parseFloat(val);
+  if (isNaN(num)) return "";
+  if (useFraction && decimals === 0) {
+    return formatFraction(num) + (usePercent ? "%" : "");
+  }
+  return addCommas(num.toFixed(decimals)) + (usePercent ? "%" : "");
+}
+
+function gcd(a, b) { a=Math.abs(a); b=Math.abs(b); while(b){const t=b;b=a%b;a=t;} return a; }
+
+function formatFraction(val) {
+  const sign = val < 0 ? "-" : "";
+  const absVal = Math.abs(val);
+  const wholeAbs = Math.floor(absVal);
+  const frac = absVal - wholeAbs;
+  if (frac < 0.0001) return `${sign}${wholeAbs}`;
+  // Find best fraction with denominator 2..12
+  const denoms = [2,3,4,5,6,7,8,9,10,11,12];
+  let bestNum = 1, bestDen = 2, bestDiff = Infinity;
+  for (const d of denoms) {
+    const n = Math.round(frac * d);
+    if (n === 0 || n === d) continue; // would collapse to integer
+    const diff = Math.abs(frac - n/d);
+    if (diff < bestDiff) { bestDiff = diff; bestNum = n; bestDen = d; }
+  }
+  // Simplify the fraction part
+  const g = gcd(bestNum, bestDen);
+  const sn = bestNum / g, sd = bestDen / g;
+  if (sn === sd) {
+    // fraction part = 1, add to whole
+    return `${sign}${wholeAbs + 1}`;
+  }
+  if (wholeAbs === 0) return `${sign}${sn}/${sd}`;
+  return `${sign}${wholeAbs} ${sn}/${sd}`;
+}
+
+// Detect what style a user label is: 'fraction', 'decimal', 'integer', or 'unknown'
+function detectLabelStyle(label) {
+  const s = label.trim();
+  if (!s) return 'unknown';
+  if (s.match(/^\-?\d+\s+\d+\/\d+$/) || s.match(/^\-?\d+\/\d+$/)) return 'fraction';
+  if (s.includes('.')) return 'decimal';
+  if (s.match(/^\-?\d+$/)) return 'integer';
+  return 'unknown';
+}
+
+// Format computer label to match the style of the user's label
+function formatComputerLabel(cv, userLabel, decimals, useFraction, usePercent) {
+  const pct = usePercent ? "%" : "";
+  const style = detectLabelStyle(userLabel);
+  if (style === 'decimal') {
+    // Count decimal places in user label
+    const dotIdx = userLabel.indexOf('.');
+    const userDp = dotIdx >= 0 ? userLabel.replace(/[^0-9]/g,'').length - userLabel.substring(0,dotIdx).replace(/[^0-9]/g,'').length : 0;
+    const dp = Math.max(0, Math.min(userDp, 2));
+    return addCommas(cv.toFixed(dp)) + pct;
+  }
+  if (style === 'fraction' || (style === 'integer' && useFraction)) {
+    return formatFraction(cv) + pct;
+  }
+  if (style === 'integer') {
+    return addCommas(String(Math.round(cv))) + pct;
+  }
+  // fallback: use settings
+  if (useFraction && decimals === 0) return formatFraction(cv) + pct;
+  return addCommas(cv.toFixed(decimals)) + pct;
+}
+
+function parseFraction(str) {
+  str = str.trim();
+  const neg = str.startsWith("-");
+  str = str.replace(/^-/, "").trim();
+  // mixed number: "2 3/4"
+  const mixedMatch = str.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+  if (mixedMatch) {
+    const whole = parseInt(mixedMatch[1]);
+    const num = parseInt(mixedMatch[2]);
+    const den = parseInt(mixedMatch[3]);
+    return (neg ? -1 : 1) * (whole + num/den);
+  }
+  const fracMatch = str.match(/^(\d+)\/(\d+)$/);
+  if (fracMatch) return (neg ? -1 : 1) * parseInt(fracMatch[1]) / parseInt(fracMatch[2]);
+  return parseFloat((neg ? "-" : "") + str);
+}
+
+/* ─────────────────────────────────────────────
+   SETTINGS SCREEN
+───────────────────────────────────────────── */
+function SettingsScreen({ onStart }) {
+  const [start, setStart] = useState("0");
+  const [end, setEnd] = useState("10");
+  const [decimals, setDecimals] = useState("0");
+  const [useFraction, setUseFraction] = useState(false);
+  const [usePercent, setUsePercent] = useState(false);
+  const [useBell, setUseBell] = useState(false);
+  const [error, setError] = useState("");
+
+  function handleGo() {
+    const s = parseFloat(start), e = parseFloat(end);
+    if (isNaN(s) || isNaN(e)) { setError("Please enter valid numbers."); return; }
+    if (s >= e) { setError("Start must be less than end."); return; }
+    setError("");
+    onStart({ valStart: s, valEnd: e, decimals: parseInt(decimals), useFraction: parseInt(decimals)===0 && useFraction, usePercent, useBell });
+  }
+
+  return (
+    <div style={styles.settingsWrap}>
+      <div style={styles.settingsCard}>
+        <div style={styles.settingsTitle}>🔢 Number Line Explorer</div>
+        <div style={styles.settingsSubtitle}>Set up your number line adventure!</div>
+
+        <div style={styles.settingsRow}>
+          <label style={styles.label}>Start number</label>
+          <input style={styles.input} value={start} onChange={e=>setStart(e.target.value.replace(/[^0-9.\-]/g, ""))} placeholder="e.g. 0" />
+        </div>
+        <div style={styles.settingsRow}>
+          <label style={styles.label}>End number</label>
+          <input style={styles.input} value={end} onChange={e=>setEnd(e.target.value.replace(/[^0-9.\-]/g, ""))} placeholder="e.g. 10" />
+        </div>
+        <div style={styles.settingsRow}>
+          <label style={styles.label}>Decimal places on labels</label>
+          <select style={styles.select} value={decimals} onChange={e=>{ setDecimals(e.target.value); if(e.target.value!=="0") setUseFraction(false); }}>
+            <option value="0">0 (whole numbers)</option>
+            <option value="1">1 decimal place</option>
+            <option value="2">2 decimal places</option>
+          </select>
+        </div>
+        {decimals === "0" && (
+          <div style={styles.settingsRow}>
+            <label style={styles.checkLabel}>
+              <input type="checkbox" checked={useFraction} onChange={e=>setUseFraction(e.target.checked)} style={styles.checkbox}/>
+              Allow fractions (½, 2¾, etc.)
+            </label>
+          </div>
+        )}
+        <div style={styles.settingsRow}>
+          <label style={styles.checkLabel}>
+            <input type="checkbox" checked={usePercent} onChange={e=>setUsePercent(e.target.checked)} style={styles.checkbox}/>
+            Show % after all labels
+          </label>
+        </div>
+        <div style={styles.settingsRow}>
+          <label style={styles.checkLabel}>
+            <input type="checkbox" checked={useBell} onChange={e=>setUseBell(e.target.checked)} style={styles.checkbox}/>
+            Draw number line as a hill (bell curve) 🏔️
+          </label>
+        </div>
+        {error && <div style={styles.errorMsg}>{error}</div>}
+        <button style={styles.goBtn} onClick={handleGo}>Let's Play! 🎉</button>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   NUMBER PAD
+───────────────────────────────────────────── */
+function NumberPad({ onKey, decimals, useFraction, onEnter }) {
+  // 2 rows, wide layout:
+  // Row 1: 7 8 9 0 ±  [.]  [/]  [sp]
+  // Row 2: 1 2 3 4 5 6  DEL  ↵
+  const showDot = decimals > 0 && !useFraction;
+  const b = styles.padBtn;
+  const iconDel = (
+    <svg width={18} height={13} viewBox="0 0 22 16" fill="none">
+      <path d="M8 1 L1 8 L8 15" stroke="#b45309" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+      <rect x={7} y={1} width={14} height={14} rx={2} fill="#ffe0a0" stroke="#b45309" strokeWidth={1.5}/>
+      <line x1={11} y1={5} x2={17} y2={11} stroke="#b45309" strokeWidth={2} strokeLinecap="round"/>
+      <line x1={17} y1={5} x2={11} y2={11} stroke="#b45309" strokeWidth={2} strokeLinecap="round"/>
+    </svg>
+  );
+  const iconEnter = (
+    <svg width={16} height={13} viewBox="0 0 20 16" fill="none">
+      <path d="M13 2 L13 9 L3 9" stroke="#276749" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M6 6 L3 9 L6 12" stroke="#276749" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+  // Build top row: always 7 8 9 0 ±, then optional . / space
+  const topExtra = [];
+  if (showDot) topExtra.push(<button key="." style={{...b, background:"#f0f4ff"}} onClick={()=>onKey(".")}>.</button>);
+  if (useFraction) topExtra.push(<button key="/" style={{...b, background:"#e8f4ff"}} onClick={()=>onKey("/")}>/</button>);
+  if (useFraction) topExtra.push(<button key=" " style={{...b, background:"#e8f4ff", fontSize:10}} onClick={()=>onKey(" ")}>sp</button>);
+  const topCount = 5 + topExtra.length; // 5 digits + optional special keys
+  return (
+    <div style={styles.padWrap}>
+      {/* Row 1: 5-9 + special keys */}
+      <div style={{display:"grid", gridTemplateColumns:`repeat(${topCount},1fr)`, gap:4, marginBottom:4}}>
+        <button style={b} onClick={()=>onKey("5")}>5</button>
+        <button style={b} onClick={()=>onKey("6")}>6</button>
+        <button style={b} onClick={()=>onKey("7")}>7</button>
+        <button style={b} onClick={()=>onKey("8")}>8</button>
+        <button style={b} onClick={()=>onKey("9")}>9</button>
+        {topExtra}
+      </div>
+      {/* Row 2: 0-4 + del + enter */}
+      <div style={{display:"grid", gridTemplateColumns:`repeat(8,1fr)`, gap:4}}>
+        <button style={b} onClick={()=>onKey("0")}>0</button>
+        <button style={b} onClick={()=>onKey("1")}>1</button>
+        <button style={b} onClick={()=>onKey("2")}>2</button>
+        <button style={b} onClick={()=>onKey("3")}>3</button>
+        <button style={b} onClick={()=>onKey("4")}>4</button>
+        <button style={{...b, background:"#ffd6d6"}} onClick={()=>onKey("-")}>±</button>
+        <button style={{...b, background:"#fff0d6", display:"flex", alignItems:"center", justifyContent:"center"}} onClick={()=>onKey("DEL")}>{iconDel}</button>
+        <button style={{...b, background:"#d4edda", display:"flex", alignItems:"center", justifyContent:"center"}} onClick={onEnter}>{iconEnter}</button>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   MAIN GAME SCREEN
+───────────────────────────────────────────── */
+function GameScreen({ settings, onQuit }) {
+  const { valStart, valEnd, decimals, useFraction, usePercent, useBell } = settings;
+  const canvasRef = useRef(null);
+  const svgRef = useRef(null);
+  const [dots, setDots] = useState([]);   // {id,x,color,label,checked}
+  const [selectedId, setSelectedId] = useState(null);
+  const [draggingNew, setDraggingNew] = useState(false);
+  const [draggingDot, setDraggingDot] = useState(null); // {id, startX}
+  const [checked, setChecked] = useState(false);
+  const [clientPos, setClientPos] = useState({ x: 0, y: 0 }); // raw screen coords for overlay
+  const [showTool, setShowTool] = useState(false);
+  const nextId = useRef(1);
+  const dotsRef = useRef([]);
+  const nextColor = useRef(0);
+  const [editingId, setEditingId] = useState(null);
+  // Keep dotsRef in sync for use inside window event closures
+  useEffect(() => { dotsRef.current = dots; }, [dots]);
+  const [svgHeight, setSvgHeight] = useState(300);
+  const headerRef = useRef(null);
+  const [toast, setToast] = useState(null); // {x, y, msg}
+  const [visibleTicks, setVisibleTicks] = useState(new Set()); // indices of ticks with visible labels
+  const toastTimer = useRef(null);
+
+  // LINE geometry — line is vertically centered in the available svgHeight
+  const LINE_X0 = 80;
+  const LINE_X1 = 700;
+  const CANVAS_W = 780;
+  // Minimum space needed above and below the line
+  const MIN_ABOVE = useBell ? BELL_PEAK + 44 : 44;
+  const LABEL_H = useFraction ? 52 : 36;
+  const MIN_BELOW = DOT_R + LABEL_H + 20;
+  const CANVAS_H = MIN_ABOVE + MIN_BELOW; // minimum content height
+  // Place line so extra space is split evenly above and below
+  const extraSpace = Math.max(0, svgHeight - CANVAS_H);
+  const LINE_Y = MIN_ABOVE + extraSpace * 0.40;
+
+  function getLineY(px) {
+    if (!useBell) return LINE_Y;
+    if (px < LINE_X0 || px > LINE_X1) return LINE_Y;
+    return LINE_Y + bellY(px, LINE_X0, LINE_X1);
+  }
+
+  // Build SVG path for line
+  function buildLinePath() {
+    if (!useBell) {
+      return `M ${LINE_X0} ${LINE_Y} L ${LINE_X1} ${LINE_Y}`;
+    }
+    const steps = 120;
+    let d = `M ${LINE_X0} ${LINE_Y}`;
+    for (let i = 1; i <= steps; i++) {
+      const px = LINE_X0 + (LINE_X1 - LINE_X0) * (i / steps);
+      const py = LINE_Y + bellY(px, LINE_X0, LINE_X1);
+      d += ` L ${px} ${py}`;
+    }
+    return d;
+  }
+
+  function snapToLine(px) {
+    return clamp(px, LINE_X0, LINE_X1);
+  }
+
+  function isTooClose(px, excludeId=null) {
+    return dots.some(d => {
+      if (d.id === excludeId) return false;
+      return Math.abs(d.x - px) < MIN_DOT_GAP;
+    });
+  }
+
+  // ── Measure available height for SVG ──
+  useEffect(() => {
+    function updateHeight() {
+      const topBar = headerRef.current;
+      const topUsed = topBar ? topBar.getBoundingClientRect().bottom : 120;
+      const bottomPanelH = checked ? 90 : 290;
+      const available = window.innerHeight - topUsed - bottomPanelH - 16;
+      setSvgHeight(Math.max(available, CANVAS_H));
+    }
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, [checked, CANVAS_H]);
+
+  // ── Pointer-capture drag system ──
+  // We use a ref for drag state so window listeners always see current values
+  const dragStateRef = useRef({ type: null, dotId: null });
+  const pendingDotDrag = useRef(null); // {id, startX, startY} — committed only after movement
+
+  function getSvgX(clientX) {
+    if (!svgRef.current) return 0;
+    return clientX - svgRef.current.getBoundingClientRect().left;
+  }
+  function getSvgPos(clientX, clientY) {
+    if (!svgRef.current) return { x: 0, y: 0 };
+    const r = svgRef.current.getBoundingClientRect();
+    return { x: clientX - r.left, y: clientY - r.top };
+  }
+  function isTooCloseFn(dotsArr, px, excludeId) {
+    return dotsArr.some(d => d.id !== excludeId && Math.abs(d.x - px) < MIN_DOT_GAP);
+  }
+
+  function showToast(clientX, clientY, msg) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ x: clientX, y: clientY - 70, msg });
+    toastTimer.current = setTimeout(() => setToast(null), 1800);
+  }
+
+  useEffect(() => {
+    function onMove(e) {
+      const ds = dragStateRef.current;
+      // Commit pending dot drag once pointer moves >4px
+      if (pendingDotDrag.current) {
+        const dx = e.clientX - pendingDotDrag.current.startX;
+        const dy = e.clientY - pendingDotDrag.current.startY;
+        if (Math.sqrt(dx*dx + dy*dy) > 4) {
+          const id = pendingDotDrag.current.id;
+          pendingDotDrag.current = null;
+          dragStateRef.current = { type: "dot", dotId: id };
+          setDraggingDot(id);
+          setClientPos({ x: e.clientX, y: e.clientY });
+          setEditingId(null);
+        }
+        return;
+      }
+      if (ds.type === "new") {
+        setClientPos({ x: e.clientX, y: e.clientY });
+        setShowTool(true);
+      } else if (ds.type === "dot") {
+        setClientPos({ x: e.clientX, y: e.clientY });
+        const nx = snapToLine(getSvgX(e.clientX));
+        setDots(prev =>
+          isTooCloseFn(prev, nx, ds.dotId)
+            ? prev
+            : prev.map(d => d.id === ds.dotId ? { ...d, x: nx } : d)
+        );
+      }
+    }
+    function onUp(e) {
+      // If released before drag threshold — treat as a tap, not a drag
+      if (pendingDotDrag.current) {
+        const id = pendingDotDrag.current.id;
+        pendingDotDrag.current = null;
+        dragStateRef.current = { type: null, dotId: null };
+        setSelectedId(id);
+        setEditingId(id);
+        return;
+      }
+      const ds = dragStateRef.current;
+      if (ds.type === "new") {
+        // Only place dot if pointer is dropped within the SVG bounds
+        const svgRect = svgRef.current ? svgRef.current.getBoundingClientRect() : null;
+        const onSvg = svgRect &&
+          e.clientX >= svgRect.left && e.clientX <= svgRect.right &&
+          e.clientY >= svgRect.top  && e.clientY <= svgRect.bottom;
+        if (onSvg) {
+          const nx = snapToLine(getSvgX(e.clientX));
+          // Check too-close outside of setDots to avoid stale closure
+          if (!isTooCloseFn(dotsRef.current, nx, null)) {
+            const id = nextId.current++;
+            const color = DOT_COLOR;
+            setSelectedId(id);
+            setEditingId(id);
+            setDots(prev => [...prev, { id, x: nx, color, label: "" }]);
+          }
+          if (isTooCloseFn(dotsRef.current, nx, null)) showToast(e.clientX, e.clientY, "Too close to another dot!");
+        }
+        setDraggingNew(false);
+        setShowTool(false);
+      } else if (ds.type === "dot") {
+        setDraggingDot(null);
+      }
+      dragStateRef.current = { type: null, dotId: null };
+    }
+    function onSelectStart(e) { e.preventDefault(); }
+    function onTouchMove(e) {
+      // Block scroll while dragging a dot or placing a new one
+      if (dragStateRef.current.type) e.preventDefault();
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("selectstart", onSelectStart);
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("selectstart", onSelectStart);
+      document.removeEventListener("touchmove", onTouchMove);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function startDotDrag(e, id) {
+    e.preventDefault();
+    e.stopPropagation();
+    // Don't commit drag yet — wait for movement threshold in onMove
+    pendingDotDrag.current = { id, startX: e.clientX, startY: e.clientY };
+    setSelectedId(id);
+  }
+
+  function clickDot(e, id) {
+    // only fire if not a drag
+    if (dragStateRef.current.type) return;
+    e.stopPropagation();
+    setSelectedId(id);
+    setEditingId(id);
+  }
+
+  // ── Tool drag (from palette) ──
+  function toolPointerDown(e) {
+    e.preventDefault();
+    dragStateRef.current = { type: "new", dotId: null };
+    setDraggingNew(true);
+    setClientPos({ x: e.clientX, y: e.clientY });
+    setShowTool(true);
+  }
+
+  // ── Number pad input ──
+  function handleKey(key) {
+    if (editingId === null) return;
+    setDots(prev => prev.map(d => {
+      if (d.id !== editingId) return d;
+      let lbl = d.label;
+      if (key === "DEL") return {...d, label: lbl.slice(0,-1)};
+      if (key === "-") {
+        if (lbl.startsWith("-")) return {...d, label: lbl.slice(1)};
+        return {...d, label: "-" + lbl};
+      }
+      // Decimal places check
+      if (key === "." && !useFraction) {
+        if (lbl.includes(".")) return d;
+        if (decimals === 0) return d;
+        return {...d, label: lbl + "."};
+      }
+      if (key === "/" && useFraction) return {...d, label: lbl + "/"};
+      if (key === " " && useFraction) return {...d, label: lbl + " "};
+      // Check decimal places after dot
+      if (!useFraction && lbl.includes(".")) {
+        const afterDot = lbl.split(".")[1] || "";
+        if (afterDot.length >= decimals) return d;
+      }
+      return {...d, label: lbl + key};
+    }));
+  }
+
+  // ── Check answers ──
+  function handleCheck() {
+    setChecked(true);
+    setEditingId(null);
+    setVisibleTicks(new Set());
+  }
+
+  // ── Delete selected dot ──
+  function handleDelete() {
+    if (selectedId === null) return;
+    setDots(prev => prev.filter(d => d.id !== selectedId));
+    setSelectedId(null);
+    setEditingId(null);
+  }
+
+  // ── Reset ──
+  function handleQuit() {
+    setDots([]);
+    setSelectedId(null);
+    setChecked(false);
+    onQuit();
+  }
+
+  // ── Compute correct value for dot ──
+  function correctValue(px) {
+    return xToValue(px, LINE_X0, LINE_X1, valStart, valEnd);
+  }
+
+  // ── Is user label close enough? ──
+  function scoreAccuracy(dot) {
+    const cv = correctValue(dot.x);
+    const uv = parseFraction(dot.label);
+    if (isNaN(uv) || dot.label.trim() === "") return null;
+    const range = Math.abs(valEnd - valStart);
+    const pct = Math.abs(uv - cv) / range;
+    if (pct <= 0.06) return "green";
+    if (pct <= 0.10) return "orange";
+    return "red";
+  }
+
+  const selectedDot = dots.find(d => d.id === selectedId) || null;
+
+  return (
+    <div style={styles.gameWrap}>
+      {/* Outer scroll wrapper — allows horizontal scroll for wide SVG */}
+      <div style={{overflowX:"auto", overflowY:"visible"}}>
+        {/* Fixed-width inner container matches SVG width */}
+        <div style={{width:CANVAS_W, minWidth:CANVAS_W}}>
+
+          {/* Header + instructions */}
+          <div ref={headerRef}>
+            <div style={styles.gameHeader}>
+              <span style={styles.gameTitle}>🔢 Number Line Explorer</span>
+              <div style={styles.headerBtns}>
+              </div>
+            </div>
+            <div style={styles.instructions}>
+              {!checked
+                ? "Drag the 🔵 dot tool onto the number line to place a point. Then use the number pad to label it!"
+                : <>Green = great estimate! Orange = you are getting close. Red = try to be more precise.<br/>Computer's answer is above the line.</>}
+            </div>
+          </div>
+
+          {/* Main area */}
+          <div style={styles.mainArea}>
+            {/* SVG canvas */}
+            <div style={{ position:"relative", userSelect:"none" }}>
+          <svg
+            ref={svgRef}
+            width={CANVAS_W}
+            height={svgHeight}
+            style={{...styles.svg, touchAction: (draggingNew || draggingDot !== null) ? "none" : "auto"}}
+          >
+            <defs>
+              <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.12"/>
+              </filter>
+            </defs>
+
+            <defs>
+              <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.12"/>
+              </filter>
+            </defs>
+
+            {/* Background grid lines */}
+            <line x1={LINE_X0} y1={0} x2={LINE_X0} y2={svgHeight} stroke="#e0e8f0" strokeWidth="1.5" strokeDasharray="4,4"/>
+            <line x1={LINE_X1} y1={0} x2={LINE_X1} y2={svgHeight} stroke="#e0e8f0" strokeWidth="1.5" strokeDasharray="4,4"/>
+
+            {/* Number line */}
+            <path d={buildLinePath()} stroke="#2c5282" strokeWidth="4" fill="none" strokeLinecap="round"/>
+
+            {/* Tick marks and end labels */}
+            {[LINE_X0, LINE_X1].map((px, i) => {
+              const ly = getLineY(px);
+              const val = i===0 ? valStart : valEnd;
+              return (
+                <g key={i}>
+                  <line x1={px} y1={ly-10} x2={px} y2={ly+10} stroke="#2c5282" strokeWidth="3"/>
+                  <text x={px} y={ly+28} textAnchor="middle" style={styles.endLabel}>{formatValue(val, decimals, useFraction, usePercent)}</text>
+                </g>
+              );
+            })}
+
+            {/* 10% interval tick marks — tappable, persistent labels */}
+            {checked && Array.from({length:9}, (_,i) => {
+              const pct = (i+1) / 10;
+              const px = LINE_X0 + (LINE_X1 - LINE_X0) * pct;
+              const ly = getLineY(px);
+              const tickVal = xToValue(px, LINE_X0, LINE_X1, valStart, valEnd);
+              const tickLabel = formatValue(tickVal, decimals, useFraction, usePercent);
+              const r = 16; // circle radius
+              const circleY = ly - DOT_R - 28 - r;
+              const isVisible = visibleTicks.has(i);
+              function toggleTick(e) {
+                e.stopPropagation();
+                setVisibleTicks(prev => {
+                  const next = new Set(prev);
+                  next.has(i) ? next.delete(i) : next.add(i);
+                  return next;
+                });
+              }
+              return (
+                <g key={i}>
+                  {/* Wide invisible hit area on tick */}
+                  <line x1={px} y1={ly - DOT_R - 8} x2={px} y2={ly + DOT_R + 8}
+                    stroke="transparent" strokeWidth={16} style={{cursor:"pointer"}} onClick={toggleTick}/>
+                  {/* Visible tick */}
+                  <line x1={px} y1={ly - DOT_R - 4} x2={px} y2={ly + DOT_R + 4}
+                    stroke="#888" strokeWidth={1.5} opacity={0.6} pointerEvents="none"/>
+                  {/* Persistent round label — also tappable to hide */}
+                  {isVisible && (
+                    <g style={{cursor:"pointer"}} onClick={toggleTick}>
+                      <circle cx={px} cy={circleY} r={r}
+                        fill="white" stroke="#bee3f8" strokeWidth={2}
+                        filter="url(#shadow)"/>
+                      <text x={px} y={circleY + 4} textAnchor="middle" dominantBaseline="middle"
+                        style={{fontSize:11, fontFamily:"'Nunito',sans-serif", fontWeight:800, fill:"#2c5282", pointerEvents:"none", userSelect:"none", WebkitUserSelect:"none"}}>
+                        {tickLabel}
+                      </text>
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+
+            {/* Arrowheads */}
+            <polygon points={`${LINE_X1+14},${LINE_Y} ${LINE_X1+2},${LINE_Y-7} ${LINE_X1+2},${LINE_Y+7}`} fill="#2c5282"/>
+            <polygon points={`${LINE_X0-14},${LINE_Y} ${LINE_X0-2},${LINE_Y-7} ${LINE_X0-2},${LINE_Y+7}`} fill="#2c5282"/>
+
+            {/* DOTS */}
+            {dots.map(dot => {
+              const ly = getLineY(dot.x);
+              const close = checked ? scoreAccuracy(dot) : null;
+              const cv = checked ? correctValue(dot.x) : null;
+              const isSelected = dot.id === selectedId;
+              const isEditing = dot.id === editingId;
+
+              const isDraggingThis = dot.id === draggingDot;
+              return (
+                <g key={dot.id}>
+                  {/* Ghost marker on line while dot is being dragged (overlay handles the floating dot) */}
+                  {isDraggingThis && (
+                    <circle cx={dot.x} cy={ly} r={DOT_R} fill="none" stroke={dot.color} strokeWidth={2} strokeDasharray="3,3" opacity={0.5} pointerEvents="none"/>
+                  )}
+                  {/* Dot — hidden while dragging (shown in fixed overlay instead) */}
+                  {!isDraggingThis && <circle cx={dot.x} cy={ly} r={DOT_R+3} fill="rgba(0,0,0,0.12)" pointerEvents="none"/>}
+                  <circle
+                    cx={dot.x} cy={ly} r={DOT_R}
+                    fill={checked ? (close === "green" ? COLOR_GREEN : close === "orange" ? COLOR_ORANGE : close === "red" ? COLOR_RED : dot.color) : dot.color}
+                    stroke={isSelected ? "#fff" : "rgba(255,255,255,0.6)"}
+                    strokeWidth={isSelected ? 3 : 1.5}
+                    opacity={isDraggingThis ? 0 : 1}
+                    style={{cursor: isDraggingThis ? "grabbing" : "grab", filter: isSelected && !isDraggingThis ? "drop-shadow(0 0 8px rgba(0,0,0,0.5))" : "none"}}
+                    onPointerDown={e=>startDotDrag(e, dot.id)}
+                    onClick={e=>clickDot(e, dot.id)}
+                  />
+
+                  {/* User label below */}
+                  <foreignObject
+                    x={dot.x - 36} y={ly + DOT_R + 6}
+                    width={72} height={LABEL_H}
+                  >
+                    <div
+                      xmlns="http://www.w3.org/1999/xhtml"
+                      style={{
+                        width: 68,
+                        marginLeft: 2,
+                        background: checked
+                          ? (close === "green" ? COLOR_GREEN_LIGHT : close === "orange" ? COLOR_ORANGE_LIGHT : close === "red" ? COLOR_RED_LIGHT : "rgba(255,255,255,0.92)")
+                          : (isEditing ? "#fffbe6" : "white"),
+                        border: checked
+                          ? `2px solid ${close === "green" ? COLOR_GREEN_BORDER : close === "orange" ? COLOR_ORANGE_BORDER : close === "red" ? COLOR_RED_BORDER : "#ccc"}`
+                          : `2px solid ${isEditing ? "#f6ad1b" : "#999"}`,
+                        borderRadius: 6,
+                        textAlign:"center",
+                        fontSize: isEditing ? 15 : 11,
+                        fontFamily: "'Nunito', sans-serif",
+                        fontWeight: 700,
+                        color: checked ? (close === "green" ? COLOR_GREEN : close === "orange" ? COLOR_ORANGE : close === "red" ? COLOR_RED : "#333") : "#333",
+                        padding: isEditing ? "3px 4px" : "1px 4px",
+                        cursor:"pointer",
+                        boxShadow: isEditing ? "0 2px 8px rgba(0,0,0,0.15)" : "none",
+                        minHeight: isEditing ? 30 : 20,
+                        transition:"all 0.15s",
+                        boxSizing:"border-box",
+                        overflow:"hidden",
+                        userSelect:"none",
+                        WebkitUserSelect:"none",
+                      }}
+                      onClick={e=>{ e.stopPropagation(); setEditingId(dot.id); setSelectedId(dot.id); }}
+                    >
+                      {dot.label
+                        ? <>{isEditing ? dot.label : addCommas(dot.label)}{!isEditing && usePercent ? "%" : ""}</>
+                        : <span style={{color:"#bbb"}}>?</span>}
+                      {isEditing && <span style={{display:"inline-block",width:1,height:14,background:"#f6ad1b",marginLeft:1,verticalAlign:"middle",animation:"blink 1s step-end infinite"}}/>}
+                    </div>
+                  </foreignObject>
+
+                  {/* Computer label above (checked only) */}
+                  {checked && (
+                    <text
+                      x={dot.x}
+                      y={ly - DOT_R - 10}
+                      textAnchor="middle"
+                      style={{ fontSize:15, fontFamily:"'Nunito',sans-serif", fontWeight:800, fill:"#1a56a0", pointerEvents:"none", userSelect:"none", WebkitUserSelect:"none" }}
+                    >
+                      {formatComputerLabel(cv, dot.label, decimals, useFraction, usePercent)}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+
+
+
+          </svg>
+        </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* Fixed bottom panel — all controls float here */}
+      <div style={styles.bottomPanel}>
+
+        {/* Dot tool + trash row — above the number pad */}
+        {!checked && (
+          <div style={{display:"flex", alignItems:"center", gap:8}}>
+            <div style={styles.padLabel} onMouseDown={e=>e.preventDefault()} onSelectStart={e=>e.preventDefault()}>Drag a dot:</div>
+            <svg
+              width={36} height={36}
+              style={{ cursor:"grab", display:"block", touchAction:"none", userSelect:"none", borderRadius:10, border:"2px solid #bee3f8", background:"white", flexShrink:0 }}
+              onPointerDown={toolPointerDown}
+            >
+              <circle cx={18} cy={18} r={10} fill={DOT_COLOR} stroke="white" strokeWidth={2}/>
+              <line x1={12} y1={18} x2={24} y2={18} stroke="white" strokeWidth={2.5} strokeLinecap="round" pointerEvents="none"/>
+              <line x1={18} y1={12} x2={18} y2={24} stroke="white" strokeWidth={2.5} strokeLinecap="round" pointerEvents="none"/>
+            </svg>
+            {selectedDot && (
+              <button style={{...styles.deleteBtn, width:36, height:36, fontSize:18, marginLeft:24}} onClick={handleDelete} title="Delete selected dot">🗑️</button>
+            )}
+          </div>
+        )}
+
+        {/* Number pad row */}
+        {!checked && (
+          <div>
+            <div style={styles.padLabel}>
+              {editingId
+                ? <span>Labeling: <span style={{display:"inline-block",width:12,height:12,borderRadius:"50%",background:selectedDot?.color,verticalAlign:"middle",marginLeft:2}}/></span>
+                : "Tap a dot to label it"}
+            </div>
+            <NumberPad onKey={handleKey} decimals={decimals} useFraction={useFraction} onEnter={()=>setEditingId(null)} />
+          </div>
+        )}
+
+        {/* Legend row after check */}
+        {checked && (
+          <div style={styles.legend}>
+            <span style={{color:"#16a34a", fontWeight:800}}>🟢 Green</span> = within 6%&nbsp;&nbsp;
+            <span style={{color:"#e07b00", fontWeight:800}}>🟠 Orange</span> = off by 6 to 10 percent&nbsp;&nbsp;
+            <span style={{color:"#dc2626", fontWeight:800}}>🔴 Red</span> = over 10% off&nbsp;&nbsp;
+            <span style={{color:"#1a56a0", fontWeight:800}}>Above line</span> = correct answer
+          </div>
+        )}
+
+        {/* Action buttons row */}
+        <div style={styles.bottomActions}>
+          {!checked && (
+            <button style={styles.checkBtn} onClick={handleCheck} disabled={dots.length === 0}>✅ Check</button>
+          )}
+          <button style={styles.quitBtn} onClick={handleQuit}>🔄 Play Again</button>
+        </div>
+
+      </div>
+
+      {/* Tick tooltip */}
+      {/* Toast message */}
+      {toast && (
+        <div style={{
+          position:"fixed",
+          left: toast.x,
+          top: toast.y,
+          transform:"translateX(-50%)",
+          background:"rgba(40,40,40,0.88)",
+          color:"white",
+          padding:"7px 16px",
+          borderRadius:20,
+          fontSize:14,
+          fontWeight:800,
+          fontFamily:"'Nunito',sans-serif",
+          pointerEvents:"none",
+          zIndex:10000,
+          whiteSpace:"nowrap",
+          boxShadow:"0 4px 16px rgba(0,0,0,0.25)",
+          animation:"toastIn 0.15s ease",
+        }}>
+          ⚠️ {toast.msg}
+        </div>
+      )}
+
+      {/* Fixed full-screen drag overlay — visible anywhere on screen */}
+      {(draggingNew || draggingDot !== null) && (() => {
+        const color = draggingNew
+          ? DOT_COLOR
+          : (dots.find(d => d.id === draggingDot)?.color || "#4a90d9");
+        const cx = clientPos.x;
+        const cy = clientPos.y;
+        return (
+          <svg
+            style={{ position:"fixed", top:0, left:0, width:"100vw", height:"100vh", pointerEvents:"none", zIndex:9999 }}
+          >
+            {/* dashed stem from dot down to finger */}
+            <line
+              x1={cx} y1={cy - DRAG_OFFSET_Y + DOT_R}
+              x2={cx} y2={cy - 4}
+              stroke="rgba(0,0,0,0.3)" strokeWidth={2} strokeDasharray="4,3"
+            />
+            {/* finger touch circle */}
+            <circle cx={cx} cy={cy} r={7} fill="rgba(0,0,0,0.15)" />
+            {/* dot shadow */}
+            <circle cx={cx} cy={cy - DRAG_OFFSET_Y} r={DOT_R + 3} fill="rgba(0,0,0,0.18)" />
+            {/* dot */}
+            <circle cx={cx} cy={cy - DRAG_OFFSET_Y} r={DOT_R} fill={color} stroke="white" strokeWidth={2.5} />
+          </svg>
+        );
+      })()}
+
+      <style>{`
+        html, body { overscroll-behavior: none; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(6px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap');
+      `}</style>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   APP ROOT
+───────────────────────────────────────────── */
+export default function App() {
+  const [settings, setSettings] = useState(null);
+  if (!settings) return <SettingsScreen onStart={setSettings} />;
+  return <GameScreen settings={settings} onQuit={()=>setSettings(null)} />;
+}
+
+/* ─────────────────────────────────────────────
+   STYLES
+───────────────────────────────────────────── */
+const styles = {
+  settingsWrap: {
+    minHeight:"100vh",
+    background:"linear-gradient(135deg,#e0f0ff 0%,#ffecd2 100%)",
+    display:"flex",
+    alignItems:"center",
+    justifyContent:"center",
+    fontFamily:"'Nunito',sans-serif",
+    padding:16,
+  },
+  settingsCard: {
+    background:"white",
+    borderRadius:24,
+    padding:"36px 44px",
+    boxShadow:"0 12px 48px rgba(70,130,200,0.18)",
+    maxWidth:480,
+    width:"100%",
+  },
+  settingsTitle: {
+    fontSize:28,
+    fontWeight:900,
+    fontFamily:"'Nunito',sans-serif",
+    color:"#2c5282",
+    marginBottom:4,
+    letterSpacing:1.5,
+    textTransform:"uppercase",
+  },
+  settingsSubtitle: {
+    fontSize:16,
+    color:"#718096",
+    marginBottom:24,
+    fontWeight:700,
+  },
+  settingsRow: {
+    marginBottom:16,
+    display:"flex",
+    alignItems:"center",
+    gap:12,
+    flexWrap:"wrap",
+  },
+  label: {
+    fontSize:15,
+    fontWeight:800,
+    color:"#2d3748",
+    minWidth:200,
+  },
+  input: {
+    border:"2.5px solid #bee3f8",
+    borderRadius:10,
+    padding:"8px 14px",
+    fontSize:16,
+    fontWeight:700,
+    fontFamily:"'Nunito',sans-serif",
+    width:120,
+    outline:"none",
+    color:"#2d3748",
+    background:"#f7fbff",
+  },
+  select: {
+    border:"2.5px solid #bee3f8",
+    borderRadius:10,
+    padding:"8px 12px",
+    fontSize:14,
+    fontWeight:700,
+    fontFamily:"'Nunito',sans-serif",
+    outline:"none",
+    color:"#2d3748",
+    background:"#f7fbff",
+    cursor:"pointer",
+  },
+  checkLabel: {
+    fontSize:14,
+    fontWeight:700,
+    color:"#4a5568",
+    display:"flex",
+    alignItems:"center",
+    gap:8,
+    cursor:"pointer",
+  },
+  checkbox: {
+    width:18,
+    height:18,
+    cursor:"pointer",
+    accentColor:"#4a90d9",
+  },
+  errorMsg: {
+    color:"#c62828",
+    fontWeight:800,
+    fontSize:14,
+    marginBottom:10,
+  },
+  goBtn: {
+    marginTop:12,
+    width:"100%",
+    padding:"14px",
+    fontSize:20,
+    fontWeight:900,
+    fontFamily:"'Nunito',sans-serif",
+    background:"linear-gradient(90deg,#4a90d9,#6bcb77)",
+    color:"white",
+    border:"none",
+    borderRadius:16,
+    cursor:"pointer",
+    letterSpacing:0.5,
+    boxShadow:"0 4px 16px rgba(74,144,217,0.35)",
+    transition:"transform 0.1s",
+  },
+  gameWrap: {
+    background:"linear-gradient(160deg,#f0f8ff 0%,#fffbf0 100%)",
+    fontFamily:"'Nunito',sans-serif",
+    padding:"8px 12px 8px 12px",
+    boxSizing:"border-box",
+    userSelect:"none",
+    WebkitUserSelect:"none",
+    MozUserSelect:"none",
+  },
+  gameHeader: {
+    display:"flex",
+    alignItems:"center",
+    justifyContent:"space-between",
+    marginBottom:4,
+    flexWrap:"wrap",
+    gap:8,
+    flexShrink:0,
+  },
+  gameTitle: {
+    fontSize:22,
+    fontWeight:900,
+    fontFamily:"'Nunito',sans-serif",
+    color:"#2c5282",
+    letterSpacing:1.5,
+    textTransform:"uppercase",
+  },
+  headerBtns: { display:"flex", gap:8 },
+  checkBtn: {
+    padding:"5px 12px",
+    fontSize:12,
+    fontWeight:900,
+    background:"linear-gradient(90deg,#4caf7d,#38a169)",
+    color:"white",
+    border:"none",
+    borderRadius:14,
+    cursor:"pointer",
+    boxShadow:"0 4px 14px rgba(76,175,125,0.4)",
+    letterSpacing:0.3,
+  },
+  tryAgainBtn: {
+    padding:"13px 10px",
+    fontSize:16,
+    fontWeight:900,
+    background:"linear-gradient(90deg,#f6ad1b,#ed8936)",
+    color:"white",
+    border:"none",
+    borderRadius:14,
+    cursor:"pointer",
+    boxShadow:"0 4px 14px rgba(246,173,27,0.35)",
+    width:"100%",
+    letterSpacing:0.3,
+  },
+  quitBtn: {
+    padding:"5px 12px",
+    fontSize:12,
+    fontWeight:800,
+    background:"linear-gradient(90deg,#9c6bda,#805ad5)",
+    color:"white",
+    border:"none",
+    borderRadius:14,
+    cursor:"pointer",
+    opacity:0.85,
+  },
+  instructions: {
+    background:"#ebf8ff",
+    border:"2px solid #bee3f8",
+    borderRadius:10,
+    padding:"6px 14px",
+    fontSize:13,
+    fontWeight:700,
+    color:"#2c5282",
+    marginBottom:6,
+    flexShrink:0,
+    display:"block",
+    width:"100%",
+    boxSizing:"border-box",
+  },
+  mainArea: {
+    display:"flex",
+    gap:16,
+    alignItems:"flex-start",
+  },
+  svg: {
+    background:"white",
+    borderRadius:20,
+    boxShadow:"0 6px 28px rgba(70,130,200,0.14)",
+    display:"block",
+    cursor:"default",
+    border:"2px solid #e2ecf8",
+    marginBottom:12,
+  },
+  endLabel: {
+    fontSize:14,
+    fontFamily:"'Nunito',sans-serif",
+    fontWeight:900,
+    fill:"#2c5282",
+    userSelect:"none",
+    WebkitUserSelect:"none",
+  },
+
+  bottomPanel: {
+    position:"fixed",
+    bottom:0,
+    left:0,
+    right:0,
+    background:"rgba(255,255,255,0.97)",
+    borderTop:"2.5px solid #bee3f8",
+    boxShadow:"0 -4px 24px rgba(70,130,200,0.18)",
+    zIndex:1000,
+    userSelect:"none",
+    WebkitUserSelect:"none",
+    padding:"10px 16px 18px 16px",
+    display:"flex",
+    flexDirection:"column",
+    gap:10,
+  },
+  bottomRow: {
+    display:"flex",
+    gap:16,
+    alignItems:"flex-start",
+    flexWrap:"wrap",
+  },
+  bottomActions: {
+    display:"flex",
+    gap:10,
+    alignItems:"center",
+  },
+  paletteBox: {
+    background:"white",
+    border:"2.5px solid #bee3f8",
+    borderRadius:16,
+    padding:"14px 16px",
+    textAlign:"center",
+    boxShadow:"0 3px 12px rgba(70,130,200,0.1)",
+    userSelect:"none",
+    WebkitUserSelect:"none",
+    MozUserSelect:"none",
+    cursor:"default",
+  },
+  paletteLabel: {
+    fontSize:12,
+    fontWeight:800,
+    color:"#4a5568",
+    marginBottom:8,
+  },
+  deleteBtn: {
+    width:52,
+    height:52,
+    fontSize:22,
+    background:"#fff5f5",
+    color:"#c62828",
+    border:"2px solid #fed7d7",
+    borderRadius:12,
+    cursor:"pointer",
+    display:"flex",
+    alignItems:"center",
+    justifyContent:"center",
+    lineHeight:1,
+    flexShrink:0,
+  },
+  doneBtn: {
+    padding:"11px",
+    fontSize:15,
+    fontWeight:900,
+    background:"linear-gradient(90deg,#f6ad1b,#ed8936)",
+    color:"white",
+    border:"none",
+    borderRadius:14,
+    cursor:"pointer",
+    width:"100%",
+    boxShadow:"0 3px 10px rgba(246,173,27,0.35)",
+  },
+  padLabel: {
+    fontSize:12,
+    fontWeight:800,
+    color:"#4a5568",
+    marginBottom:3,
+  },
+  padWrap: {
+    background:"white",
+    border:"2.5px solid #bee3f8",
+    borderRadius:16,
+    padding:"10px",
+    boxShadow:"0 3px 12px rgba(70,130,200,0.1)",
+  },
+  padGrid: {
+    display:"grid",
+    gridTemplateColumns:"repeat(3,1fr)",
+    gap:5,
+  },
+  padBtn: {
+    padding:"10px 6px",
+    fontSize:16,
+    fontWeight:800,
+    background:"#f7fbff",
+    border:"2px solid #bee3f8",
+    borderRadius:9,
+    cursor:"pointer",
+    fontFamily:"'Nunito',sans-serif",
+    color:"#2d3748",
+    transition:"background 0.1s",
+    lineHeight:1,
+    textAlign:"center",
+  },
+  legend: {
+    marginTop:14,
+    background:"white",
+    border:"2px solid #e2ecf8",
+    borderRadius:12,
+    padding:"10px 18px",
+    fontSize:13,
+    fontWeight:700,
+    color:"#4a5568",
+    boxShadow:"0 2px 8px rgba(70,130,200,0.08)",
+  },
+};
