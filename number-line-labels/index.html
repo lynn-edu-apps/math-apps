@@ -1,4 +1,31 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Number Line Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overscroll-behavior: none; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(6px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React & ReactDOM UMD builds -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <!-- Babel standalone for JSX transpilation -->
+  <script src="https://unpkg.com/@babel/standalone@7.24.4/babel.min.js"></script>
+
+  <script type="text/babel" data-presets="react">
+const { useState, useRef, useCallback, useEffect } = React;
+
 
 /* ─────────────────────────────────────────────
    CONSTANTS & HELPERS
@@ -130,6 +157,331 @@ function parseFraction(str) {
 /* ─────────────────────────────────────────────
    SETTINGS SCREEN
 ───────────────────────────────────────────── */
+const styles = {
+  settingsWrap: {
+    minHeight:"100vh",
+    background:"linear-gradient(135deg,#e0f0ff 0%,#ffecd2 100%)",
+    display:"flex",
+    alignItems:"center",
+    justifyContent:"center",
+    fontFamily:"'Nunito',sans-serif",
+    padding:16,
+  },
+  settingsCard: {
+    background:"white",
+    borderRadius:24,
+    padding:"36px 44px",
+    boxShadow:"0 12px 48px rgba(70,130,200,0.18)",
+    maxWidth:480,
+    width:"100%",
+  },
+  settingsTitle: {
+    fontSize:28,
+    fontWeight:900,
+    fontFamily:"'Nunito',sans-serif",
+    color:"#2c5282",
+    marginBottom:4,
+    letterSpacing:1.5,
+    textTransform:"uppercase",
+  },
+  settingsSubtitle: {
+    fontSize:16,
+    color:"#718096",
+    marginBottom:24,
+    fontWeight:700,
+  },
+  settingsRow: {
+    marginBottom:16,
+    display:"flex",
+    alignItems:"center",
+    gap:12,
+    flexWrap:"wrap",
+  },
+  label: {
+    fontSize:15,
+    fontWeight:800,
+    color:"#2d3748",
+    minWidth:200,
+  },
+  input: {
+    border:"2.5px solid #bee3f8",
+    borderRadius:10,
+    padding:"8px 14px",
+    fontSize:16,
+    fontWeight:700,
+    fontFamily:"'Nunito',sans-serif",
+    width:120,
+    outline:"none",
+    color:"#2d3748",
+    background:"#f7fbff",
+  },
+  select: {
+    border:"2.5px solid #bee3f8",
+    borderRadius:10,
+    padding:"8px 12px",
+    fontSize:14,
+    fontWeight:700,
+    fontFamily:"'Nunito',sans-serif",
+    outline:"none",
+    color:"#2d3748",
+    background:"#f7fbff",
+    cursor:"pointer",
+  },
+  checkLabel: {
+    fontSize:14,
+    fontWeight:700,
+    color:"#4a5568",
+    display:"flex",
+    alignItems:"center",
+    gap:8,
+    cursor:"pointer",
+  },
+  checkbox: {
+    width:18,
+    height:18,
+    cursor:"pointer",
+    accentColor:"#4a90d9",
+  },
+  errorMsg: {
+    color:"#c62828",
+    fontWeight:800,
+    fontSize:14,
+    marginBottom:10,
+  },
+  goBtn: {
+    marginTop:12,
+    width:"100%",
+    padding:"14px",
+    fontSize:20,
+    fontWeight:900,
+    fontFamily:"'Nunito',sans-serif",
+    background:"linear-gradient(90deg,#4a90d9,#6bcb77)",
+    color:"white",
+    border:"none",
+    borderRadius:16,
+    cursor:"pointer",
+    letterSpacing:0.5,
+    boxShadow:"0 4px 16px rgba(74,144,217,0.35)",
+    transition:"transform 0.1s",
+  },
+  gameWrap: {
+    background:"linear-gradient(160deg,#f0f8ff 0%,#fffbf0 100%)",
+    fontFamily:"'Nunito',sans-serif",
+    padding:"8px 12px 8px 12px",
+    boxSizing:"border-box",
+    userSelect:"none",
+    WebkitUserSelect:"none",
+    MozUserSelect:"none",
+  },
+  gameHeader: {
+    display:"flex",
+    alignItems:"center",
+    justifyContent:"space-between",
+    marginBottom:4,
+    flexWrap:"wrap",
+    gap:8,
+    flexShrink:0,
+  },
+  gameTitle: {
+    fontSize:22,
+    fontWeight:900,
+    fontFamily:"'Nunito',sans-serif",
+    color:"#2c5282",
+    letterSpacing:1.5,
+    textTransform:"uppercase",
+  },
+  headerBtns: { display:"flex", gap:8 },
+  checkBtn: {
+    padding:"5px 12px",
+    fontSize:12,
+    fontWeight:900,
+    background:"linear-gradient(90deg,#4caf7d,#38a169)",
+    color:"white",
+    border:"none",
+    borderRadius:14,
+    cursor:"pointer",
+    boxShadow:"0 4px 14px rgba(76,175,125,0.4)",
+    letterSpacing:0.3,
+  },
+  tryAgainBtn: {
+    padding:"13px 10px",
+    fontSize:16,
+    fontWeight:900,
+    background:"linear-gradient(90deg,#f6ad1b,#ed8936)",
+    color:"white",
+    border:"none",
+    borderRadius:14,
+    cursor:"pointer",
+    boxShadow:"0 4px 14px rgba(246,173,27,0.35)",
+    width:"100%",
+    letterSpacing:0.3,
+  },
+  quitBtn: {
+    padding:"5px 12px",
+    fontSize:12,
+    fontWeight:800,
+    background:"linear-gradient(90deg,#9c6bda,#805ad5)",
+    color:"white",
+    border:"none",
+    borderRadius:14,
+    cursor:"pointer",
+    opacity:0.85,
+  },
+  instructions: {
+    background:"#ebf8ff",
+    border:"2px solid #bee3f8",
+    borderRadius:10,
+    padding:"6px 14px",
+    fontSize:13,
+    fontWeight:700,
+    color:"#2c5282",
+    marginBottom:6,
+    flexShrink:0,
+    display:"block",
+    width:"100%",
+    boxSizing:"border-box",
+  },
+  mainArea: {
+    display:"flex",
+    gap:16,
+    alignItems:"flex-start",
+  },
+  svg: {
+    background:"white",
+    borderRadius:20,
+    boxShadow:"0 6px 28px rgba(70,130,200,0.14)",
+    display:"block",
+    cursor:"default",
+    border:"2px solid #e2ecf8",
+    marginBottom:12,
+  },
+  endLabel: {
+    fontSize:14,
+    fontFamily:"'Nunito',sans-serif",
+    fontWeight:900,
+    fill:"#2c5282",
+    userSelect:"none",
+    WebkitUserSelect:"none",
+  },
+
+  bottomPanel: {
+    position:"fixed",
+    bottom:0,
+    left:0,
+    right:0,
+    background:"rgba(255,255,255,0.97)",
+    borderTop:"2.5px solid #bee3f8",
+    boxShadow:"0 -4px 24px rgba(70,130,200,0.18)",
+    zIndex:1000,
+    userSelect:"none",
+    WebkitUserSelect:"none",
+    padding:"10px 16px 18px 16px",
+    display:"flex",
+    flexDirection:"column",
+    gap:10,
+  },
+  bottomRow: {
+    display:"flex",
+    gap:16,
+    alignItems:"flex-start",
+    flexWrap:"wrap",
+  },
+  bottomActions: {
+    display:"flex",
+    gap:10,
+    alignItems:"center",
+  },
+  paletteBox: {
+    background:"white",
+    border:"2.5px solid #bee3f8",
+    borderRadius:16,
+    padding:"14px 16px",
+    textAlign:"center",
+    boxShadow:"0 3px 12px rgba(70,130,200,0.1)",
+    userSelect:"none",
+    WebkitUserSelect:"none",
+    MozUserSelect:"none",
+    cursor:"default",
+  },
+  paletteLabel: {
+    fontSize:12,
+    fontWeight:800,
+    color:"#4a5568",
+    marginBottom:8,
+  },
+  deleteBtn: {
+    width:52,
+    height:52,
+    fontSize:22,
+    background:"#fff5f5",
+    color:"#c62828",
+    border:"2px solid #fed7d7",
+    borderRadius:12,
+    cursor:"pointer",
+    display:"flex",
+    alignItems:"center",
+    justifyContent:"center",
+    lineHeight:1,
+    flexShrink:0,
+  },
+  doneBtn: {
+    padding:"11px",
+    fontSize:15,
+    fontWeight:900,
+    background:"linear-gradient(90deg,#f6ad1b,#ed8936)",
+    color:"white",
+    border:"none",
+    borderRadius:14,
+    cursor:"pointer",
+    width:"100%",
+    boxShadow:"0 3px 10px rgba(246,173,27,0.35)",
+  },
+  padLabel: {
+    fontSize:12,
+    fontWeight:800,
+    color:"#4a5568",
+    marginBottom:3,
+  },
+  padWrap: {
+    background:"white",
+    border:"2.5px solid #bee3f8",
+    borderRadius:16,
+    padding:"10px",
+    boxShadow:"0 3px 12px rgba(70,130,200,0.1)",
+  },
+  padGrid: {
+    display:"grid",
+    gridTemplateColumns:"repeat(3,1fr)",
+    gap:5,
+  },
+  padBtn: {
+    padding:"10px 6px",
+    fontSize:16,
+    fontWeight:800,
+    background:"#f7fbff",
+    border:"2px solid #bee3f8",
+    borderRadius:9,
+    cursor:"pointer",
+    fontFamily:"'Nunito',sans-serif",
+    color:"#2d3748",
+    transition:"background 0.1s",
+    lineHeight:1,
+    textAlign:"center",
+  },
+  legend: {
+    marginTop:14,
+    background:"white",
+    border:"2px solid #e2ecf8",
+    borderRadius:12,
+    padding:"10px 18px",
+    fontSize:13,
+    fontWeight:700,
+    color:"#4a5568",
+    boxShadow:"0 2px 8px rgba(70,130,200,0.08)",
+  },
+};
+
+
 function SettingsScreen({ onStart }) {
   const [start, setStart] = useState("0");
   const [end, setEnd] = useState("10");
@@ -846,12 +1198,7 @@ function GameScreen({ settings, onQuit }) {
         );
       })()}
 
-      <style>{`
-        html, body { overscroll-behavior: none; }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-        @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(6px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap');
-      `}</style>
+
     </div>
   );
 }
@@ -859,7 +1206,7 @@ function GameScreen({ settings, onQuit }) {
 /* ─────────────────────────────────────────────
    APP ROOT
 ───────────────────────────────────────────── */
-export default function App() {
+function App() {
   const [settings, setSettings] = useState(null);
   if (!settings) return <SettingsScreen onStart={setSettings} />;
   return <GameScreen settings={settings} onQuit={()=>setSettings(null)} />;
@@ -868,326 +1215,11 @@ export default function App() {
 /* ─────────────────────────────────────────────
    STYLES
 ───────────────────────────────────────────── */
-const styles = {
-  settingsWrap: {
-    minHeight:"100vh",
-    background:"linear-gradient(135deg,#e0f0ff 0%,#ffecd2 100%)",
-    display:"flex",
-    alignItems:"center",
-    justifyContent:"center",
-    fontFamily:"'Nunito',sans-serif",
-    padding:16,
-  },
-  settingsCard: {
-    background:"white",
-    borderRadius:24,
-    padding:"36px 44px",
-    boxShadow:"0 12px 48px rgba(70,130,200,0.18)",
-    maxWidth:480,
-    width:"100%",
-  },
-  settingsTitle: {
-    fontSize:28,
-    fontWeight:900,
-    fontFamily:"'Nunito',sans-serif",
-    color:"#2c5282",
-    marginBottom:4,
-    letterSpacing:1.5,
-    textTransform:"uppercase",
-  },
-  settingsSubtitle: {
-    fontSize:16,
-    color:"#718096",
-    marginBottom:24,
-    fontWeight:700,
-  },
-  settingsRow: {
-    marginBottom:16,
-    display:"flex",
-    alignItems:"center",
-    gap:12,
-    flexWrap:"wrap",
-  },
-  label: {
-    fontSize:15,
-    fontWeight:800,
-    color:"#2d3748",
-    minWidth:200,
-  },
-  input: {
-    border:"2.5px solid #bee3f8",
-    borderRadius:10,
-    padding:"8px 14px",
-    fontSize:16,
-    fontWeight:700,
-    fontFamily:"'Nunito',sans-serif",
-    width:120,
-    outline:"none",
-    color:"#2d3748",
-    background:"#f7fbff",
-  },
-  select: {
-    border:"2.5px solid #bee3f8",
-    borderRadius:10,
-    padding:"8px 12px",
-    fontSize:14,
-    fontWeight:700,
-    fontFamily:"'Nunito',sans-serif",
-    outline:"none",
-    color:"#2d3748",
-    background:"#f7fbff",
-    cursor:"pointer",
-  },
-  checkLabel: {
-    fontSize:14,
-    fontWeight:700,
-    color:"#4a5568",
-    display:"flex",
-    alignItems:"center",
-    gap:8,
-    cursor:"pointer",
-  },
-  checkbox: {
-    width:18,
-    height:18,
-    cursor:"pointer",
-    accentColor:"#4a90d9",
-  },
-  errorMsg: {
-    color:"#c62828",
-    fontWeight:800,
-    fontSize:14,
-    marginBottom:10,
-  },
-  goBtn: {
-    marginTop:12,
-    width:"100%",
-    padding:"14px",
-    fontSize:20,
-    fontWeight:900,
-    fontFamily:"'Nunito',sans-serif",
-    background:"linear-gradient(90deg,#4a90d9,#6bcb77)",
-    color:"white",
-    border:"none",
-    borderRadius:16,
-    cursor:"pointer",
-    letterSpacing:0.5,
-    boxShadow:"0 4px 16px rgba(74,144,217,0.35)",
-    transition:"transform 0.1s",
-  },
-  gameWrap: {
-    background:"linear-gradient(160deg,#f0f8ff 0%,#fffbf0 100%)",
-    fontFamily:"'Nunito',sans-serif",
-    padding:"8px 12px 8px 12px",
-    boxSizing:"border-box",
-    userSelect:"none",
-    WebkitUserSelect:"none",
-    MozUserSelect:"none",
-  },
-  gameHeader: {
-    display:"flex",
-    alignItems:"center",
-    justifyContent:"space-between",
-    marginBottom:4,
-    flexWrap:"wrap",
-    gap:8,
-    flexShrink:0,
-  },
-  gameTitle: {
-    fontSize:22,
-    fontWeight:900,
-    fontFamily:"'Nunito',sans-serif",
-    color:"#2c5282",
-    letterSpacing:1.5,
-    textTransform:"uppercase",
-  },
-  headerBtns: { display:"flex", gap:8 },
-  checkBtn: {
-    padding:"5px 12px",
-    fontSize:12,
-    fontWeight:900,
-    background:"linear-gradient(90deg,#4caf7d,#38a169)",
-    color:"white",
-    border:"none",
-    borderRadius:14,
-    cursor:"pointer",
-    boxShadow:"0 4px 14px rgba(76,175,125,0.4)",
-    letterSpacing:0.3,
-  },
-  tryAgainBtn: {
-    padding:"13px 10px",
-    fontSize:16,
-    fontWeight:900,
-    background:"linear-gradient(90deg,#f6ad1b,#ed8936)",
-    color:"white",
-    border:"none",
-    borderRadius:14,
-    cursor:"pointer",
-    boxShadow:"0 4px 14px rgba(246,173,27,0.35)",
-    width:"100%",
-    letterSpacing:0.3,
-  },
-  quitBtn: {
-    padding:"5px 12px",
-    fontSize:12,
-    fontWeight:800,
-    background:"linear-gradient(90deg,#9c6bda,#805ad5)",
-    color:"white",
-    border:"none",
-    borderRadius:14,
-    cursor:"pointer",
-    opacity:0.85,
-  },
-  instructions: {
-    background:"#ebf8ff",
-    border:"2px solid #bee3f8",
-    borderRadius:10,
-    padding:"6px 14px",
-    fontSize:13,
-    fontWeight:700,
-    color:"#2c5282",
-    marginBottom:6,
-    flexShrink:0,
-    display:"block",
-    width:"100%",
-    boxSizing:"border-box",
-  },
-  mainArea: {
-    display:"flex",
-    gap:16,
-    alignItems:"flex-start",
-  },
-  svg: {
-    background:"white",
-    borderRadius:20,
-    boxShadow:"0 6px 28px rgba(70,130,200,0.14)",
-    display:"block",
-    cursor:"default",
-    border:"2px solid #e2ecf8",
-    marginBottom:12,
-  },
-  endLabel: {
-    fontSize:14,
-    fontFamily:"'Nunito',sans-serif",
-    fontWeight:900,
-    fill:"#2c5282",
-    userSelect:"none",
-    WebkitUserSelect:"none",
-  },
 
-  bottomPanel: {
-    position:"fixed",
-    bottom:0,
-    left:0,
-    right:0,
-    background:"rgba(255,255,255,0.97)",
-    borderTop:"2.5px solid #bee3f8",
-    boxShadow:"0 -4px 24px rgba(70,130,200,0.18)",
-    zIndex:1000,
-    userSelect:"none",
-    WebkitUserSelect:"none",
-    padding:"10px 16px 18px 16px",
-    display:"flex",
-    flexDirection:"column",
-    gap:10,
-  },
-  bottomRow: {
-    display:"flex",
-    gap:16,
-    alignItems:"flex-start",
-    flexWrap:"wrap",
-  },
-  bottomActions: {
-    display:"flex",
-    gap:10,
-    alignItems:"center",
-  },
-  paletteBox: {
-    background:"white",
-    border:"2.5px solid #bee3f8",
-    borderRadius:16,
-    padding:"14px 16px",
-    textAlign:"center",
-    boxShadow:"0 3px 12px rgba(70,130,200,0.1)",
-    userSelect:"none",
-    WebkitUserSelect:"none",
-    MozUserSelect:"none",
-    cursor:"default",
-  },
-  paletteLabel: {
-    fontSize:12,
-    fontWeight:800,
-    color:"#4a5568",
-    marginBottom:8,
-  },
-  deleteBtn: {
-    width:52,
-    height:52,
-    fontSize:22,
-    background:"#fff5f5",
-    color:"#c62828",
-    border:"2px solid #fed7d7",
-    borderRadius:12,
-    cursor:"pointer",
-    display:"flex",
-    alignItems:"center",
-    justifyContent:"center",
-    lineHeight:1,
-    flexShrink:0,
-  },
-  doneBtn: {
-    padding:"11px",
-    fontSize:15,
-    fontWeight:900,
-    background:"linear-gradient(90deg,#f6ad1b,#ed8936)",
-    color:"white",
-    border:"none",
-    borderRadius:14,
-    cursor:"pointer",
-    width:"100%",
-    boxShadow:"0 3px 10px rgba(246,173,27,0.35)",
-  },
-  padLabel: {
-    fontSize:12,
-    fontWeight:800,
-    color:"#4a5568",
-    marginBottom:3,
-  },
-  padWrap: {
-    background:"white",
-    border:"2.5px solid #bee3f8",
-    borderRadius:16,
-    padding:"10px",
-    boxShadow:"0 3px 12px rgba(70,130,200,0.1)",
-  },
-  padGrid: {
-    display:"grid",
-    gridTemplateColumns:"repeat(3,1fr)",
-    gap:5,
-  },
-  padBtn: {
-    padding:"10px 6px",
-    fontSize:16,
-    fontWeight:800,
-    background:"#f7fbff",
-    border:"2px solid #bee3f8",
-    borderRadius:9,
-    cursor:"pointer",
-    fontFamily:"'Nunito',sans-serif",
-    color:"#2d3748",
-    transition:"background 0.1s",
-    lineHeight:1,
-    textAlign:"center",
-  },
-  legend: {
-    marginTop:14,
-    background:"white",
-    border:"2px solid #e2ecf8",
-    borderRadius:12,
-    padding:"10px 18px",
-    fontSize:13,
-    fontWeight:700,
-    color:"#4a5568",
-    boxShadow:"0 2px 8px rgba(70,130,200,0.08)",
-  },
-};
+
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+root.render(React.createElement(App));
+  </script>
+</body>
+</html>
