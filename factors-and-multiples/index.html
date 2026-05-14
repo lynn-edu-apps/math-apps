@@ -405,7 +405,6 @@
     font-size: var(--chip-size);
     font-weight: 900;
     color: var(--primary-dark);
-    background: rgba(67,97,238,0.12);
     border-radius: 3px;
     padding: 1px 2px;
     line-height: 1.2;
@@ -485,8 +484,7 @@
 <div id="start-screen">
   <div class="logo-area">
     <span class="logo-emoji">🔢</span>
-    <div class="logo-title">Number Explorer</div>
-    <div class="logo-subtitle">Factors &amp; Multiples Adventure</div>
+    <div class="logo-title">Factors and Multiples Explorer</div>
   </div>
 
   <div class="start-card">
@@ -514,7 +512,7 @@
 <div id="explorer-screen">
 
   <div class="top-bar">
-    <div class="app-title-small">🔢 Number Explorer</div>
+    <div class="app-title-small">🔢 Factors and Multiples Explorer</div>
     <div class="mode-btns">
       <button class="mode-btn active" id="btn-factors" onclick="setMode('factors')">🔍 Show Factors</button>
       <button class="mode-btn" id="btn-multiples" onclick="setMode('multiples')">✨ Show Multiples</button>
@@ -544,12 +542,28 @@ let currentMode = 'factors';    // 'factors' | 'multiples'
 let selectedCells = new Set();  // cells with visible factor lists
 let activeMultiples = {};       // { number: colorHex }
 
-// ── PALETTE for multiples (distinct, vivid) ────────────────────────────────
+// ── PALETTE for multiples — ordered so consecutive picks are far apart on the color wheel ──
 const PALETTE = [
-  '#f72585','#4361ee','#06d6a0','#ffd166','#ef476f',
-  '#118ab2','#7209b7','#fb5607','#3a86ff','#8338ec',
-  '#06a77d','#d62828','#023e8a','#ff9f1c','#2dc653',
-  '#e63946','#457b9d','#a8dadc','#f4a261','#e76f51'
+  '#4361ee', // 1. blue
+  '#e63946', // 2. red
+  '#2dc653', // 3. green
+  '#f4c30a', // 4. yellow
+  '#7209b7', // 5. purple
+  '#00b4d8', // 6. teal
+  '#fb5607', // 7. orange
+  '#f72585', // 8. magenta
+  '#023e8a', // 9. navy
+  '#70e000', // 10. lime
+  '#9d4e15', // 11. rust/brown
+  '#00f5d4', // 12. cyan-mint
+  '#c77dff', // 13. lavender
+  '#ee9b00', // 14. amber
+  '#386641', // 15. forest green
+  '#ff6b9d', // 16. pink
+  '#3a86ff', // 17. sky blue
+  '#bc4749', // 18. muted red
+  '#8338ec', // 19. violet
+  '#606c38', // 20. olive
 ];
 let paletteIdx = 0;
 
@@ -684,7 +698,7 @@ function setMode(mode) {
     document.getElementById('btn-multiples').classList.add('active');
     document.getElementById('btn-factors').classList.remove('active');
     document.getElementById('instruction-text').textContent =
-      'Click a corner triangle ◸ to highlight all multiples of that number!';
+      'Click a corner triangle ◹ to highlight all multiples of that number!';
     document.getElementById('multiples-legend').style.display = 'flex';
   }
 }
@@ -706,10 +720,11 @@ function cellClick(n) {
 
     // Build factor chips
     factorDiv.innerHTML = '';
-    getFactors(n).forEach(f => {
+    const factors = getFactors(n);
+    factors.forEach((f, idx) => {
       const chip = document.createElement('span');
       chip.className = 'factor-chip';
-      chip.textContent = f;
+      chip.textContent = f + (idx < factors.length - 1 ? ',' : '');
       factorDiv.appendChild(chip);
     });
   }
@@ -719,9 +734,9 @@ function cellClick(n) {
 function toggleMultiple(n) {
   if (activeMultiples[n]) {
     // Remove this multiple
-    const color = activeMultiples[n];
     delete activeMultiples[n];
     removeDots(n);
+    setTriangleColor(n, null);
     updateLegend();
   } else {
     // Add this multiple
@@ -731,8 +746,20 @@ function toggleMultiple(n) {
     for (let m = n; m <= total; m += n) {
       addDot(m, n, color);
     }
+    setTriangleColor(n, color);
     updateLegend();
   }
+}
+
+function setTriangleColor(n, color) {
+  const cell = document.getElementById('cell-' + n);
+  if (!cell) return;
+  const tri = cell.querySelector('.corner-trigger');
+  if (!tri) return;
+  // border-color shorthand: transparent [right-color] transparent transparent
+  tri.style.borderColor = color
+    ? 'transparent ' + color + ' transparent transparent'
+    : 'transparent #94a3b8 transparent transparent';
 }
 
 function addDot(cellNum, sourceNum, color) {
@@ -796,6 +823,7 @@ function clearAll() {
 
   // Clear multiples
   document.querySelectorAll('.m-dot').forEach(d => d.remove());
+  Object.keys(activeMultiples).forEach(n => setTriangleColor(parseInt(n), null));
   activeMultiples = {};
   paletteIdx = 0;
   updateLegend();
