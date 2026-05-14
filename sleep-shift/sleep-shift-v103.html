@@ -1,0 +1,3224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sleep Shift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=Varela+Round&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f0eb;
+  --surface: #ffffff;
+  --surface2: #f9f6f2;
+  --border: #e2dbd3;
+  --text: #2c2420;
+  --text2: #7a6e68;
+  --accent-bed: #5b8ccc;
+  --accent-wake: #e07b5a;
+  --accent-dur: #5daa80;
+  --accent-ui: #5b8ccc;
+  --goal-color: rgba(0,0,0,0.18);
+  --chart-bg: #fdfbf8;
+  --grid-color: rgba(0,0,0,0.06);
+  --dst-color: rgba(0,0,0,0.07);
+  --modal-overlay: rgba(44,36,32,0.45);
+  --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  --radius: 14px;
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+}
+[data-theme="dark"] {
+  --bg: #0e0c0c;
+  --surface: #181515;
+  --surface2: #211d1d;
+  --border: #302b2b;
+  --text: #f0ece8;
+  --text2: #9a908b;
+  --chart-bg: #131111;
+  --grid-color: rgba(255,255,255,0.05);
+  --dst-color: rgba(255,255,255,0.07);
+  --modal-overlay: rgba(0,0,0,0.7);
+  --shadow: 0 2px 20px rgba(0,0,0,0.5);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.3s,color 0.3s}
+h1,h2,h3{font-family:var(--font-display)}
+
+/* ---- layout ---- */
+#app{max-width:960px;margin:0 auto;padding:24px 16px 80px}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:10px;flex-wrap:wrap}
+.title-block{display:flex;flex-direction:column;gap:2px}
+.top-bar h1{font-size:2.3rem;letter-spacing:-0.02em}
+.top-bar h1 span{color:var(--accent-ui)}
+.tagline{font-size:0.9rem;color:var(--text2);font-style:italic;letter-spacing:0.01em}
+.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+@media(max-width:480px){
+  .top-bar h1{font-size:1.65rem}
+  .tagline{font-size:0.8rem}
+  .top-actions button{font-size:0.78rem;padding:6px 10px}
+}
+
+/* ---- buttons ---- */
+button{cursor:pointer;border:none;font-family:var(--font-body);font-size:0.875rem;border-radius:8px;padding:8px 16px;transition:all 0.15s}
+.btn-primary{background:var(--accent-ui);color:#fff;font-weight:600}
+.btn-primary:hover{filter:brightness(1.1)}
+.btn-ghost{background:transparent;color:var(--text2);border:1.5px solid var(--border)}
+.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-icon{background:transparent;color:var(--text2);padding:6px 10px;border-radius:8px;border:1.5px solid var(--border)}
+.btn-icon:hover{background:var(--surface2)}
+.btn-danger{background:transparent;color:#b94040;font-weight:500;border:1.5px solid #d48080}
+.btn-danger:hover{background:#fdf0f0;color:#8b2020;border-color:#b94040}
+[data-theme="dark"] .btn-danger{color:#d48080;border-color:#7a4040}
+[data-theme="dark"] .btn-danger:hover{background:#2e1a1a;color:#e09090;border-color:#c06060}
+.btn-sm{padding:5px 11px;font-size:0.8rem}
+
+/* ---- entry modal ---- */
+.modal-entry{max-width:640px}
+.modal-entries{max-width:700px;max-height:80vh;display:flex;flex-direction:column}
+.modal-close-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px}
+.modal-close-row h2{font-size:1.2rem;display:flex;align-items:center;gap:8px;margin-bottom:0}
+.modal-x{border:none;font-size:1.35rem;color:var(--text2);padding:6px 12px;line-height:1;border-radius:8px}
+.entry-count-badge{font-family:var(--font-body);font-size:0.72rem;font-weight:600;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:20px;padding:2px 10px}
+.entries-list{display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1}
+.day-field-row{margin-bottom:10px}
+.day-field-row input{max-width:200px}
+.day-hint{font-size:0.75rem;margin-top:4px;min-height:16px;display:flex;align-items:center;gap:4px}
+.day-hint.exists{color:#d97a00}
+[data-theme="dark"] .day-hint.exists{color:#f0a830}
+.day-hint.editing{color:var(--accent-ui)}
+.fields-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+.field-group{display:flex;flex-direction:column;gap:4px}
+.field-group label{font-size:0.73rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em}
+.field-group input[type="date"],.field-group input[type="time"],.field-group input[type="number"],.field-group select{
+  font-family:var(--font-body);font-size:0.875rem;padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;
+  background:var(--surface2);color:var(--text);outline:none;width:100%;transition:border-color 0.15s;
+  min-width:0;box-sizing:border-box;
+}
+.field-group input:focus,.field-group select:focus{border-color:var(--accent-ui)}
+.time-row{display:flex;gap:5px;align-items:center}
+.time-row input{flex:1;min-width:0}
+.time-row .btn-now{font-size:0.68rem;padding:5px 7px;white-space:nowrap;background:var(--surface2);border:1.5px solid var(--border);color:var(--text2);border-radius:6px;flex-shrink:0}
+.time-row .btn-now:hover{background:var(--accent-ui);color:#fff;border-color:var(--accent-ui)}
+.day-offset-row{display:flex;align-items:center;gap:6px;margin-top:3px;font-size:0.75rem;color:var(--text2);flex-wrap:wrap}
+.day-offset-row select{font-size:0.75rem;padding:3px 6px;width:auto;min-width:0;flex:1}
+.dst-row{display:flex;flex-direction:column;gap:5px;margin-top:10px;font-size:0.82rem;color:var(--text2)}
+.dst-row select{font-size:0.82rem;padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);width:100%;box-sizing:border-box}
+.entry-actions{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.entry-actions .btn-primary{margin-left:auto}
+.entry-delete-row{margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+.entry-error{color:#c0392b;font-size:0.8rem;margin-top:5px;min-height:16px}
+
+/* ---- entry rows ---- */
+.entry-row{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.entry-row-info{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.entry-day{font-weight:600;font-size:0.85rem;white-space:nowrap;flex-shrink:0}
+.entry-time-pair{display:flex;gap:6px;font-size:0.82rem;color:var(--text2);flex-wrap:wrap;align-items:center}
+.entry-time-pair .tlabel{font-size:0.68rem;text-transform:uppercase;font-weight:600;letter-spacing:0.04em;color:var(--text2);flex-shrink:0}
+.entry-time-pair .tval{color:var(--text);white-space:nowrap}
+.entry-dur{font-size:0.78rem;background:var(--surface2);border-radius:20px;padding:1px 8px;color:var(--text);white-space:nowrap;flex-shrink:0}
+.entry-dst-badge{font-size:0.66rem;background:#fffbe6;color:#a07a00;border:1px solid #e8d97a;border-radius:20px;padding:1px 6px;white-space:nowrap;flex-shrink:0}
+[data-theme="dark"] .entry-dst-badge{background:#2e2a00;color:#d4b84a;border-color:#5a5020}
+.entry-row-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* ---- chart section ---- */
+.charts-section{margin-top:0}
+.chart-range-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.range-daycount{font-size:0.75rem;color:var(--text2);margin-bottom:10px;min-height:1em}
+.include-today-label{font-size:0.75rem;color:var(--text2);display:flex;align-items:center;gap:4px;cursor:pointer;-webkit-user-select:none;user-select:none}
+.include-today-label input{cursor:pointer}
+.include-today-label.disabled{opacity:0.35;pointer-events:none}
+@media(max-width:480px){.range-btn{font-size:0.72rem;padding:4px 8px}}
+.chart-range-bar .range-label{font-size:0.78rem;font-weight:700;color:var(--text);margin-right:4px;text-transform:uppercase;letter-spacing:0.05em}
+.range-btn{font-size:0.78rem;padding:5px 11px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:500}
+.range-btn.active,.range-btn:hover{background:var(--accent-ui);color:#fff;border-color:var(--accent-ui)}
+.custom-range-inputs{display:flex;gap:8px;align-items:center;font-size:0.82rem;color:var(--text2)}
+.custom-range-inputs input{font-size:0.82rem;padding:5px 8px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);width:130px}
+.chart-card{background:var(--surface);border-radius:var(--radius);padding:20px 10px 14px;box-shadow:var(--shadow);margin-bottom:20px;border:1px solid var(--border);position:relative}
+.chart-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap;gap:8px}
+.chart-bubble{position:fixed;z-index:200;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:7px 11px;box-shadow:0 4px 18px rgba(0,0,0,0.18);min-width:130px;pointer-events:none}
+.chart-title{font-size:1rem;font-family:var(--font-body);font-weight:600}
+.chart-avg{font-size:0.92rem;color:var(--text);background:var(--surface2);border:1.5px solid var(--border);border-radius:20px;padding:3px 12px;display:inline-flex;align-items:center;gap:5px}
+.chart-avg .avg-label{font-weight:500}
+.chart-avg strong{color:var(--text);font-weight:700}
+.chart-wrap{overflow-x:auto;overflow-y:hidden}
+canvas{display:block}
+
+/* ---- settings modal ---- */
+.modal-overlay{display:none;position:fixed;inset:0;background:var(--modal-overlay);z-index:100;align-items:center;justify-content:center;touch-action:none}
+.modal-overlay.open{display:flex}
+#confirmModal{z-index:300}
+#dataModal{z-index:250}
+.modal{background:var(--surface);border-radius:var(--radius);padding:22px;max-width:480px;width:calc(100% - 24px);max-height:90vh;overflow-y:auto;overflow-x:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.18);touch-action:pan-y;overscroll-behavior:contain}
+.modal h2{font-size:1.3rem;margin-bottom:20px}
+@media(max-width:480px){.modal{padding:14px;width:calc(100% - 12px)}}
+.settings-group{margin-bottom:18px}
+.settings-group label{font-size:0.78rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px}
+.settings-group input[type="color"]{width:48px;height:36px;border:none;border-radius:6px;cursor:pointer;padding:2px}
+.settings-group select,.settings-group input[type="number"]{font-family:var(--font-body);font-size:0.92rem;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);width:100%}
+.color-row{display:flex;gap:16px;flex-wrap:wrap}
+.color-item{display:flex;flex-direction:column;gap:4px;align-items:center;font-size:0.75rem;color:var(--text2)}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+.theme-toggle{display:flex;gap:8px;align-items:center;font-size:0.85rem}
+.goals-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.goals-row .field-group{min-width:0}
+.goals-row .field-group input[type="time"],.goals-row .field-group input[type="number"]{display:block;width:100%;box-sizing:border-box;min-width:0;min-height:32px;font-size:0.82rem;padding:6px 6px;-webkit-appearance:none;appearance:none}
+.goals-row .field-group select{display:block;width:100%;box-sizing:border-box;min-width:0;font-size:0.82rem;padding:6px 6px}
+.section-divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+
+/* ---- chart point bubble ---- */
+.bubble-day{font-weight:700;font-size:0.82rem;margin-bottom:5px;color:var(--text)}
+.bubble-row{display:flex;justify-content:space-between;gap:12px;font-size:0.78rem;color:var(--text);line-height:1.6}
+.bubble-lbl{color:var(--text2);font-weight:600;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em}
+.no-data{text-align:center;color:var(--text2);font-size:0.9rem;padding:30px 0}
+.modal-data{max-width:560px;max-height:85vh;display:flex;flex-direction:column}
+.data-modal-desc{font-size:0.82rem;color:var(--text2);margin:6px 0 8px}
+.data-textarea{width:100%;flex:1;min-height:180px;max-height:340px;font-family:'Courier New',monospace;font-size:0.72rem;padding:10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);resize:vertical;line-height:1.4}
+/* ---- iOS auto-zoom prevention ---- */
+/* iOS zooms in when focusing inputs with font-size < 16px and never zooms back out.
+   Setting font-size:16px on all inputs/selects prevents this entirely. */
+input,select,textarea{font-size:16px !important}
+/* Prevent text selection loupe and callout on all interactive/visual elements */
+*{-webkit-tap-highlight-color:transparent}
+body,button,select,input,canvas,.chart-card,.chart-bubble,.modal,.entry-row,
+.range-btn,.top-bar,.chart-header,.chart-avg,.tagline,h1,h2,label{
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+}
+/* Re-enable selection only where the user genuinely needs to select/copy text */
+textarea,.data-textarea{
+  -webkit-user-select:text;
+  user-select:text;
+  -webkit-touch-callout:default;
+}
+/* Prevent iOS context menu on canvas long-press */
+canvas{-webkit-touch-callout:none;touch-action:pan-y}
+.chart-order-list,.bubble-fields-list{display:flex;flex-direction:column;gap:6px}
+.chart-order-item,.bubble-field-item{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);font-size:0.85rem}
+.chart-order-item .coi-label{flex:1;font-weight:500}
+.bubble-field-item .bfi-label{flex:1;font-weight:500}
+.coi-arrows{display:flex;gap:3px}
+.coi-btn{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:0.8rem;cursor:pointer;color:var(--text);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;transition:opacity 0.15s}
+.coi-btn:hover{background:var(--surface);color:var(--text);border-color:var(--border)}
+.coi-btn:active{background:var(--surface) !important;color:var(--text) !important;border-color:var(--border) !important;opacity:0.5}
+.coi-btn.coi-disabled{opacity:0.3;cursor:default;pointer-events:none}
+.coi-btn.coi-reset,.coi-btn.coi-reset:active,.coi-btn.coi-reset:hover{background:var(--surface) !important;color:var(--text) !important;border-color:var(--border) !important;opacity:1 !important}
+.coi-btn::selection,.coi-btn *::selection{background:transparent}
+.cf-item{display:flex;align-items:center;gap:8px;padding:7px 8px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);font-size:0.83rem;margin-bottom:5px;flex-wrap:wrap}
+.cf-item-name{flex:1;font-weight:500;min-width:80px}
+.cf-item-type{font-size:0.72rem;color:var(--text2);background:var(--surface);border-radius:12px;padding:2px 7px;border:1px solid var(--border)}
+.add-cf-form{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:8px;display:flex;flex-direction:column;gap:8px}
+.add-cf-form label{font-size:0.75rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em}
+.add-cf-form input,.add-cf-form select{font-family:var(--font-body);font-size:0.88rem;padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);width:100%}
+.add-cf-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top-bar">
+    <div class="title-block">
+      <h1>Sleep <span>Shift</span></h1>
+      <p class="tagline">Small steps tonight, better mornings ahead.</p>
+    </div>
+    <div class="top-actions">
+      <button class="btn-icon" id="btnTheme" title="Toggle dark mode">🌙</button>
+      <button class="btn-ghost" id="btnSettings">⚙ Settings</button>
+      <button class="btn-ghost" id="btnExportModal">⬆⬇ Export</button>
+      <button class="btn-ghost" id="btnViewEntries">📋 Entries</button>
+      <button class="btn-primary" id="btnNewEntry">+ New Entry</button>
+    </div>
+  </div>
+
+  <!-- Charts (now at top) -->
+  <div class="charts-section" id="chartsSection">
+    <div class="chart-range-bar">
+      <span class="range-label">Show:</span>
+      <button class="range-btn active" data-range="7">7 days</button>
+      <button class="range-btn" data-range="14">14 days</button>
+      <button class="range-btn" data-range="30">30 days</button>
+      <button class="range-btn" data-range="90">90 days</button>
+      <button class="range-btn" data-range="180">6 months</button>
+      <button class="range-btn" data-range="365">1 year</button>
+      <button class="range-btn" data-range="1095">3 years</button>
+      <button class="range-btn" data-range="all">All time</button>
+      <button class="range-btn" data-range="custom">Custom</button>
+      <label class="include-today-label" id="includeTodayWrap">
+        <input type="checkbox" id="includeTodayChk"> Include today
+      </label>
+    </div>
+    <div class="range-daycount" id="rangeDayCount"></div>
+    <div class="custom-range-inputs" id="customRangeRow" style="display:none;margin-bottom:12px">
+      <label>From <input type="date" id="customFrom"></label>
+      <label>To <input type="date" id="customTo"></label>
+      <button class="btn-ghost btn-sm" id="btnApplyCustom">Apply</button>
+    </div>
+
+    <div class="chart-card" id="bedtimeChartCard">
+      <div class="chart-header">
+        <div class="chart-title">🌙 Bedtime</div>
+        <div class="chart-avg" id="avgBed"></div>
+      </div>
+      <div class="chart-wrap"><canvas id="bedtimeChart"></canvas></div>
+      <div class="chart-bubble" id="bubbleBed" style="display:none"></div>
+    </div>
+
+    <div class="chart-card" id="wakeChartCard">
+      <div class="chart-header">
+        <div class="chart-title">☀️ Wake-up Time</div>
+        <div class="chart-avg" id="avgWake"></div>
+      </div>
+      <div class="chart-wrap"><canvas id="wakeChart"></canvas></div>
+      <div class="chart-bubble" id="bubbleWake" style="display:none"></div>
+    </div>
+
+    <div class="chart-card" id="oobChartCard">
+      <div class="chart-header">
+        <div class="chart-title">🚶 Out of Bed</div>
+        <div class="chart-avg" id="avgOob"></div>
+      </div>
+      <div class="chart-wrap"><canvas id="oobChart"></canvas></div>
+      <div class="chart-bubble" id="bubbleOob" style="display:none"></div>
+    </div>
+
+    <div class="chart-card" id="durChartCard">
+      <div class="chart-header">
+        <div class="chart-title">⏱ Sleep Duration</div>
+        <div class="chart-avg" id="avgDur"></div>
+      </div>
+      <div class="chart-wrap"><canvas id="durChart"></canvas></div>
+      <div class="chart-bubble" id="bubbleDur" style="display:none"></div>
+    </div>
+
+    <!-- Custom field charts injected here -->
+    <div id="customChartsContainer"></div>
+  </div>
+</div>
+
+<!-- Entry Modal -->
+<div class="modal-overlay" id="entryModal">
+  <div class="modal modal-entry">
+    <div class="modal-close-row">
+      <h2>Sleep Period <span class="badge" id="entryPanelMode">New Entry</span></h2>
+      <button class="btn-icon modal-x" id="btnEntryModalClose">✕</button>
+    </div>
+    <div class="field-group day-field-row">
+      <label>Day</label>
+      <input type="date" id="fDay">
+      <div id="dayHint" class="day-hint"></div>
+    </div>
+    <div class="fields-row">
+      <div class="field-group">
+        <label>Bedtime</label>
+        <div class="time-row">
+          <input type="time" id="fBed" placeholder="--:--">
+          <button class="btn-now" id="btnNowBed">Now</button>
+        </div>
+        <div class="day-offset-row">
+          <span>Date:</span>
+          <select id="fBedOffset">
+            <option value="0">Same day as Day</option>
+            <option value="1">Next day (+1)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Wake-up Time</label>
+        <div class="time-row">
+          <input type="time" id="fWake" placeholder="--:--">
+          <button class="btn-now" id="btnNowWake">Now</button>
+        </div>
+        <div class="day-offset-row">
+          <span>Date:</span>
+          <select id="fWakeOffset">
+            <option value="0">Same day as Day</option>
+            <option value="1">Next day (+1)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="fields-row" style="margin-top:10px">
+      <div class="field-group">
+        <label>Out of Bed</label>
+        <div class="time-row">
+          <input type="time" id="fOob" placeholder="--:--">
+          <button class="btn-now" id="btnNowOob">Now</button>
+          <button class="btn-now" id="btnClearOob" title="Clear Out of Bed time" style="display:none">✕</button>
+        </div>
+        <div class="day-offset-row">
+          <span>Date:</span>
+          <select id="fOobOffset">
+            <option value="0">Same day as Day</option>
+            <option value="1">Next day (+1)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="customFieldsEntry" style="margin-top:10px"></div>
+    <div class="dst-row">
+      <span>DST adjustment during this sleep period:</span>
+      <select id="fDst">
+        <option value="0">None</option>
+        <option value="1">Spring forward +1hr (clocks jumped forward)</option>
+        <option value="-1">Fall back −1hr (clocks fell back)</option>
+      </select>
+    </div>
+    <div class="entry-error" id="entryError"></div>
+    <div class="entry-actions">
+      <button class="btn-ghost" id="btnCancelEntry">Cancel</button>
+      <button class="btn-primary" id="btnSaveEntry">Save Entry</button>
+    </div>
+    <div class="entry-delete-row" id="entryDeleteRow" style="display:none">
+      <button class="btn-danger btn-sm" id="btnDeleteEntry">Delete this entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Entries List Modal -->
+<div class="modal-overlay" id="entriesModal">
+  <div class="modal modal-entries">
+    <div class="modal-close-row">
+      <h2>Saved Entries <span class="entry-count-badge" id="entriesCount"></span></h2>
+      <button class="btn-icon modal-x" id="btnEntriesModalClose">✕</button>
+    </div>
+    <div class="entries-list" id="entriesList"></div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <button class="btn-danger btn-sm" id="btnDeleteAll">🗑 Delete All Entries</button>
+    </div>
+  </div>
+</div>
+
+<!-- Data Export/Import Modal -->
+<div class="modal-overlay" id="dataModal">
+  <div class="modal modal-data">
+    <div class="modal-close-row">
+      <h2 style="margin-bottom:0" id="dataModalTitle">Export JSON</h2>
+      <button class="btn-icon modal-x" id="btnDataModalClose">✕</button>
+    </div>
+    <p class="data-modal-desc" id="dataModalDesc"></p>
+    <textarea id="dataModalTextarea" class="data-textarea" spellcheck="false"></textarea>
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="btn-primary" id="btnDataModalAction">Copy to Clipboard</button>
+      <button class="btn-ghost" id="btnDataModalClose2">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chart point bubble -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <p id="confirmMessage" style="font-size:0.95rem;margin-bottom:20px;line-height:1.5"></p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn-ghost" id="btnConfirmCancel">Cancel</button>
+      <button class="btn-danger" id="btnConfirmOk" style="background:#c0392b;color:#fff;border-color:#c0392b;font-weight:600">Delete All</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export / Import Modal -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-close-row">
+      <h2 style="margin-bottom:0">Export &amp; Import</h2>
+      <button class="btn-icon modal-x" id="btnExportModalClose">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+      <button class="btn-ghost" id="btnExportJSON" style="text-align:left;padding:12px 14px">
+        <div style="font-weight:600">⬇ Export JSON</div>
+        <div style="font-size:0.78rem;color:var(--text2);margin-top:2px">Full backup — entries, custom fields, settings</div>
+      </button>
+      <button class="btn-ghost" id="btnExportCSV" style="text-align:left;padding:12px 14px">
+        <div style="font-weight:600">⬇ Export CSV</div>
+        <div style="font-size:0.78rem;color:var(--text2);margin-top:2px">Spreadsheet-friendly, open in Numbers or Excel</div>
+      </button>
+      <button class="btn-ghost" id="btnImportJSON" style="text-align:left;padding:12px 14px">
+        <div style="font-weight:600">⬆ Import JSON</div>
+        <div style="font-size:0.78rem;color:var(--text2);margin-top:2px">Restore from a previous JSON export</div>
+      </button>
+      <button class="btn-ghost" id="btnSaveApp" style="text-align:left;padding:12px 14px">
+        <div style="font-weight:600">💾 Save App to Device</div>
+        <div style="font-size:0.78rem;color:var(--text2);margin-top:2px">Download the app as sleep-shift.html (works in Safari)</div>
+      </button>
+    </div>
+    <input type="file" id="importFileInput" accept=".json" style="display:none">
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-close-row">
+      <h2 style="margin-bottom:0">Settings</h2>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn-primary btn-sm" id="btnSaveSettingsTop">Save</button>
+        <button class="btn-icon modal-x" id="btnSettingsClose">✕</button>
+      </div>
+    </div>
+    <div class="settings-group">
+      <label>Time Format</label>
+      <select id="setTimeFormat">
+        <option value="12">12-hour (AM/PM)</option>
+        <option value="24">24-hour (Military)</option>
+      </select>
+    </div>
+    <div class="settings-group">
+      <label>Theme</label>
+      <div class="theme-toggle">
+        <button class="btn-ghost btn-sm" id="setThemeAuto">Auto</button>
+        <button class="btn-ghost btn-sm" id="setThemeLight">☀ Light</button>
+        <button class="btn-ghost btn-sm" id="setThemeDark">🌙 Dark</button>
+      </div>
+    </div>
+    <hr class="section-divider">
+    <div class="settings-group">
+      <label>Chart Lines</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);cursor:pointer">
+        <input type="checkbox" id="setSmoothLines" checked>
+        Smooth curves (uncheck for straight lines)
+      </label>
+    </div>
+    <hr class="section-divider">
+    <div class="settings-group">
+      <label>Goal Lines</label>
+      <div class="goals-row">
+        <div class="field-group">
+          <label>Bedtime goal</label>
+          <div style="display:flex;gap:4px;align-items:center">
+            <input type="time" id="setGoalBed" style="flex:1;min-width:0">
+            <button class="btn-ghost btn-sm" onclick="document.getElementById('setGoalBed').value=''" style="flex-shrink:0;padding:4px 7px;font-size:0.72rem">Clear</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Wake-up goal</label>
+          <div style="display:flex;gap:4px;align-items:center">
+            <input type="time" id="setGoalWake" style="flex:1;min-width:0">
+            <button class="btn-ghost btn-sm" onclick="document.getElementById('setGoalWake').value=''" style="flex-shrink:0;padding:4px 7px;font-size:0.72rem">Clear</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Out of Bed goal</label>
+          <div style="display:flex;gap:4px;align-items:center">
+            <input type="time" id="setGoalOob" style="flex:1;min-width:0">
+            <button class="btn-ghost btn-sm" onclick="document.getElementById('setGoalOob').value=''" style="flex-shrink:0;padding:4px 7px;font-size:0.72rem">Clear</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Duration goal (hrs)</label>
+          <input type="number" id="setGoalDur" min="1" max="24" step="0.5" value="8">
+        </div>
+      </div>
+    </div>
+    <hr class="section-divider">
+    <div class="settings-group">
+      <label>New Entry Defaults</label>
+      <div class="goals-row">
+        <div class="field-group">
+          <label>Bedtime date</label>
+          <select id="setDefaultBedOffset">
+            <option value="0">Same day</option>
+            <option value="1">Next day</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Wake-up date</label>
+          <select id="setDefaultWakeOffset">
+            <option value="0">Same day</option>
+            <option value="1">Next day</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Out of Bed date</label>
+          <select id="setDefaultOobOffset">
+            <option value="0">Same day</option>
+            <option value="1">Next day</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <hr class="section-divider">
+    <div class="settings-group">
+      <label>App Accent Color</label>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px">
+        <div class="color-item">
+          <input type="color" id="colAccentUi" value="#5b8ccc">
+          <span>Custom</span>
+        </div>
+        <div class="field-group" style="flex:1;min-width:160px">
+          <label>Presets</label>
+          <select id="accentPreset">
+            <option value="">— choose a preset —</option>
+            <option value="#5b8ccc">Sky Blue (default)</option>
+            <option value="#4a90a4">Teal Blue</option>
+            <option value="#5c7a9e">Slate Blue</option>
+            <option value="#6b8f71">Sage Green</option>
+            <option value="#7a6bc9">Soft Violet</option>
+            <option value="#c47a5a">Terracotta</option>
+            <option value="#c46d8a">Dusty Rose</option>
+            <option value="#b07d3a">Warm Amber</option>
+            <option value="#5a9e8a">Seafoam</option>
+            <option value="#7a8c9e">Steel Gray-Blue</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <hr class="section-divider">
+    <div class="settings-group">
+      <label>Chart Colors</label>
+      <div class="color-row">
+        <div class="color-item">
+          <input type="color" id="colBed" value="#5b8ccc">
+          <span>Bedtime</span>
+        </div>
+        <div class="color-item">
+          <input type="color" id="colWake" value="#e07b5a">
+          <span>Wake-up</span>
+        </div>
+        <div class="color-item">
+          <input type="color" id="colOob" value="#9b59b6">
+          <span>Out of Bed</span>
+        </div>
+        <div class="color-item">
+          <input type="color" id="colDur" value="#5daa80">
+          <span>Duration</span>
+        </div>
+        <div class="color-item">
+          <input type="color" id="colChartBg" value="#fdfbf8">
+          <span>Chart BG</span>
+        </div>
+      </div>
+    </div>
+    <hr class="section-divider">
+    <div class="settings-group">
+      <label>Chart Visibility &amp; Order</label>
+      <div id="chartOrderList" class="chart-order-list"></div>
+    </div>
+    <hr class="section-divider">
+    <div class="settings-group">
+      <label>Bubble Pop-up Fields</label>
+      <div id="bubbleFieldsList" class="bubble-fields-list"></div>
+    </div>
+    <hr class="section-divider">
+    <div class="settings-group">
+      <label>Custom Fields <span style="font-weight:400;font-size:0.78rem;color:var(--text2)">(max 10)</span></label>
+      <div id="customFieldsList"></div>
+      <button class="btn-ghost btn-sm" id="btnAddCustomField" style="margin-top:8px">+ Add Custom Field</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="btnResetColors">Reset Colors</button>
+      <button class="btn-ghost" id="btnResetSettings">Reset All</button>
+      <button class="btn-ghost" id="btnSettingsCancel">Cancel</button>
+      <button class="btn-primary" id="btnSaveSettings">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA MODEL
+// entries: { id, day (YYYY-MM-DD), bedTime (HH:MM or ''), bedOffset (0|1), wakeTime (HH:MM or ''), wakeOffset (0|1), dst (-1|0|1) }
+// ============================================================
+
+const DEFAULT_SETTINGS = {
+  timeFormat: '12',
+  theme: 'auto',
+  goalBed: '',
+  goalWake: '',
+  goalOob: '',
+  goalDur: 8,
+  colBed: '#5b8ccc',
+  colWake: '#e07b5a',
+  colOob: '#9b59b6',    // Out of Bed line color
+  colDur: '#5daa80',
+  colChartBg: '#fdfbf8',
+  accentUi: '#5b8ccc',
+  smoothLines: true,
+  defaultBedOffset: '0',
+  defaultWakeOffset: '1',
+  defaultOobOffset: '1',
+  // Chart visibility: keyed by chartId
+  chartVisible: { bed: true, wake: true, oob: true, dur: true },
+  // Chart order: array of chartId strings
+  chartOrder: ['bed', 'wake', 'oob', 'dur'],
+  // Bubble field visibility
+  bubbleFields: { bed: true, wake: true, oob: true, dur: true, custom: true }
+};
+
+let entries = [];
+let settings = Object.assign({}, DEFAULT_SETTINGS);
+let customFieldDefs = []; // [{id, name, type, decimalPlaces, color, goalValue, chartVisible, bubbleVisible, chartOrder}]
+let editingId = null;
+let chartRange = { type: '7' };
+let openedFromEntries = false;
+let includeToday = false;
+
+function loadData() {
+  try {
+    const e = localStorage.getItem('sleepEntries');
+    if (e) entries = JSON.parse(e);
+    const s = localStorage.getItem('sleepSettings');
+    if (s) {
+      const loaded = JSON.parse(s);
+      settings = Object.assign({}, DEFAULT_SETTINGS, loaded);
+      // Deep merge nested objects
+      settings.chartVisible = Object.assign({}, DEFAULT_SETTINGS.chartVisible, loaded.chartVisible || {});
+      settings.chartOrder = loaded.chartOrder || DEFAULT_SETTINGS.chartOrder.slice();
+      settings.bubbleFields = Object.assign({}, DEFAULT_SETTINGS.bubbleFields, loaded.bubbleFields || {});
+    }
+    const cf = localStorage.getItem('sleepCustomFields');
+    if (cf) customFieldDefs = JSON.parse(cf);
+  } catch(err) { console.warn('Load error', err); }
+}
+
+function saveData() {
+  localStorage.setItem('sleepEntries', JSON.stringify(entries));
+  localStorage.setItem('sleepSettings', JSON.stringify(settings));
+  localStorage.setItem('sleepCustomFields', JSON.stringify(customFieldDefs));
+}
+
+// Ensure chartOrder includes all built-in and custom chart ids
+function normalizeChartOrder() {
+  const builtIn = ['bed','wake','oob','dur'];
+  const customChartIds = customFieldDefs
+    .filter(f => ['datetime','numeric','yesno','text'].includes(f.type))
+    .map(f => 'cf_' + f.id);
+  const allIds = [...builtIn, ...customChartIds];
+  // Add missing ids to end
+  allIds.forEach(id => { if (!settings.chartOrder.includes(id)) settings.chartOrder.push(id); });
+  // Remove ids that no longer exist
+  settings.chartOrder = settings.chartOrder.filter(id => allIds.includes(id));
+}
+
+// ---- Time utils ----
+function parseHHMM(hhmm) {
+  if (!hhmm) return null;
+  const [h,m] = hhmm.split(':').map(Number);
+  return h * 60 + m; // minutes since midnight
+}
+
+function minutesToHHMM(mins) {
+  const total = Math.round(((mins % 1440) + 1440) % 1440);
+  const h = Math.floor(total / 60) % 24;
+  const m = total % 60;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+}
+
+function formatTime(hhmm, fmt) {
+  if (!hhmm) return '—';
+  const [h, m] = hhmm.split(':').map(Number);
+  if (fmt === '24') return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return h12 + ':' + String(m).padStart(2,'0') + ' ' + ampm;
+}
+
+function formatTimeFromMins(mins, fmt) {
+  return formatTime(minutesToHHMM(((mins % 1440) + 1440) % 1440), fmt);
+}
+
+// Convert entry times to absolute ms timestamps
+function entryToMs(entry) {
+  const dayMs = new Date(entry.day + 'T00:00:00').getTime();
+  let bedMs = null, wakeMs = null, oobMs = null;
+  if (entry.bedTime) {
+    const [bh, bm] = entry.bedTime.split(':').map(Number);
+    bedMs = dayMs + (entry.bedOffset||0) * 86400000 + (bh * 3600 + bm * 60) * 1000;
+  }
+  if (entry.wakeTime) {
+    const [wh, wm] = entry.wakeTime.split(':').map(Number);
+    wakeMs = dayMs + (entry.wakeOffset||0) * 86400000 + (wh * 3600 + wm * 60) * 1000;
+  }
+  if (entry.oobTime) {
+    const [oh, om] = entry.oobTime.split(':').map(Number);
+    oobMs = dayMs + (entry.oobOffset||0) * 86400000 + (oh * 3600 + om * 60) * 1000;
+  }
+  return { bedMs, wakeMs, oobMs };
+}
+
+function durationHours(entry) {
+  const { bedMs, wakeMs } = entryToMs(entry);
+  if (bedMs === null || wakeMs === null) return null;
+  const diff = (wakeMs - bedMs) / 3600000;
+  // DST adjustment: if spring forward, actual sleep was 1hr less; fall back 1hr more
+  const adjusted = diff - entry.dst;
+  return adjusted > 0 && adjusted <= 24 ? adjusted : null;
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function nowHHMM() {
+  const n = new Date();
+  return String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+}
+
+// ---- Generate unique ID ----
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+// ---- DOM refs ----
+const fDay = document.getElementById('fDay');
+const fBed = document.getElementById('fBed');
+const fWake = document.getElementById('fWake');
+const fOob = document.getElementById('fOob');
+const fBedOffset = document.getElementById('fBedOffset');
+const fWakeOffset = document.getElementById('fWakeOffset');
+const fOobOffset = document.getElementById('fOobOffset');
+const fDst = document.getElementById('fDst');
+const entryError = document.getElementById('entryError');
+const entryPanelMode = document.getElementById('entryPanelMode');
+const btnDeleteEntry = document.getElementById('btnDeleteEntry');
+const entriesList = document.getElementById('entriesList');
+
+// ---- Day hint ----
+function updateDayHint() {
+  const hint = document.getElementById('dayHint');
+  const day = fDay.value;
+  if (!day) { hint.textContent = ''; hint.className = 'day-hint'; return; }
+  const existing = entries.find(e => e.day === day && e.id !== editingId);
+  if (existing) {
+    // Load the existing entry's data into the form
+    editingId = existing.id;
+    fBed.value = existing.bedTime || '';
+    fWake.value = existing.wakeTime || '';
+    fOob.value = existing.oobTime || '';
+    fBedOffset.value = String(existing.bedOffset || 0);
+    fWakeOffset.value = String(existing.wakeOffset || 0);
+    fOobOffset.value = String(existing.oobOffset !== undefined ? existing.oobOffset : (settings.defaultOobOffset || 1));
+    fDst.value = String(existing.dst || 0);
+    fillCustomFieldInputs(existing);
+    entryPanelMode.textContent = 'Editing';
+    document.getElementById('entryDeleteRow').style.display = '';
+    hint.className = 'day-hint editing';
+    hint.textContent = '✎ Existing entry loaded — you are now editing it.';
+  } else if (editingId && entries.find(e => e.day === day && e.id === editingId)) {
+    hint.className = 'day-hint editing';
+    hint.textContent = '✎ Editing existing entry for this day.';
+  } else {
+    // No existing entry for this day — clear times and reset to defaults
+    editingId = null;
+    fBed.value = '';
+    fWake.value = '';
+    fOob.value = '';
+    fBedOffset.value = settings.defaultBedOffset || '0';
+    fWakeOffset.value = settings.defaultWakeOffset || '1';
+    fOobOffset.value = settings.defaultOobOffset || '1';
+    fDst.value = '0';
+    fillCustomFieldInputs(null);
+    entryPanelMode.textContent = 'New Entry';
+    document.getElementById('entryDeleteRow').style.display = 'none';
+    hint.className = 'day-hint';
+    hint.textContent = '';
+  }
+}
+fDay.addEventListener('change', updateDayHint);
+function resetEntryPanel() {
+  editingId = null;
+  fDay.value = todayStr();
+  fBed.value = '';
+  fWake.value = '';
+  fOob.value = '';
+  fBedOffset.value = settings.defaultBedOffset || '0';
+  fWakeOffset.value = settings.defaultWakeOffset || '1';
+  fOobOffset.value = settings.defaultOobOffset || '1';
+  fDst.value = '0';
+  entryError.textContent = '';
+  entryPanelMode.textContent = 'New Entry';
+  document.getElementById('entryDeleteRow').style.display = 'none';
+  renderCustomFieldInputs();
+  updateOobClearBtn();
+  updateDayHint();
+}
+
+function fillEntryPanel(entry) {
+  editingId = entry.id;
+  fDay.value = entry.day;
+  fBed.value = entry.bedTime || '';
+  fWake.value = entry.wakeTime || '';
+  fOob.value = entry.oobTime || '';
+  fBedOffset.value = String(entry.bedOffset || 0);
+  fWakeOffset.value = String(entry.wakeOffset || 0);
+  fOobOffset.value = String(entry.oobOffset !== undefined ? entry.oobOffset : (settings.defaultOobOffset || 1));
+  fDst.value = String(entry.dst || 0);
+  entryError.textContent = '';
+  entryPanelMode.textContent = 'Editing';
+  document.getElementById('entryDeleteRow').style.display = '';
+  renderCustomFieldInputs();
+  fillCustomFieldInputs(entry);
+  updateOobClearBtn();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  updateDayHint();
+}
+
+// Now buttons: use touchstart+preventDefault to intercept before iOS picker dismissal
+// Falls back to click on desktop where touchstart doesn't fire
+function wireNowBtn(btnId, getFn) {
+  const btn = document.getElementById(btnId);
+  btn.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // prevents focus loss / picker commit
+    getFn();
+  }, { passive: false });
+  btn.addEventListener('click', (e) => {
+    // Only run on non-touch (desktop) — touch already handled above
+    if (!e.isTrusted || e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+    getFn();
+  });
+}
+wireNowBtn('btnNowBed',  () => { fBed.value  = nowHHMM(); });
+wireNowBtn('btnNowWake', () => { fWake.value = nowHHMM(); });
+wireNowBtn('btnNowOob',  () => { fOob.value  = nowHHMM(); updateOobClearBtn(); });
+
+const btnClearOob = document.getElementById('btnClearOob');
+function updateOobClearBtn() {
+  btnClearOob.style.display = fOob.value ? '' : 'none';
+}
+btnClearOob.onclick = () => { fOob.value = ''; updateOobClearBtn(); };
+
+// Pre-fill OOB from wake time when user taps the empty field
+fOob.addEventListener('focus', () => {
+  if (!fOob.value && fWake.value) {
+    fOob.value = fWake.value;
+    fOobOffset.value = fWakeOffset.value;
+    updateOobClearBtn();
+  }
+});
+fOob.addEventListener('change', updateOobClearBtn);
+
+// When wake time changes, pre-populate Out of Bed if it's empty
+// OOB offset follows wake offset only if user hasn't touched OOB time
+fWakeOffset.addEventListener('change', () => {
+  if (!fOob.value) fOobOffset.value = fWakeOffset.value;
+});
+document.getElementById('btnNewEntry').onclick = () => {
+  resetEntryPanel();
+  openedFromEntries = false;
+  document.getElementById('entryModal').classList.add('open');
+};
+document.getElementById('btnCancelEntry').onclick = () => {
+  openedFromEntries = false;
+  document.getElementById('entryModal').classList.remove('open');
+  resetEntryPanel();
+};
+document.getElementById('btnEntryModalClose').onclick = () => {
+  openedFromEntries = false;
+  document.getElementById('entryModal').classList.remove('open');
+  resetEntryPanel();
+};
+document.getElementById('entryModal').onclick = (e) => {
+  if (e.target === document.getElementById('entryModal')) {
+    openedFromEntries = false;
+    document.getElementById('entryModal').classList.remove('open');
+    resetEntryPanel();
+  }
+};
+document.getElementById('btnViewEntries').onclick = () => {
+  renderEntriesList();
+  document.getElementById('entriesModal').classList.add('open');
+};
+document.getElementById('btnEntriesModalClose').onclick = () => {
+  document.getElementById('entriesModal').classList.remove('open');
+};
+document.getElementById('entriesModal').onclick = (e) => {
+  if (e.target === document.getElementById('entriesModal'))
+    document.getElementById('entriesModal').classList.remove('open');
+};
+
+document.getElementById('btnSaveEntry').onclick = () => {
+  entryError.textContent = '';
+  const day = fDay.value;
+  if (!day) { entryError.textContent = 'Please select a Day.'; return; }
+  const bedTime = fBed.value.trim();
+  const wakeTime = fWake.value.trim();
+  const oobCheck = fOob.value.trim();
+  const dstCheck = parseInt(fDst.value);
+
+  // Require at least one value besides Day
+  const hasCustomValue = customFieldDefs.some(fd => {
+    const el = document.getElementById('cfInput_' + fd.id);
+    if (!el) return false;
+    const v = el.value;
+    return v !== '' && v !== null && v !== undefined;
+  });
+  if (!bedTime && !wakeTime && !oobCheck && dstCheck === 0 && !hasCustomValue) {
+    entryError.textContent = 'Please enter at least one value (bedtime, wake-up, out of bed, or a custom field).';
+    return;
+  }
+
+  const bedOffset = parseInt(fBedOffset.value);
+  const wakeOffset = parseInt(fWakeOffset.value);
+  const oobOffset = parseInt(fOobOffset.value);
+  const dst = parseInt(fDst.value);
+  const oobTime = fOob.value.trim();
+
+  // Validation
+  const dayMs = new Date(day + 'T00:00:00').getTime();
+  let bedMs = null, wakeMs = null, oobMs = null;
+  if (bedTime) {
+    const [bh,bm] = bedTime.split(':').map(Number);
+    bedMs = dayMs + bedOffset * 86400000 + (bh*3600+bm*60)*1000;
+  }
+  if (wakeTime) {
+    const [wh,wm] = wakeTime.split(':').map(Number);
+    wakeMs = dayMs + wakeOffset * 86400000 + (wh*3600+wm*60)*1000;
+  }
+  if (oobTime) {
+    const [oh,om] = oobTime.split(':').map(Number);
+    oobMs = dayMs + oobOffset * 86400000 + (oh*3600+om*60)*1000;
+  }
+
+  if (bedMs !== null && wakeMs !== null) {
+    if (wakeMs <= bedMs) { entryError.textContent = 'Wake-up time must be after bedtime.'; return; }
+    const diffH = (wakeMs - bedMs) / 3600000;
+    if (diffH > 24) {
+      const bedHour = bedTime ? parseInt(bedTime.split(':')[0]) : null;
+      const hint = (bedHour !== null && bedHour < 12 && bedOffset === 0)
+        ? ' Tip: your bedtime is an AM time set to "Same day as Day" — did you mean "Next day (+1)"?'
+        : '';
+      entryError.textContent = 'Bedtime and wake-up time cannot be more than 24 hours apart.' + hint;
+      return;
+    }
+  }
+  if (oobMs !== null && wakeMs !== null) {
+    if (oobMs < wakeMs) { entryError.textContent = 'Out of Bed time must be equal to or after Wake-up time.'; return; }
+  }
+
+  // Check overlap with other entries
+  const others = entries.filter(e => e.id !== editingId);
+  for (const other of others) {
+    const { bedMs: obMs, wakeMs: owMs } = entryToMs(other);
+    if (bedMs !== null && wakeMs !== null && obMs !== null && owMs !== null) {
+      if (bedMs < owMs && wakeMs > obMs) {
+        entryError.textContent = `This sleep period overlaps with the entry for ${other.day}. Please adjust times.`;
+        return;
+      }
+    }
+  }
+
+  // Collect custom field values
+  const customFieldValues = collectCustomFieldValues();
+
+  if (editingId) {
+    const idx = entries.findIndex(e => e.id === editingId);
+    if (idx >= 0) {
+      entries[idx] = { id: editingId, day, bedTime, bedOffset, wakeTime, wakeOffset, oobTime, oobOffset, dst, customFields: customFieldValues };
+    }
+  } else {
+    if (entries.find(e => e.day === day)) {
+      entryError.textContent = `An entry for ${day} already exists. Edit it instead.`;
+      return;
+    }
+    entries.push({ id: genId(), day, bedTime, bedOffset, wakeTime, wakeOffset, oobTime, oobOffset, dst, customFields: customFieldValues });
+  }
+
+  entries.sort((a,b) => a.day.localeCompare(b.day));
+  saveData();
+  resetEntryPanel();
+  document.getElementById('entryModal').classList.remove('open');
+  renderEntriesList();
+  renderCharts();
+  if (openedFromEntries) {
+    openedFromEntries = false;
+    document.getElementById('entriesModal').classList.add('open');
+  }
+};
+
+document.getElementById('btnDeleteEntry').onclick = () => {
+  if (!editingId) return;
+  // no confirm() — blocked in iframe environments
+  entries = entries.filter(e => e.id !== editingId);
+  saveData();
+  resetEntryPanel();
+  document.getElementById('entryModal').classList.remove('open');
+  renderEntriesList();
+  renderCharts();
+  if (openedFromEntries) {
+    openedFromEntries = false;
+    document.getElementById('entriesModal').classList.add('open');
+  }
+};
+
+// ---- Entries List ----
+function renderEntriesList() {
+  const countEl = document.getElementById('entriesCount');
+  if (countEl) countEl.textContent = entries.length + ' entries';
+  const sorted = [...entries].sort((a,b) => b.day.localeCompare(a.day));
+  if (sorted.length === 0) {
+    entriesList.innerHTML = '<div class="no-data">No entries yet. Add your first sleep entry above.</div>';
+    return;
+  }
+  entriesList.innerHTML = sorted.map(entry => {
+    const dur = durationHours(entry);
+    const durStr = dur !== null ? dur.toFixed(1) + ' hrs' : '';
+    const bedStr = entry.bedTime ? formatTime(entry.bedTime, settings.timeFormat) + (entry.bedOffset ? ' (+1d)' : '') : '—';
+    const wakeStr = entry.wakeTime ? formatTime(entry.wakeTime, settings.timeFormat) + (entry.wakeOffset ? ' (+1d)' : '') : '—';
+    const oobStr = entry.oobTime ? formatTime(entry.oobTime, settings.timeFormat) + (entry.oobOffset ? ' (+1d)' : '') : '';
+    const dstBadge = entry.dst !== 0 ? `<span class="entry-dst-badge">${entry.dst > 0 ? '⏰ +1hr DST' : '⏰ −1hr DST'}</span>` : '';
+
+    // Custom field values for this entry
+    let customBits = '';
+    if (entry.customFields && customFieldDefs.length > 0) {
+      customFieldDefs.forEach(fd => {
+        const val = entry.customFields[fd.id];
+        if (val === null || val === undefined || val === '') return;
+        let display = '';
+        if (fd.type === 'datetime' && val && val.time) display = formatTime(val.time, settings.timeFormat) + (val.offset ? ' +1d' : '');
+        else if (fd.type === 'numeric') display = typeof val === 'number' ? val.toFixed(fd.decimalPlaces || 0) : val;
+        else if (fd.type === 'yesno') display = val === 'yes' ? '✓' : '✗';
+        else if (fd.type === 'marker') display = val === 'on' ? '📍' : '';
+        else if (fd.type === 'text') display = val.length > 20 ? val.slice(0, 18) + '…' : val;
+        if (display) customBits += `<span class="tlabel">${fd.name}</span><span class="tval">${display}</span>`;
+      });
+    }
+    return `<div class="entry-row" data-id="${entry.id}">
+      <div class="entry-row-info">
+        <div class="entry-day">${entry.day}</div>
+        <div class="entry-time-pair">
+          <span class="tlabel">Bed</span><span class="tval">${bedStr}</span>
+          <span class="tlabel">Wake</span><span class="tval">${wakeStr}</span>
+          ${oobStr ? '<span class="tlabel">OOB</span><span class="tval">' + oobStr + '</span>' : ''}
+          ${durStr ? '<span class="entry-dur">' + durStr + '</span>' : ''}
+          ${dstBadge}
+          ${customBits}
+        </div>
+      </div>
+      <div class="entry-row-actions">
+        <button class="btn-ghost btn-sm edit-btn" data-id="${entry.id}">Edit</button>
+      </div>
+    </div>`;
+  }).join('');
+  entriesList.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.onclick = () => {
+      const entry = entries.find(e => e.id === btn.dataset.id);
+      if (entry) {
+        fillEntryPanel(entry);
+        document.getElementById('entriesModal').classList.remove('open');
+        openedFromEntries = true;
+        document.getElementById('entryModal').classList.add('open');
+      }
+    };
+  });
+}
+
+// ---- Chart range ----
+document.getElementById('includeTodayChk').onchange = function() {
+  includeToday = this.checked;
+  renderCharts();
+};
+
+document.querySelectorAll('.range-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const r = btn.dataset.range;
+    const todayWrap = document.getElementById('includeTodayWrap');
+    if (r === 'custom') {
+      document.getElementById('customRangeRow').style.display = 'flex';
+      todayWrap.classList.add('disabled');
+      chartRange = { type: 'custom', from: document.getElementById('customFrom').value, to: document.getElementById('customTo').value };
+    } else {
+      document.getElementById('customRangeRow').style.display = 'none';
+      todayWrap.classList.remove('disabled');
+      chartRange = { type: r };
+    }
+    renderCharts();
+  };
+});
+
+document.getElementById('btnApplyCustom').onclick = () => {
+  chartRange = {
+    type: 'custom',
+    from: document.getElementById('customFrom').value,
+    to: document.getElementById('customTo').value
+  };
+  renderCharts();
+};
+
+// Julian Day Number — integer, no floating point
+function jdn(date) {
+  const y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate();
+  return Math.floor((1461 * (y + 4800 + Math.floor((m - 14) / 12))) / 4)
+       + Math.floor((367 * (m - 2 - 12 * Math.floor((m - 14) / 12))) / 12)
+       - Math.floor((3 * Math.floor((y + 4900 + Math.floor((m - 14) / 12)) / 100)) / 4)
+       + d - 32075;
+}
+function dateRangeDays(from, to) {
+  // Inclusive count of calendar days: integer subtraction of JDNs
+  return jdn(to) - jdn(from) + 1;
+}
+
+function getChartDateRange() {
+  const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0);
+  const yesterdayMidnight = new Date(todayMidnight.getTime() - 86400000);
+  const defaultTo = includeToday ? new Date(todayMidnight) : new Date(yesterdayMidnight);
+  defaultTo.setHours(23,59,59,999);
+
+  if (chartRange.type === 'all') {
+    if (entries.length === 0) {
+      const from = new Date(defaultTo.getTime() - 6*86400000); from.setHours(0,0,0,0);
+      return { from, to: defaultTo, totalDays: dateRangeDays(from, defaultTo) };
+    }
+    const days = entries.map(e => e.day).sort();
+    const from = new Date(days[0] + 'T00:00:00');
+    return { from, to: defaultTo, totalDays: dateRangeDays(from, defaultTo) };
+  }
+  if (chartRange.type === 'custom') {
+    const from = chartRange.from ? new Date(chartRange.from + 'T00:00:00') : new Date(defaultTo.getTime() - 6*86400000);
+    const to = chartRange.to ? new Date(chartRange.to + 'T23:59:59') : defaultTo;
+    return { from, to, totalDays: dateRangeDays(from, to) };
+  }
+  // Preset numeric range — totalDays is exactly what the user chose, +1 if includeToday
+  const numDays = parseInt(chartRange.type);
+  const totalDays = includeToday ? numDays + 1 : numDays;
+  const from = new Date(defaultTo.getTime() - (totalDays - 1) * 86400000);
+  from.setHours(0,0,0,0);
+  return { from, to: defaultTo, totalDays };
+}
+
+function getFilteredEntries() {
+  const _range = getChartDateRange(); const { from, to, totalDays } = _range;
+  return entries.filter(e => {
+    const d = new Date(e.day + 'T00:00:00');
+    return d >= from && d <= to;
+  });
+}
+
+// ---- Average calculation ----
+function avgMinutes(minsArray) {
+  if (!minsArray.length) return null;
+  // Circular mean for time of day
+  let sx = 0, sy = 0;
+  for (const m of minsArray) {
+    const ang = (m / 1440) * 2 * Math.PI;
+    sx += Math.cos(ang); sy += Math.sin(ang);
+  }
+  const avgAng = Math.atan2(sy / minsArray.length, sx / minsArray.length);
+  const avgMins = ((avgAng / (2 * Math.PI)) * 1440 + 1440) % 1440;
+  return avgMins;
+}
+
+// ---- CHART DRAWING ----
+const CHART_HEIGHT = 220;
+const CHART_PAD = { top: 18, right: 10, bottom: 48, left: 58 };
+
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// ---- Smart X-axis label generator ----
+// Returns array of { i (day index from 'from'), label, major } to draw on the X axis.
+// Automatically picks tick density + format so labels never crowd each other.
+function getXLabels(from, totalDays, drawW, padLeft, padRight) {
+  const plotW = drawW - padLeft - padRight;
+  const minPx = 44; // minimum pixels between label centres
+  const maxLabels = Math.max(2, Math.floor(plotW / minPx));
+
+  // Candidate tick schemes: { step in days, formatter(Date)->string, major: show month name separately? }
+  const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MONTH_ABBR  = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+
+  // Choose a scheme based on totalDays
+  let ticks = [];
+
+  if (totalDays <= 14) {
+    // Every day: "6/4"
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(from.getTime() + i * 86400000);
+      ticks.push({ i, label: (d.getMonth()+1) + '/' + d.getDate(), major: false });
+    }
+  } else if (totalDays <= 62) {
+    // Every 2, 3, 5, or 7 days depending on space
+    const steps = [2, 3, 5, 7];
+    const step = steps.find(s => Math.floor(totalDays / s) <= maxLabels) || 7;
+    // Anchor ticks to calendar (start of month or day 1)
+    const base = new Date(from);
+    base.setDate(1); // first of month on or before from
+    if (base < from) base.setMonth(base.getMonth() + 1); // next month
+    // Walk back to find first tick at or after from
+    let startI = Math.round((base - from) / 86400000);
+    if (startI > step) startI = startI % step;
+    for (let i = startI; i < totalDays; i += step) {
+      const d = new Date(from.getTime() + i * 86400000);
+      ticks.push({ i, label: (d.getMonth()+1) + '/' + d.getDate(), major: d.getDate() === 1 });
+    }
+  } else if (totalDays <= 200) {
+    // Label the 1st and 15th of each month, or just 1st if crowded
+    const showHalf = totalDays <= 100;
+    const d = new Date(from);
+    d.setDate(1);
+    if (d < from) d.setMonth(d.getMonth() + 1);
+    while (d <= new Date(from.getTime() + totalDays * 86400000)) {
+      const i = Math.round((d - from) / 86400000);
+      if (i >= 0 && i < totalDays) {
+        ticks.push({ i, label: MONTH_SHORT[d.getMonth()] + ' ' + d.getDate(), major: d.getDate() === 1 });
+      }
+      if (showHalf) {
+        const mid = new Date(d); mid.setDate(15);
+        const mi = Math.round((mid - from) / 86400000);
+        if (mi >= 0 && mi < totalDays)
+          ticks.push({ i: mi, label: '15', major: false });
+      }
+      d.setMonth(d.getMonth() + 1);
+    }
+  } else if (totalDays <= 400) {
+    // Monthly labels: "Jan", "Feb" etc
+    const d = new Date(from);
+    d.setDate(1);
+    if (d < from) d.setMonth(d.getMonth() + 1);
+    while (d <= new Date(from.getTime() + totalDays * 86400000)) {
+      const i = Math.round((d - from) / 86400000);
+      if (i >= 0 && i < totalDays)
+        ticks.push({ i, label: MONTH_SHORT[d.getMonth()] + ' \'' + String(d.getFullYear()).slice(2), major: d.getMonth() === 0 });
+      d.setMonth(d.getMonth() + 1);
+    }
+  } else if (totalDays <= 800) {
+    // Every other month
+    const d = new Date(from);
+    d.setDate(1);
+    if (d < from) d.setMonth(d.getMonth() + 1);
+    let idx = 0;
+    while (d <= new Date(from.getTime() + totalDays * 86400000)) {
+      const i = Math.round((d - from) / 86400000);
+      if (idx % 2 === 0 && i >= 0 && i < totalDays)
+        ticks.push({ i, label: MONTH_ABBR[d.getMonth()] + ' \'' + String(d.getFullYear()).slice(2), major: d.getMonth() === 0 });
+      d.setMonth(d.getMonth() + 1);
+      idx++;
+    }
+  } else {
+    // Quarterly or yearly
+    const d = new Date(from);
+    d.setDate(1); d.setMonth(0); // Jan 1
+    if (d < from) d.setFullYear(d.getFullYear() + 1);
+    while (d <= new Date(from.getTime() + totalDays * 86400000)) {
+      const i = Math.round((d - from) / 86400000);
+      if (i >= 0 && i < totalDays)
+        ticks.push({ i, label: String(d.getFullYear()), major: true });
+      // Also add quarterly if we have room
+      if (totalDays <= 1200) {
+        [3, 6, 9].forEach(mo => {
+          const q = new Date(d); q.setMonth(mo);
+          const qi = Math.round((q - from) / 86400000);
+          if (qi >= 0 && qi < totalDays)
+            ticks.push({ i: qi, label: MONTH_ABBR[mo], major: false });
+        });
+      }
+      d.setFullYear(d.getFullYear() + 1);
+    }
+  }
+
+  // Final cull: remove any ticks closer than minPx to a previous tick
+  ticks.sort((a, b) => a.i - b.i);
+  const culled = [];
+  let lastX = -9999;
+  for (const t of ticks) {
+    const x = padLeft + (t.i / totalDays) * plotW;
+    if (x - lastX >= minPx) { culled.push({ ...t, x }); lastX = x; }
+  }
+  return culled;
+}
+
+// ---- HiDPI canvas setup ----
+// Sets canvas physical pixels = CSS pixels * dpr, then scales ctx so all
+// drawing coordinates remain in CSS pixels. Returns the ctx ready to draw.
+function setupCanvas(canvas, cssW, cssH) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  canvas.style.width  = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return ctx;
+}
+
+function drawTimeChart(canvas, filteredEntries, getVal, color, goalMins, markerDays, label) {
+  // getVal(entry) -> minutes (can be negative or >1440 for days that cross midnight, adjusted to user intent)
+  const pts = filteredEntries.map(e => ({ day: e.day, val: getVal(e), dst: e.dst !== 0 })).filter(p => p.val !== null);
+
+  const _range = getChartDateRange(); const { from, to, totalDays } = _range;
+  
+  const containerW = (canvas.parentElement ? canvas.parentElement.clientWidth : 0) || 400;
+  const drawW = Math.max(containerW, 300);
+
+  const ctx = setupCanvas(canvas, drawW, CHART_HEIGHT);
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const chartBg = isDark ? '#131111' : settings.colChartBg;
+
+  ctx.fillStyle = chartBg;
+  ctx.fillRect(0, 0, drawW, CHART_HEIGHT);
+
+  const pl = CHART_PAD.left, pt = CHART_PAD.top, pr = CHART_PAD.right, pb = CHART_PAD.bottom;
+  const w = drawW - pl - pr;
+  const h = CHART_HEIGHT - pt - pb;
+
+  if (pts.length === 0) {
+    ctx.fillStyle = isDark ? '#999' : '#888';
+    ctx.font = '13px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No data in this range', drawW/2, CHART_HEIGHT/2);
+    return [];
+  }
+
+  // Find center based on average
+  const avgM = avgMinutes(pts.map(p => ((p.val % 1440) + 1440) % 1440));
+  // Center on avgM, show ±4 hours (480 mins) around it
+  const windowMins = 600;
+  let centerM = avgM;
+  // Normalize all vals relative to center
+  function normVal(v) {
+    let r = ((v % 1440) + 1440) % 1440;
+    // bring within centerM ± 720
+    while (r < centerM - 720) r += 1440;
+    while (r > centerM + 720) r -= 1440;
+    return r;
+  }
+  const normPts = pts.map(p => ({ ...p, nv: normVal(p.val) }));
+  const allNV = normPts.map(p => p.nv);
+  let yMin = Math.min(...allNV, centerM - windowMins/2);
+  let yMax = Math.max(...allNV, centerM + windowMins/2);
+  // Add goalMins to range
+  if (goalMins !== null) {
+    const gn = normVal(goalMins);
+    yMin = Math.min(yMin, gn);
+    yMax = Math.max(yMax, gn);
+  }
+  // Pad
+  const rangePad = 40;
+  yMin -= rangePad; yMax += rangePad;
+  const yRange = yMax - yMin;
+
+  function toY(v) { return pt + h - ((normVal(v) - yMin) / yRange) * h; }
+  function toX(dayStr) {
+    const d = new Date(dayStr + 'T00:00:00');
+    return pl + ((d - from) / (totalDays * 86400000)) * w;
+  }
+
+  // Marker vertical lines (DST + custom markers)
+  for (const marker of (markerDays||[])) {
+    const x = toX(marker.day);
+    // Dashed vertical line
+    ctx.save();
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, pt+h); ctx.stroke();
+    ctx.restore();
+    // Icon below X axis labels
+    ctx.save();
+    ctx.font = '11px serif'; ctx.fillStyle = isDark ? '#bbb' : '#888';
+    ctx.textAlign = 'center';
+    ctx.fillText(marker.isDst ? '⏰' : '📍', x, pt+h+28);
+    ctx.restore();
+    // Label rotated -90° along the dashed line, near plot bottom
+    ctx.save();
+    ctx.translate(x - 7, pt + h - 4);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = isDark ? '#bbb' : '#666';
+    ctx.font = '600 9px DM Sans, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(marker.label, 0, 0);
+    ctx.restore();
+  }
+
+  // Grid lines (horizontal, every 60 mins)
+  ctx.save();
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+  ctx.lineWidth = 1;
+  const gridStart = Math.ceil(yMin / 60) * 60;
+  for (let m = gridStart; m <= yMax; m += 60) {
+    const y = pt + h - ((m - yMin) / yRange) * h;
+    ctx.beginPath(); ctx.moveTo(pl, y); ctx.lineTo(pl+w, y); ctx.stroke();
+    // Label
+    const labelM = ((m % 1440) + 1440) % 1440;
+    const timeStr = formatTimeFromMins(labelM, settings.timeFormat);
+    ctx.fillStyle = isDark ? '#ddd' : '#444';
+    ctx.font = '10px DM Sans, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(timeStr, pl - 10, y + 4);
+  }
+  ctx.restore();
+
+  // X axis labels
+  ctx.save();
+  const xLabels = getXLabels(from, totalDays, drawW, pl, pr);
+  for (const tick of xLabels) {
+    ctx.fillStyle = tick.major ? (isDark ? '#eee' : '#222') : (isDark ? '#ddd' : '#555');
+    ctx.font = tick.major ? 'bold 10px DM Sans, sans-serif' : '600 10px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(tick.label, tick.x, pt + h + 14);
+    if (tick.major) {
+      ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(tick.x, pt); ctx.lineTo(tick.x, pt + h); ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // Goal line (drawn before curve so line stays under it)
+  if (goalMins !== null) {
+    const gy = toY(goalMins);
+    ctx.save();
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath(); ctx.moveTo(pl, gy); ctx.lineTo(pl+w, gy); ctx.stroke();
+    ctx.restore();
+  }
+
+  if (normPts.length < 2) {
+    const hits = [];
+    let topY = CHART_HEIGHT;
+    for (const p of normPts) {
+      const x = toX(p.day), y = toY(p.val);
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+      hits.push({ x, y, entry: filteredEntries.find(e => e.day === p.day) });
+      if (y < topY) topY = y;
+    }
+    canvas._topY = topY;
+    return hits;
+  }
+
+  // Line drawing — smooth or straight based on settings
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  const xs = normPts.map(p => toX(p.day));
+  const ys = normPts.map(p => pt + h - ((p.nv - yMin) / yRange) * h);
+
+  ctx.beginPath();
+  if (settings.smoothLines !== false) {
+    // Catmull-Rom to bezier
+    for (let i = 0; i < xs.length - 1; i++) {
+      const p0 = i > 0 ? i-1 : 0;
+      const p1 = i;
+      const p2 = i+1;
+      const p3 = i < xs.length-2 ? i+2 : i+1;
+      const cp1x = xs[p1] + (xs[p2]-xs[p0])/6;
+      const cp1y = ys[p1] + (ys[p2]-ys[p0])/6;
+      const cp2x = xs[p2] - (xs[p3]-xs[p1])/6;
+      const cp2y = ys[p2] - (ys[p3]-ys[p1])/6;
+      if (i === 0) ctx.moveTo(xs[p1], ys[p1]);
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, xs[p2], ys[p2]);
+    }
+  } else {
+    ctx.moveTo(xs[0], ys[0]);
+    for (let i = 1; i < xs.length; i++) ctx.lineTo(xs[i], ys[i]);
+  }
+  ctx.stroke();
+
+  // Area fill under curve
+  ctx.lineTo(xs[xs.length-1], pt+h);
+  ctx.lineTo(xs[0], pt+h);
+  ctx.closePath();
+  ctx.fillStyle = hexToRgba(color, 0.1);
+  ctx.fill();
+  ctx.restore();
+
+  // Dots — build hit array
+  const hits = [];
+  let topY = CHART_HEIGHT;
+  for (const p of normPts) {
+    const x = toX(p.day), y = pt + h - ((p.nv - yMin) / yRange) * h;
+    ctx.save();
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.restore();
+    hits.push({ x, y, entry: filteredEntries.find(e => e.day === p.day) });
+    if (y < topY) topY = y;
+  }
+  canvas._topY = topY;
+
+  // Goal label — drawn last so it sits on top of curve and dots
+  if (goalMins !== null) {
+    const gy = toY(goalMins);
+    ctx.save();
+    ctx.fillStyle = isDark ? '#ccc' : '#444';
+    ctx.font = '600 11px ui-rounded, "Varela Round", "Nunito", system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('goal', pl + 4, gy - 3);
+    ctx.restore();
+  }
+
+  return hits;
+}
+
+function drawDurChart(canvas, filteredEntries) {
+  const pts = filteredEntries.map(e => {
+    const d = durationHours(e);
+    return d !== null ? { day: e.day, val: d } : null;
+  }).filter(Boolean);
+
+  const _range = getChartDateRange(); const { from, to, totalDays } = _range;
+  
+  const containerW2 = (canvas.parentElement ? canvas.parentElement.clientWidth : 0) || 400;
+  const drawW = Math.max(containerW2, 300);
+
+  const ctx = setupCanvas(canvas, drawW, CHART_HEIGHT);
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const chartBg = isDark ? '#131111' : settings.colChartBg;
+
+  ctx.fillStyle = chartBg;
+  ctx.fillRect(0, 0, drawW, CHART_HEIGHT);
+
+  const isAllTime = chartRange.type === 'all';
+  const pl = isAllTime ? 42 : 30, pt = CHART_PAD.top, pr = CHART_PAD.right, pb = CHART_PAD.bottom;
+  const w = drawW - pl - pr;
+  const h = CHART_HEIGHT - pt - pb;
+
+  if (pts.length === 0) {
+    ctx.fillStyle = isDark ? '#999' : '#888';
+    ctx.font = '13px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No duration data in this range', drawW/2, CHART_HEIGHT/2);
+    return [];
+  }
+
+  const goalDur = settings.goalDur;
+  const yMax = Math.max(...pts.map(p => p.val), goalDur, 9) + 1;
+  const yMin = 0;
+  const yRange = yMax - yMin;
+
+  function toY(v) { return pt + h - ((v - yMin) / yRange) * h; }
+  function toX(dayStr) {
+    const d = new Date(dayStr + 'T00:00:00');
+    return pl + ((d - from) / (totalDays * 86400000)) * w;
+  }
+
+  // Grid
+  ctx.save();
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+  ctx.lineWidth = 1;
+  for (let v = 0; v <= yMax; v += 1) {
+    const y = toY(v);
+    ctx.beginPath(); ctx.moveTo(pl, y); ctx.lineTo(pl+w, y); ctx.stroke();
+    ctx.fillStyle = isDark ? '#ddd' : '#444';
+    ctx.font = '600 10px DM Sans, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(v.toFixed(0), 4, y+4);
+  }
+  ctx.restore();
+
+  // X axis labels
+  ctx.save();
+  const xLabelsDur = getXLabels(from, totalDays, drawW, pl, pr);
+  for (const tick of xLabelsDur) {
+    ctx.fillStyle = tick.major ? (isDark ? '#eee' : '#222') : (isDark ? '#ddd' : '#555');
+    ctx.font = tick.major ? 'bold 10px DM Sans, sans-serif' : '600 10px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(tick.label, tick.x, pt + h + 14);
+    if (tick.major) {
+      ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(tick.x, pt); ctx.lineTo(tick.x, pt + h); ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // Bars (goal line+label drawn after, so they sit on top)
+  const barW = Math.max(6, (w / totalDays) * 0.6);
+  const hits = [];
+  let topY = CHART_HEIGHT;
+  for (const p of pts) {
+    const x = toX(p.day);
+    const barH = ((p.val - yMin) / yRange) * h;
+    const y = toY(p.val);
+    ctx.save();
+    ctx.fillStyle = settings.colDur;
+    ctx.beginPath();
+    const bx = x - barW/2;
+    const r = Math.min(4, barW/2);
+    ctx.moveTo(bx + r, y);
+    ctx.lineTo(bx + barW - r, y);
+    ctx.quadraticCurveTo(bx + barW, y, bx + barW, y + r);
+    ctx.lineTo(bx + barW, pt+h);
+    ctx.lineTo(bx, pt+h);
+    ctx.lineTo(bx, y + r);
+    ctx.quadraticCurveTo(bx, y, bx+r, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // Duration label inside bar: 1 decimal ≤8 days, rounded integer 9-15, none above 15
+    if (barH > 20 && totalDays <= 15) {
+      const labelStr = totalDays <= 8 ? p.val.toFixed(1) : Math.round(p.val).toString();
+      ctx.save();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 9px DM Sans, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(labelStr, x, y + 12);
+      ctx.restore();
+    }
+    hits.push({ x, y: y + barH/2, bx, bRight: bx + barW, bTop: y, bBot: pt+h, entry: filteredEntries.find(e => e.day === p.day) });
+    if (y < topY) topY = y;
+  }
+  canvas._topY = topY;
+
+  // Goal line + label drawn after bars so they're never covered
+  const gy = toY(goalDur);
+  ctx.save();
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(pl, gy); ctx.lineTo(pl+w, gy); ctx.stroke();
+  ctx.restore();
+  ctx.save();
+  ctx.fillStyle = isDark ? '#ccc' : '#444';
+  ctx.font = '600 11px ui-rounded, "Varela Round", "Nunito", system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('goal', pl+4, gy-3);
+  ctx.restore();
+
+  return hits;
+}
+
+// ---- Custom Field Entry Panel ----
+function renderCustomFieldInputs() {
+  const container = document.getElementById('customFieldsEntry');
+  if (!container) return;
+  if (customFieldDefs.length === 0) { container.innerHTML = ''; return; }
+  container.innerHTML = customFieldDefs.map(fd => {
+    const inputId = 'cfInput_' + fd.id;
+    if (fd.type === 'datetime') {
+      return `<div class="field-group" style="margin-top:8px">
+        <label>${fd.name}</label>
+        <div class="time-row">
+          <input type="time" id="${inputId}" placeholder="--:--">
+          <button class="btn-now" onclick="document.getElementById('${inputId}').value=nowHHMM()">Now</button>
+        </div>
+        <div class="day-offset-row">
+          <span>Date:</span>
+          <select id="${inputId}_off">
+            <option value="0">Same day</option>
+            <option value="1">Next day (+1)</option>
+          </select>
+        </div>
+      </div>`;
+    } else if (fd.type === 'numeric') {
+      const step = fd.decimalPlaces === 1 ? '0.1' : '1';
+      return `<div class="field-group" style="margin-top:8px">
+        <label>${fd.name}</label>
+        <input type="number" id="${inputId}" step="${step}" min="0" style="font-family:var(--font-body);font-size:0.875rem;padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);width:100%">
+      </div>`;
+    } else if (fd.type === 'text') {
+      return `<div class="field-group" style="margin-top:8px">
+        <label>${fd.name}</label>
+        <input type="text" id="${inputId}" style="font-family:var(--font-body);font-size:0.875rem;padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);width:100%">
+      </div>`;
+    } else if (fd.type === 'yesno') {
+      return `<div class="field-group" style="margin-top:8px">
+        <label>${fd.name}</label>
+        <select id="${inputId}" style="font-family:var(--font-body);font-size:0.875rem;padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);width:auto">
+          <option value="">—</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+        </select>
+      </div>`;
+    } else if (fd.type === 'marker') {
+      return `<div class="field-group" style="margin-top:8px;display:flex;align-items:center;gap:10px">
+        <label style="margin:0">📍 ${fd.name}</label>
+        <select id="${inputId}" style="font-family:var(--font-body);font-size:0.875rem;padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);width:auto">
+          <option value="">Off</option>
+          <option value="on">Mark this day</option>
+        </select>
+      </div>`;
+    }
+    return '';
+  }).join('');
+}
+
+function fillCustomFieldInputs(entry) {
+  customFieldDefs.forEach(fd => {
+    const inputId = 'cfInput_' + fd.id;
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    const val = entry && entry.customFields ? entry.customFields[fd.id] : undefined;
+    if (fd.type === 'datetime') {
+      el.value = (val && val.time) ? val.time : '';
+      const offEl = document.getElementById(inputId + '_off');
+      if (offEl) offEl.value = (val && val.offset !== undefined) ? String(val.offset) : '0';
+    } else if (fd.type === 'numeric') {
+      el.value = (val !== undefined && val !== null && val !== '') ? val : '';
+    } else {
+      el.value = val || '';
+    }
+  });
+}
+
+function collectCustomFieldValues() {
+  const result = {};
+  customFieldDefs.forEach(fd => {
+    const inputId = 'cfInput_' + fd.id;
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    if (fd.type === 'datetime') {
+      const time = el.value.trim();
+      const offEl = document.getElementById(inputId + '_off');
+      const offset = offEl ? parseInt(offEl.value) : 0;
+      result[fd.id] = time ? { time, offset } : null;
+    } else if (fd.type === 'numeric') {
+      const raw = el.value.trim();
+      if (raw === '') { result[fd.id] = null; return; }
+      let num = parseFloat(raw);
+      if (isNaN(num)) { result[fd.id] = null; return; }
+      const factor = fd.decimalPlaces === 1 ? 10 : 1;
+      result[fd.id] = Math.round(num * factor) / factor;
+    } else {
+      result[fd.id] = el.value || null;
+    }
+  });
+  return result;
+}
+
+// ---- Settings: Custom Fields Management ----
+function renderSettingsCustomFields() {
+  const list = document.getElementById('customFieldsList');
+  if (!list) return;
+  if (customFieldDefs.length === 0) {
+    list.innerHTML = '<div style="font-size:0.82rem;color:var(--text2)">No custom fields yet.</div>';
+    return;
+  }
+  list.innerHTML = customFieldDefs.map(fd => {
+    const typeLabel = {datetime:'Date/Time',numeric:'Numeric',text:'Text',yesno:'Yes/No',marker:'Marker'}[fd.type] || fd.type;
+    return `<div class="cf-item">
+      <span class="cf-item-name">${fd.name}</span>
+      <span class="cf-item-type">${typeLabel}</span>
+      ${(fd.type === 'datetime' || fd.type === 'numeric' || fd.type === 'yesno' || fd.type === 'text') ? `<input type="color" value="${fd.color||'#888888'}" title="Color" style="width:32px;height:28px;border:none;border-radius:5px;cursor:pointer;padding:1px" onchange="updateCFColor('${fd.id}',this.value)">` : ''}
+      <input type="text" value="${fd.name}" placeholder="Name" style="font-family:var(--font-body);font-size:0.8rem;padding:4px 7px;border:1.5px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);width:100px" onchange="renameCF('${fd.id}',this.value)">
+      ${(fd.type === 'datetime' || fd.type === 'numeric') ? `<div style="font-size:0.75rem;color:var(--text2)">Goal: <input type="${fd.type==='numeric'?'number':'time'}" value="${fd.goalValue||''}" style="font-family:var(--font-body);font-size:0.78rem;padding:3px 6px;border:1.5px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);width:${fd.type==='numeric'?'60px':'90px'}" onchange="setCFGoal('${fd.id}',this.value)"></div>` : ''}
+      ${fd.type === 'numeric' ? `<label style="font-size:0.75rem;color:var(--text2);display:flex;align-items:center;gap:4px;font-weight:400;text-transform:none;letter-spacing:0"><input type="checkbox" ${fd.unsetZero?'checked':''} onchange="setCFUnsetZero('${fd.id}',this.checked)"> unset=0</label>` : ''}
+      <button class="btn-danger btn-sm" onclick="deleteCF('${fd.id}')">Delete</button>
+    </div>`;
+  }).join('');
+}
+
+function updateCFColor(id, color) {
+  const fd = customFieldDefs.find(f => f.id === id);
+  if (fd) { fd.color = color; saveData(); setTimeout(renderCharts, 80); }
+}
+function renameCF(id, name) {
+  const fd = customFieldDefs.find(f => f.id === id);
+  if (fd && name.trim()) { fd.name = name.trim(); saveData(); renderCharts(); }
+}
+function setCFGoal(id, val) {
+  const fd = customFieldDefs.find(f => f.id === id);
+  if (fd) { fd.goalValue = val; saveData(); setTimeout(renderCharts, 80); }
+}
+function setCFUnsetZero(id, val) {
+  const fd = customFieldDefs.find(f => f.id === id);
+  if (fd) { fd.unsetZero = val; saveData(); setTimeout(renderCharts, 80); }
+}
+function deleteCF(id) {
+  const fd = customFieldDefs.find(f => f.id === id);
+  if (!fd) return;
+  // Custom confirm using our modal
+  document.getElementById('confirmMessage').textContent =
+    `Delete custom field "${fd.name}"? All saved data for this field will be lost.`;
+  document.getElementById('btnConfirmOk').textContent = 'Delete';
+  document.getElementById('confirmModal').classList.add('open');
+  document.getElementById('confirmModal').dataset.deleteCfId = id;
+}
+
+// ---- Settings: Chart Order & Visibility ----
+function makeChartOrderRow(id, idx, total, allCharts) {
+  const meta = allCharts.find(c => c.id === id);
+  if (!meta) return null;
+  const vis = settings.chartVisible[id] !== false;
+  const div = document.createElement('div');
+  div.className = 'chart-order-item';
+
+  const upDisabled = idx === 0;
+  const downDisabled = idx === total - 1;
+
+  div.innerHTML = `
+    <input type="checkbox" ${vis ? 'checked' : ''} onchange="toggleChartVisible('${id}',this.checked)" title="Show/hide">
+    <span class="coi-label">${meta.icon} ${meta.label}</span>
+    <div class="coi-arrows">
+      <span class="coi-btn ${upDisabled ? 'coi-disabled' : ''}" data-id="${id}" data-dir="-1">↑</span>
+      <span class="coi-btn ${downDisabled ? 'coi-disabled' : ''}" data-id="${id}" data-dir="1">↓</span>
+    </div>`;
+
+  // Wire events directly so touchstart+onclick don't both fire
+  div.querySelectorAll('.coi-btn').forEach(span => {
+    let touchHandled = false;
+    span.addEventListener('touchstart', e => {
+      e.preventDefault();
+      touchHandled = true;
+    }, { passive: false });
+    span.addEventListener('touchend', e => {
+      e.preventDefault();
+      if (!span.classList.contains('coi-disabled')) {
+        moveChart(span.dataset.id, parseInt(span.dataset.dir));
+      }
+    }, { passive: false });
+    span.addEventListener('click', e => {
+      if (touchHandled) { touchHandled = false; return; } // already handled by touch
+      if (!span.classList.contains('coi-disabled')) {
+        moveChart(span.dataset.id, parseInt(span.dataset.dir));
+      }
+    });
+  });
+
+  return div;
+}
+
+function renderChartOrderList() {
+  const container = document.getElementById('chartOrderList');
+  if (!container) return;
+  normalizeChartOrder();
+  const allCharts = getChartMeta();
+  container.innerHTML = '';
+  settings.chartOrder.forEach((id, idx) => {
+    const row = makeChartOrderRow(id, idx, settings.chartOrder.length, allCharts);
+    if (row) container.appendChild(row);
+  });
+}
+
+function getChartMeta() {
+  const builtIn = [
+    {id:'bed', icon:'🌙', label:'Bedtime'},
+    {id:'wake', icon:'☀️', label:'Wake-up Time'},
+    {id:'oob', icon:'🚶', label:'Out of Bed'},
+    {id:'dur', icon:'⏱', label:'Sleep Duration'}
+  ];
+  const custom = customFieldDefs
+    .filter(f => ['datetime','numeric','yesno','text'].includes(f.type))
+    .map(f => ({id:'cf_'+f.id, icon:'📊', label:f.name}));
+  return [...builtIn, ...custom];
+}
+
+function toggleChartVisible(id, vis) {
+  settings.chartVisible[id] = vis;
+  saveData();
+  setTimeout(renderCharts, 80);
+}
+function moveChart(id, dir) {
+  normalizeChartOrder();
+  const idx = settings.chartOrder.indexOf(id);
+  if (idx < 0) return;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= settings.chartOrder.length) return;
+
+  // Swap in the data model
+  [settings.chartOrder[idx], settings.chartOrder[newIdx]] = [settings.chartOrder[newIdx], settings.chartOrder[idx]];
+  saveData();
+
+  // Rebuild just the two affected rows with fresh DOM nodes
+  // (destroying the blue span rather than moving it)
+  const container = document.getElementById('chartOrderList');
+  const allCharts = getChartMeta();
+  const total = settings.chartOrder.length;
+  const rows = Array.from(container.children);
+
+  const minI = Math.min(idx, newIdx);
+  const maxI = Math.max(idx, newIdx);
+
+  // Replace the two rows — new elements have no highlight state
+  const newRowMin = makeChartOrderRow(settings.chartOrder[minI], minI, total, allCharts);
+  const newRowMax = makeChartOrderRow(settings.chartOrder[maxI], maxI, total, allCharts);
+  if (newRowMin && rows[minI]) container.replaceChild(newRowMin, rows[minI]);
+  const rows2 = Array.from(container.children);
+  if (newRowMax && rows2[maxI]) container.replaceChild(newRowMax, rows2[maxI]);
+
+  // Move focus away from the chart order list entirely
+  const modal = document.querySelector('#settingsModal .modal');
+  if (modal) { modal.setAttribute('tabindex', '-1'); modal.focus(); modal.removeAttribute('tabindex'); }
+
+  // Force any :active state off all arrow spans
+  document.querySelectorAll('.coi-btn').forEach(el => {
+    el.classList.add('coi-reset');
+    requestAnimationFrame(() => el.classList.remove('coi-reset'));
+  });
+
+  setTimeout(renderCharts, 80);
+}
+
+// ---- Settings: Bubble Fields ----
+function renderBubbleFieldsList() {
+  const container = document.getElementById('bubbleFieldsList');
+  if (!container) return;
+  const fields = [
+    {id:'bed', label:'Bedtime'},
+    {id:'wake', label:'Wake-up Time'},
+    {id:'oob', label:'Out of Bed'},
+    {id:'dur', label:'Sleep Duration'},
+    ...customFieldDefs.map(f => ({id:'cf_'+f.id, label:f.name}))
+  ];
+  container.innerHTML = fields.map(f => {
+    const vis = settings.bubbleFields[f.id] !== false;
+    return `<div class="bubble-field-item">
+      <input type="checkbox" ${vis ? 'checked' : ''} onchange="toggleBubbleField('${f.id}',this.checked)">
+      <span class="bfi-label">${f.label}</span>
+    </div>`;
+  }).join('');
+}
+function toggleBubbleField(id, vis) {
+  settings.bubbleFields[id] = vis;
+  saveData();
+}
+
+// ---- Add Custom Field form ----
+document.getElementById('btnAddCustomField').onclick = () => {
+  if (customFieldDefs.length >= 10) {
+    alert('Maximum of 10 custom fields reached.');
+    return;
+  }
+  const existing = document.getElementById('addCFForm');
+  if (existing) { existing.remove(); return; }
+  const form = document.createElement('div');
+  form.id = 'addCFForm';
+  form.className = 'add-cf-form';
+  form.innerHTML = `
+    <label>Field Name</label>
+    <input type="text" id="cfNewName" placeholder="e.g. Cups of Coffee" autocomplete="off">
+    <div class="add-cf-row">
+      <div>
+        <label>Type</label>
+        <select id="cfNewType">
+          <option value="numeric">Numeric</option>
+          <option value="datetime">Date/Time</option>
+          <option value="yesno">Yes/No</option>
+          <option value="text">Text</option>
+          <option value="marker">Marker</option>
+        </select>
+      </div>
+      <div id="cfDecPlacesWrap">
+        <label>Decimal Places</label>
+        <select id="cfNewDec">
+          <option value="0">0 (integer)</option>
+          <option value="1">1 decimal</option>
+        </select>
+      </div>
+    </div>
+    <div id="cfUnsetZeroWrap" style="display:none;align-items:center;gap:8px;margin-top:4px">
+      <input type="checkbox" id="cfNewUnsetZero">
+      <label for="cfNewUnsetZero" style="font-size:0.82rem;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0">Count unset days as zero in average</label>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn-primary btn-sm" id="btnCFCreate">Create</button>
+      <button class="btn-ghost btn-sm" id="btnCFCancel">Cancel</button>
+    </div>`;
+  document.getElementById('customFieldsList').after(form);
+  // Explicitly clear and focus the name input — browser autocomplete can prefill it
+  const nameInput = document.getElementById('cfNewName');
+  nameInput.value = '';
+  setTimeout(() => nameInput.focus(), 50);
+
+  document.getElementById('cfNewType').onchange = function() {
+    const isNum = this.value === 'numeric';
+    document.getElementById('cfDecPlacesWrap').style.display = isNum ? '' : 'none';
+    document.getElementById('cfUnsetZeroWrap').style.display = isNum ? 'flex' : 'none';
+  };
+  document.getElementById('btnCFCancel').onclick = () => form.remove();
+  document.getElementById('btnCFCreate').onclick = () => {
+    const name = document.getElementById('cfNewName').value.trim();
+    if (!name) { alert('Please enter a field name.'); return; }
+    const type = document.getElementById('cfNewType').value;
+    const decimalPlaces = type === 'numeric' ? parseInt(document.getElementById('cfNewDec').value) : 0;
+    // Assign a color from a curated palette, cycling through, skipping any already used
+    const PALETTE = [
+      '#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c',
+      '#3498db','#9b59b6','#e91e8c','#00bcd4','#ff5722',
+      '#8bc34a','#ff9800','#673ab7','#009688','#f06292'
+    ];
+    const usedColors = customFieldDefs.map(f => f.color);
+    const autoColor = PALETTE.find(c => !usedColors.includes(c)) || PALETTE[customFieldDefs.length % PALETTE.length];
+    const unsetZero = (type === 'numeric' && document.getElementById('cfNewUnsetZero')) ? document.getElementById('cfNewUnsetZero').checked : false;
+    const newField = {
+      id: genId(),
+      name,
+      type,
+      decimalPlaces,
+      unsetZero,
+      color: autoColor,
+      goalValue: '',
+      chartVisible: true,
+      bubbleVisible: true
+    };
+    customFieldDefs.push(newField);
+    normalizeChartOrder();
+    saveData();
+    form.remove();
+    renderSettingsCustomFields();
+    renderChartOrderList();
+    renderBubbleFieldsList();
+    renderCustomFieldInputs();
+    setTimeout(renderCharts, 80);
+  };
+};
+
+function updateRangeDayCount() {
+  const el = document.getElementById('rangeDayCount');
+  if (!el) return;
+  const _range = getChartDateRange(); const { from, to, totalDays } = _range;
+  
+
+  function fmtDate(d) {
+    return (d.getMonth()+1) + '/' + d.getDate() + '/' + String(d.getFullYear()).slice(2);
+  }
+  const fromStr = fmtDate(from);
+  // to is 23:59:59 of the last day — display just the date
+  const toDisplay = new Date(to); toDisplay.setHours(0,0,0,0);
+  const toStr = fmtDate(toDisplay);
+
+  // Count entries that fall within this range (any data at all)
+  const inRange = entries.filter(e => {
+    const d = new Date(e.day + 'T00:00:00');
+    return d >= from && d <= to;
+  }).length;
+
+  el.textContent = `Displaying sleep periods for Days ${fromStr} – ${toStr} (${inRange} of ${totalDays} entries have data)`;
+}
+
+function renderCharts() {
+  hideBubble();
+  updateRangeDayCount();
+  const filtered = getFilteredEntries();
+  normalizeChartOrder();
+
+  // Helper: get all marker days (DST + custom markers)
+  function getMarkerDays() {
+    const markers = [];
+    // DST markers (existing)
+    filtered.forEach(e => { if (e.dst !== 0) markers.push({ day: e.day, label: e.dst > 0 ? '+DST' : '-DST', isDst: true }); });
+    // Custom marker fields
+    customFieldDefs.filter(f => f.type === 'marker').forEach(fd => {
+      filtered.forEach(e => {
+        if (e.customFields && e.customFields[fd.id] === 'on') {
+          markers.push({ day: e.day, label: fd.name, isDst: false });
+        }
+      });
+    });
+    return markers;
+  }
+  const markerDays = getMarkerDays();
+
+  // Reorder chart cards in the DOM
+  const chartsSection = document.getElementById('chartsSection');
+  const customContainer = document.getElementById('customChartsContainer');
+  const builtInIds = ['bed','wake','oob','dur'];
+  settings.chartOrder.forEach(id => {
+    if (builtInIds.includes(id)) {
+      const cardMap = {bed:'bedtimeChartCard',wake:'wakeChartCard',oob:'oobChartCard',dur:'durChartCard'};
+      const card = document.getElementById(cardMap[id]);
+      if (card) chartsSection.insertBefore(card, customContainer);
+    }
+  });
+
+  // ---- Bedtime chart ----
+  const bedEntries = filtered.filter(e => e.bedTime);
+  const bedVisible = settings.chartVisible['bed'] !== false;
+  if (bedEntries.length > 0 && bedVisible) {
+    document.getElementById('bedtimeChartCard').style.display = '';
+    const bedCanvas = document.getElementById('bedtimeChart');
+    bedCanvas._hits = drawTimeChart(bedCanvas, bedEntries,
+      e => parseHHMM(e.bedTime), settings.colBed, parseHHMM(settings.goalBed),
+      markerDays, 'Bedtime');
+    const avgBedM = avgMinutes(bedEntries.map(e => parseHHMM(e.bedTime)));
+    document.getElementById('avgBed').innerHTML = avgBedM !== null
+      ? `<span class="avg-label">Average:</span> <strong>${formatTimeFromMins(avgBedM, settings.timeFormat)}</strong>` : '';
+  } else {
+    document.getElementById('bedtimeChartCard').style.display = 'none';
+  }
+
+  // ---- Wake-up chart ----
+  const wakeEntries = filtered.filter(e => e.wakeTime);
+  const wakeVisible = settings.chartVisible['wake'] !== false;
+  if (wakeEntries.length > 0 && wakeVisible) {
+    document.getElementById('wakeChartCard').style.display = '';
+    const wakeCanvas = document.getElementById('wakeChart');
+    wakeCanvas._hits = drawTimeChart(wakeCanvas, wakeEntries,
+      e => parseHHMM(e.wakeTime), settings.colWake, parseHHMM(settings.goalWake),
+      markerDays, 'Wake-up');
+    const avgWakeM = avgMinutes(wakeEntries.map(e => parseHHMM(e.wakeTime)));
+    document.getElementById('avgWake').innerHTML = avgWakeM !== null
+      ? `<span class="avg-label">Average:</span> <strong>${formatTimeFromMins(avgWakeM, settings.timeFormat)}</strong>` : '';
+  } else {
+    document.getElementById('wakeChartCard').style.display = 'none';
+  }
+
+  // ---- Out of Bed chart ----
+  const oobEntries = filtered.filter(e => e.oobTime);
+  const oobVisible = settings.chartVisible['oob'] !== false;
+  if (oobEntries.length > 0 && oobVisible) {
+    document.getElementById('oobChartCard').style.display = '';
+    const oobCanvas = document.getElementById('oobChart');
+    oobCanvas._hits = drawTimeChart(oobCanvas, oobEntries,
+      e => parseHHMM(e.oobTime), settings.colOob || '#9b59b6',
+      parseHHMM(settings.goalOob || ''), markerDays, 'Out of Bed');
+    const avgOobM = avgMinutes(oobEntries.map(e => parseHHMM(e.oobTime)));
+    document.getElementById('avgOob').innerHTML = avgOobM !== null
+      ? `<span class="avg-label">Average:</span> <strong>${formatTimeFromMins(avgOobM, settings.timeFormat)}</strong>` : '';
+  } else {
+    document.getElementById('oobChartCard').style.display = 'none';
+  }
+
+  // ---- Duration chart ----
+  const durEntries = filtered.filter(e => durationHours(e) !== null);
+  const durVisible = settings.chartVisible['dur'] !== false;
+  if (durEntries.length > 0 && durVisible) {
+    document.getElementById('durChartCard').style.display = '';
+    const durCanvas = document.getElementById('durChart');
+    durCanvas._hits = drawDurChart(durCanvas, durEntries);
+    const durs = durEntries.map(e => durationHours(e));
+    const avgDur = durs.reduce((a,b) => a+b, 0) / durs.length;
+    document.getElementById('avgDur').innerHTML =
+      `<span class="avg-label">Average:</span> <strong>${avgDur.toFixed(1)} hours</strong>`;
+  } else {
+    document.getElementById('durChartCard').style.display = 'none';
+  }
+
+  // ---- Custom field charts ----
+  renderCustomCharts(filtered, markerDays);
+}
+
+function renderCustomCharts(filtered, markerDays) {
+  const container = document.getElementById('customChartsContainer');
+  if (!container) return;
+  const { totalDays } = getChartDateRange();
+
+  // Build set of needed chart divs
+  const chartableFields = customFieldDefs.filter(f => ['datetime','numeric','yesno','text'].includes(f.type));
+
+  // Remove stale divs
+  Array.from(container.children).forEach(child => {
+    const id = child.id.replace('cfCard_', '');
+    if (!chartableFields.find(f => f.id === id)) child.remove();
+  });
+
+  // Render in chartOrder
+  settings.chartOrder.forEach(oid => {
+    if (!oid.startsWith('cf_')) return;
+    const fid = oid.slice(3);
+    const fd = chartableFields.find(f => f.id === fid);
+    if (!fd) return;
+    const visible = settings.chartVisible[oid] !== false;
+    let card = document.getElementById('cfCard_' + fid);
+    if (!card) {
+      card = document.createElement('div');
+      card.className = 'chart-card';
+      card.id = 'cfCard_' + fid;
+      card.innerHTML = `<div class="chart-header">
+        <div class="chart-title">📊 ${fd.name}</div>
+        <div class="chart-avg" id="cfAvg_${fid}"></div>
+      </div>
+      <div class="chart-wrap"><canvas id="cfCanvas_${fid}"></canvas></div>
+      <div class="chart-bubble" id="cfBubble_${fid}" style="display:none"></div>`;
+      container.appendChild(card);
+      // Wire up click/touch for bubble
+      const canvas = card.querySelector('canvas');
+      const bub = card.querySelector('.chart-bubble');
+      const isDur = fd.type === 'numeric' || fd.type === 'yesno' || fd.type === 'text';
+      canvas.style.cursor = 'pointer';
+      canvas.addEventListener('click', e => handleChartClick(canvas, e.clientX, e.clientY, e, isDur, bub, card));
+      canvas.addEventListener('touchmove', e => {
+        const t = e.touches[0];
+        if (!t) return;
+        if (inAxisZone(canvas, t.clientY)) e.preventDefault();
+        handleDragScrub(canvas, t.clientX, t.clientY, bub, card);
+      }, {passive:false});
+      canvas.addEventListener('touchend', e => {
+        e.preventDefault();
+        const t = e.changedTouches[0];
+        if (t) handleChartClick(canvas, t.clientX, t.clientY, e, isDur, bub, card);
+      }, {passive:false});
+    }
+
+    // Update title in case renamed
+    card.querySelector('.chart-title').textContent = '📊 ' + fd.name;
+    card.style.display = visible ? '' : 'none';
+    if (!visible) return;
+
+    const canvas = document.getElementById('cfCanvas_' + fid);
+    const avgEl = document.getElementById('cfAvg_' + fid);
+    const color = fd.color || '#888888';
+    const goal = fd.goalValue || '';
+
+    if (fd.type === 'datetime') {
+      const cfEntries = filtered.filter(e => e.customFields && e.customFields[fd.id] && e.customFields[fd.id].time);
+      if (cfEntries.length > 0) {
+        canvas._hits = drawTimeChart(canvas, cfEntries,
+          e => parseHHMM(e.customFields[fd.id].time), color, parseHHMM(goal), markerDays, fd.name);
+        const avgM = avgMinutes(cfEntries.map(e => parseHHMM(e.customFields[fd.id].time)));
+        avgEl.innerHTML = avgM !== null ? `<span class="avg-label">Average:</span> <strong>${formatTimeFromMins(avgM, settings.timeFormat)}</strong>` : '';
+      } else {
+        avgEl.innerHTML = '';
+        drawTimeChart(canvas, [], e => null, color, null, [], fd.name);
+      }
+    } else if (fd.type === 'numeric') {
+      const cfEntries = filtered.filter(e => e.customFields && e.customFields[fd.id] !== null && e.customFields[fd.id] !== undefined && e.customFields[fd.id] !== '');
+      canvas._hits = drawCustomNumericChart(canvas, cfEntries, fd, color, goal, markerDays);
+      if (cfEntries.length > 0) {
+        const dp = 1; // always 1 decimal for averages
+        let avg;
+        if (fd.unsetZero) {
+          // Divide by total days in range — missing entries AND unset values both count as 0
+          const sum = cfEntries.reduce((a, e) => a + e.customFields[fd.id], 0);
+          avg = sum / totalDays;
+        } else {
+          const vals = cfEntries.map(e => e.customFields[fd.id]);
+          avg = vals.reduce((a,b)=>a+b,0) / vals.length;
+        }
+        avgEl.innerHTML = `<span class="avg-label">Average:</span> <strong>${avg.toFixed(dp)}</strong>`;
+      } else { avgEl.innerHTML = ''; }
+    } else if (fd.type === 'yesno') {
+      const cfEntries = filtered.filter(e => e.customFields && e.customFields[fd.id] === 'yes');
+      canvas._hits = drawYesNoChart(canvas, filtered, fd, color, markerDays);
+      const yesCount = cfEntries.length;
+      avgEl.innerHTML = yesCount > 0 ? `<span class="avg-label">Yes days:</span> <strong>${yesCount}</strong>` : '';
+    } else if (fd.type === 'text') {
+      const cfEntries = filtered.filter(e => e.customFields && e.customFields[fd.id] && e.customFields[fd.id].trim() !== '');
+      canvas._hits = drawTextChart(canvas, filtered, fd, color, markerDays);
+      const textCount = cfEntries.length;
+      avgEl.innerHTML = textCount > 0 ? `<span class="avg-label">Days with text:</span> <strong>${textCount}</strong>` : '';
+    }
+  });
+
+  // Reorder in DOM to match chartOrder
+  settings.chartOrder.forEach(oid => {
+    if (!oid.startsWith('cf_')) return;
+    const card = document.getElementById('cfCard_' + oid.slice(3));
+    if (card) container.appendChild(card);
+  });
+}
+
+function drawCustomNumericChart(canvas, filteredEntries, fd, color, goalVal, markerDays) {
+  // Same as drawDurChart but with custom data and goal
+  const pts = filteredEntries.map(e => {
+    const v = e.customFields ? e.customFields[fd.id] : null;
+    return (v !== null && v !== undefined && v !== '') ? { day: e.day, val: parseFloat(v) } : null;
+  }).filter(Boolean);
+
+  const _range = getChartDateRange(); const { from, to, totalDays } = _range;
+  
+  const containerW2 = (canvas.parentElement ? canvas.parentElement.clientWidth : 0) || 400;
+  const drawW = Math.max(containerW2, 300);
+  const ctx = setupCanvas(canvas, drawW, CHART_HEIGHT);
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  ctx.fillStyle = isDark ? '#131111' : settings.colChartBg;
+  ctx.fillRect(0, 0, drawW, CHART_HEIGHT);
+
+  const isAllTime = chartRange.type === 'all';
+  const pl = isAllTime ? 42 : 30, pt = CHART_PAD.top, pr = CHART_PAD.right, pb = CHART_PAD.bottom;
+  const w = drawW - pl - pr, h = CHART_HEIGHT - pt - pb;
+
+  if (pts.length === 0) {
+    ctx.fillStyle = isDark ? '#999' : '#888';
+    ctx.font = '13px DM Sans, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('No data in this range', drawW/2, CHART_HEIGHT/2);
+    return [];
+  }
+
+  const goalNum = goalVal !== '' && goalVal !== null ? parseFloat(goalVal) : null;
+  const yMax = Math.max(...pts.map(p=>p.val), goalNum||0, 1) + 1;
+  const yMin = 0, yRange = yMax - yMin;
+  function toY(v) { return pt + h - ((v-yMin)/yRange)*h; }
+  function toX(dayStr) {
+    const d = new Date(dayStr+'T00:00:00');
+    return pl + ((d-from)/(totalDays*86400000))*w;
+  }
+
+  // Grid
+  ctx.save();
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+  ctx.lineWidth = 1;
+  for (let v=0; v<=yMax; v+=1) {
+    const y=toY(v);
+    ctx.beginPath(); ctx.moveTo(pl,y); ctx.lineTo(pl+w,y); ctx.stroke();
+    ctx.fillStyle = isDark?'#ddd':'#444'; ctx.font='600 10px DM Sans,sans-serif'; ctx.textAlign='left';
+    ctx.fillText(v.toFixed(fd.decimalPlaces||0), 4, y+4);
+  }
+  ctx.restore();
+
+  // X labels
+  ctx.save();
+  const xLs = getXLabels(from, totalDays, drawW, pl, pr);
+  for (const tick of xLs) {
+    ctx.fillStyle = tick.major?(isDark?'#eee':'#222'):(isDark?'#ddd':'#555');
+    ctx.font = tick.major?'bold 10px DM Sans,sans-serif':'600 10px DM Sans,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(tick.label, tick.x, pt+h+14);
+  }
+  ctx.restore();
+
+  const barW = Math.max(6, (w/totalDays)*0.6);
+  const hits = []; let topY = CHART_HEIGHT;
+  for (const p of pts) {
+    const x = toX(p.day), barH = ((p.val-yMin)/yRange)*h, y = toY(p.val);
+    ctx.save(); ctx.fillStyle = color;
+    const bx = x-barW/2, r = Math.min(4,barW/2);
+    ctx.beginPath(); ctx.moveTo(bx+r,y); ctx.lineTo(bx+barW-r,y);
+    ctx.quadraticCurveTo(bx+barW,y,bx+barW,y+r);
+    ctx.lineTo(bx+barW,pt+h); ctx.lineTo(bx,pt+h); ctx.lineTo(bx,y+r);
+    ctx.quadraticCurveTo(bx,y,bx+r,y); ctx.closePath(); ctx.fill(); ctx.restore();
+    if (barH>20 && totalDays<=8) {
+      ctx.save(); ctx.fillStyle='#fff'; ctx.font='bold 9px DM Sans,sans-serif'; ctx.textAlign='center';
+      ctx.fillText(p.val.toFixed(fd.decimalPlaces||0), x, y+12); ctx.restore();
+    }
+    hits.push({x, y:y+barH/2, bx, bRight:bx+barW, bTop:y, bBot:pt+h, entry:filteredEntries.find(e=>e.day===p.day)});
+    if (y<topY) topY=y;
+  }
+  canvas._topY = topY;
+
+  // Markers
+  for (const marker of (markerDays||[])) {
+    const x = toX(marker.day);
+    ctx.save(); ctx.strokeStyle=isDark?'rgba(255,255,255,0.12)':'rgba(0,0,0,0.1)';
+    ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(x,pt); ctx.lineTo(x,pt+h); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.font='11px serif'; ctx.fillStyle=isDark?'#bbb':'#888';
+    ctx.textAlign='center'; ctx.fillText(marker.isDst?'⏰':'📍', x, pt+h+28); ctx.restore();
+    ctx.save(); ctx.translate(x-7, pt+h-4); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle=isDark?'#bbb':'#666'; ctx.font='600 9px DM Sans,sans-serif';
+    ctx.textAlign='left'; ctx.fillText(marker.label, 0, 0); ctx.restore();
+  }
+
+  if (goalNum !== null) {
+    const gy = toY(goalNum);
+    ctx.save(); ctx.strokeStyle=isDark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.18)';
+    ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(pl,gy); ctx.lineTo(pl+w,gy); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.fillStyle=isDark?'#ccc':'#444';
+    ctx.font='600 11px ui-rounded,"Varela Round","Nunito",system-ui,sans-serif';
+    ctx.textAlign='left'; ctx.fillText('goal', pl+4, gy-3); ctx.restore();
+  }
+  return hits;
+}
+
+function drawYesNoChart(canvas, filteredEntries, fd, color, markerDays) {
+  const _range = getChartDateRange(); const { from, to, totalDays } = _range;
+  
+  const containerW = (canvas.parentElement?canvas.parentElement.clientWidth:0)||400;
+  const drawW = Math.max(containerW, 300);
+  const ctx = setupCanvas(canvas, drawW, CHART_HEIGHT);
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  ctx.fillStyle = isDark?'#131111':settings.colChartBg;
+  ctx.fillRect(0,0,drawW,CHART_HEIGHT);
+
+  const pl=30, pt=CHART_PAD.top, pr=CHART_PAD.right, pb=CHART_PAD.bottom;
+  const w=drawW-pl-pr, h=CHART_HEIGHT-pt-pb;
+  const BAR_H = Math.round(h * 0.5);
+
+  function toX(dayStr) {
+    const d = new Date(dayStr+'T00:00:00');
+    return pl + ((d-from)/(totalDays*86400000))*w;
+  }
+
+  // Y axis label "YES"
+  ctx.save();
+  ctx.fillStyle = isDark?'#ddd':'#444';
+  ctx.font = '600 10px DM Sans,sans-serif'; ctx.textAlign='left';
+  const yesY = pt + h - BAR_H;
+  ctx.fillText('YES', 2, yesY+4);
+  ctx.strokeStyle = isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.06)';
+  ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pl,yesY); ctx.lineTo(pl+w,yesY); ctx.stroke();
+  ctx.restore();
+
+  // X labels
+  ctx.save();
+  const xLs = getXLabels(from, totalDays, drawW, pl, pr);
+  for (const tick of xLs) {
+    ctx.fillStyle = tick.major?(isDark?'#eee':'#222'):(isDark?'#ddd':'#555');
+    ctx.font = tick.major?'bold 10px DM Sans,sans-serif':'600 10px DM Sans,sans-serif';
+    ctx.textAlign='center'; ctx.fillText(tick.label, tick.x, pt+h+14);
+  }
+  ctx.restore();
+
+  const barW = Math.max(6,(w/totalDays)*0.6);
+  const hits = []; let topY = CHART_HEIGHT;
+  for (const e of filteredEntries) {
+    const val = e.customFields?e.customFields[fd.id]:null;
+    if (val !== 'yes') continue;
+    const x = toX(e.day);
+    const bx = x-barW/2, y = pt+h-BAR_H;
+    ctx.save(); ctx.fillStyle=color;
+    const r=Math.min(4,barW/2);
+    ctx.beginPath(); ctx.moveTo(bx+r,y); ctx.lineTo(bx+barW-r,y);
+    ctx.quadraticCurveTo(bx+barW,y,bx+barW,y+r);
+    ctx.lineTo(bx+barW,pt+h); ctx.lineTo(bx,pt+h); ctx.lineTo(bx,y+r);
+    ctx.quadraticCurveTo(bx,y,bx+r,y); ctx.closePath(); ctx.fill(); ctx.restore();
+    hits.push({x,y:y+BAR_H/2,bx,bRight:bx+barW,bTop:y,bBot:pt+h,entry:e});
+    if (y<topY) topY=y;
+  }
+  canvas._topY = topY;
+
+  // Markers
+  for (const marker of (markerDays||[])) {
+    const x = toX(marker.day);
+    ctx.save(); ctx.strokeStyle=isDark?'rgba(255,255,255,0.12)':'rgba(0,0,0,0.1)';
+    ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(x,pt); ctx.lineTo(x,pt+h); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.font='11px serif'; ctx.fillStyle=isDark?'#bbb':'#888';
+    ctx.textAlign='center'; ctx.fillText(marker.isDst?'⏰':'📍', x, pt+h+28); ctx.restore();
+    ctx.save(); ctx.translate(x-7, pt+h-4); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle=isDark?'#bbb':'#666'; ctx.font='600 9px DM Sans,sans-serif';
+    ctx.textAlign='left'; ctx.fillText(marker.label, 0, 0); ctx.restore();
+  }
+
+  return hits;
+}
+function drawTextChart(canvas, filteredEntries, fd, color, markerDays) {
+  // Identical to drawYesNoChart but shows bar when text is non-empty
+  // Y axis label: 'Has text' instead of 'YES'
+  const _range = getChartDateRange(); const { from, to, totalDays } = _range;
+  const containerW = (canvas.parentElement?canvas.parentElement.clientWidth:0)||400;
+  const drawW = Math.max(containerW, 300);
+  const ctx = setupCanvas(canvas, drawW, CHART_HEIGHT);
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  ctx.fillStyle = isDark?'#131111':settings.colChartBg;
+  ctx.fillRect(0,0,drawW,CHART_HEIGHT);
+
+  const pl=30, pt=CHART_PAD.top, pr=CHART_PAD.right, pb=CHART_PAD.bottom;
+  const w=drawW-pl-pr, h=CHART_HEIGHT-pt-pb;
+  const BAR_H = Math.round(h * 0.5);
+
+  function toX(dayStr) {
+    const d = new Date(dayStr+'T00:00:00');
+    return pl + ((d-from)/(totalDays*86400000))*w;
+  }
+
+  // Y axis label
+  ctx.save();
+  ctx.fillStyle = isDark?'#ddd':'#444';
+  ctx.font = '600 10px DM Sans,sans-serif'; ctx.textAlign='left';
+  const yesY = pt + h - BAR_H;
+  ctx.fillText('Has text', 2, yesY+4);
+  ctx.strokeStyle = isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.06)';
+  ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pl,yesY); ctx.lineTo(pl+w,yesY); ctx.stroke();
+  ctx.restore();
+
+  // X labels
+  ctx.save();
+  const xLs = getXLabels(from, totalDays, drawW, pl, pr);
+  for (const tick of xLs) {
+    ctx.fillStyle = tick.major?(isDark?'#eee':'#222'):(isDark?'#ddd':'#555');
+    ctx.font = tick.major?'bold 10px DM Sans,sans-serif':'600 10px DM Sans,sans-serif';
+    ctx.textAlign='center'; ctx.fillText(tick.label, tick.x, pt+h+14);
+  }
+  ctx.restore();
+
+  const barW = Math.max(6,(w/totalDays)*0.6);
+  const hits = []; let topY = CHART_HEIGHT;
+  for (const e of filteredEntries) {
+    const val = e.customFields?e.customFields[fd.id]:null;
+    if (!val || val.trim() === '') continue;
+    const x = toX(e.day);
+    const bx = x-barW/2, y = pt+h-BAR_H;
+    ctx.save(); ctx.fillStyle=color;
+    const r=Math.min(4,barW/2);
+    ctx.beginPath(); ctx.moveTo(bx+r,y); ctx.lineTo(bx+barW-r,y);
+    ctx.quadraticCurveTo(bx+barW,y,bx+barW,y+r);
+    ctx.lineTo(bx+barW,pt+h); ctx.lineTo(bx,pt+h); ctx.lineTo(bx,y+r);
+    ctx.quadraticCurveTo(bx,y,bx+r,y); ctx.closePath(); ctx.fill(); ctx.restore();
+    hits.push({x,y:y+BAR_H/2,bx,bRight:bx+barW,bTop:y,bBot:pt+h,entry:e});
+    if (y<topY) topY=y;
+  }
+  canvas._topY = topY;
+
+  // Markers
+  for (const marker of (markerDays||[])) {
+    const x = toX(marker.day);
+    ctx.save(); ctx.strokeStyle=isDark?'rgba(255,255,255,0.12)':'rgba(0,0,0,0.1)';
+    ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(x,pt); ctx.lineTo(x,pt+h); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.font='11px serif'; ctx.fillStyle=isDark?'#bbb':'#888';
+    ctx.textAlign='center'; ctx.fillText(marker.isDst?'⏰':'📍', x, pt+h+28); ctx.restore();
+    ctx.save(); ctx.translate(x-7, pt+h-4); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle=isDark?'#bbb':'#666'; ctx.font='600 9px DM Sans,sans-serif';
+    ctx.textAlign='left'; ctx.fillText(marker.label, 0, 0); ctx.restore();
+  }
+
+  return hits;
+}
+
+document.getElementById('btnDeleteAll').onclick = () => {
+  if (entries.length === 0) return;
+  document.getElementById('confirmMessage').textContent =
+    'Are you sure you want to delete all saved entries? This action cannot be undone.';
+  document.getElementById('btnConfirmOk').textContent = 'Delete All';
+  document.getElementById('entriesModal').classList.remove('open');
+  document.getElementById('confirmModal').classList.add('open');
+};
+document.getElementById('btnConfirmCancel').onclick = () => {
+  const settingsDiscard = document.getElementById('confirmModal').dataset.settingsDiscard;
+  document.getElementById('confirmModal').classList.remove('open');
+  if (settingsDiscard) {
+    // User chose to stay — keep settings open
+  } else {
+    document.getElementById('entriesModal').classList.add('open');
+  }
+};
+document.getElementById('btnConfirmOk').onclick = () => {
+  const cfId = document.getElementById('confirmModal').dataset.deleteCfId;
+  const settingsDiscard = document.getElementById('confirmModal').dataset.settingsDiscard;
+  if (settingsDiscard) {
+    delete document.getElementById('confirmModal').dataset.settingsDiscard;
+    settingsDirty = false;
+    document.getElementById('confirmModal').classList.remove('open');
+    document.getElementById('settingsModal').classList.remove('open');
+  } else if (cfId) {
+    // Delete custom field
+    customFieldDefs = customFieldDefs.filter(f => f.id !== cfId);
+    entries.forEach(e => { if (e.customFields) delete e.customFields[cfId]; });
+    delete settings.chartVisible['cf_' + cfId];
+    settings.chartOrder = settings.chartOrder.filter(id => id !== 'cf_' + cfId);
+    delete document.getElementById('confirmModal').dataset.deleteCfId;
+    saveData();
+    document.getElementById('confirmModal').classList.remove('open');
+    renderSettingsCustomFields();
+    renderChartOrderList();
+    renderBubbleFieldsList();
+    renderCustomFieldInputs();
+    setTimeout(renderCharts, 80);
+  } else {
+    // Delete all entries
+    entries = [];
+    saveData();
+    document.getElementById('confirmModal').classList.remove('open');
+    renderEntriesList();
+    setTimeout(renderCharts, 80);
+  }
+};
+
+document.getElementById('btnExportModal').onclick = () => {
+  document.getElementById('exportModal').classList.add('open');
+};
+document.getElementById('btnExportModalClose').onclick = () => {
+  document.getElementById('exportModal').classList.remove('open');
+};
+document.getElementById('exportModal').onclick = (e) => {
+  if (e.target === document.getElementById('exportModal'))
+    document.getElementById('exportModal').classList.remove('open');
+};
+
+// ---- Export / Import / Save App ----
+
+function triggerDownload(filename, text, mime) {
+  try {
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    return true;
+  } catch(e) { return false; }
+}
+
+function openDataModal(title, desc, text, actionLabel, onAction) {
+  document.getElementById('exportModal').classList.remove('open');
+  document.getElementById('dataModalTitle').textContent = title;
+  document.getElementById('dataModalDesc').textContent = desc;
+  const ta = document.getElementById('dataModalTextarea');
+  ta.value = text;
+  ta.readOnly = (onAction === null); // read-only for export, editable for import
+  const btn = document.getElementById('btnDataModalAction');
+  btn.textContent = actionLabel;
+  btn.onclick = onAction;
+  btn.style.display = onAction ? '' : 'none';
+  document.getElementById('dataModal').classList.add('open');
+  if (text) setTimeout(() => { ta.select(); }, 100);
+}
+
+function closeDataModal(skipReopen) {
+  document.getElementById('dataModal').classList.remove('open');
+  document.getElementById('dataModalTextarea').value = '';
+  if (!skipReopen) document.getElementById('exportModal').classList.add('open');
+}
+document.getElementById('btnDataModalClose').onclick = () => closeDataModal();
+document.getElementById('btnDataModalClose2').onclick = () => closeDataModal();
+document.getElementById('dataModal').onclick = (e) => {
+  if (e.target === document.getElementById('dataModal')) closeDataModal();
+};
+
+function buildJSONPayload() {
+  return JSON.stringify({ exportVersion: 1, exportDate: new Date().toISOString(), entries, customFieldDefs, settings }, null, 2);
+}
+
+function buildCSVPayload() {
+  const headers = ['day','bedTime','bedOffset','wakeTime','wakeOffset','oobTime','oobOffset','dst','sleepDurationHrs'];
+  customFieldDefs.forEach(fd => headers.push('cf_' + fd.id + '_' + fd.name.replace(/[^a-zA-Z0-9]/g,'_')));
+  const rows = [headers.join(',')];
+  const sorted = [...entries].sort((a,b) => a.day.localeCompare(b.day));
+  for (const e of sorted) {
+    const dur = durationHours(e);
+    const row = [
+      e.day, e.bedTime||'', e.bedOffset!==undefined?e.bedOffset:'',
+      e.wakeTime||'', e.wakeOffset!==undefined?e.wakeOffset:'',
+      e.oobTime||'', e.oobOffset!==undefined?e.oobOffset:'',
+      e.dst!==undefined?e.dst:0, dur!==null?dur.toFixed(2):''
+    ];
+    customFieldDefs.forEach(fd => {
+      const val = e.customFields ? e.customFields[fd.id] : null;
+      if (val===null||val===undefined) { row.push(''); return; }
+      if (fd.type==='datetime'&&val&&val.time) row.push(val.time+(val.offset?'(+1d)':''));
+      else row.push(String(val).replace(/,/g,';'));
+    });
+    rows.push(row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  }
+  return rows.join('\n');
+}
+
+function copyAndTryDownload(text, filename, mime) {
+  // Try clipboard first
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => {});
+  } else {
+    const ta = document.getElementById('dataModalTextarea');
+    ta.select(); document.execCommand('copy');
+  }
+  // Also try file download (works in Safari, fails silently in webview)
+  triggerDownload(filename, text, mime);
+  document.getElementById('btnDataModalAction').textContent = '✓ Copied!';
+  setTimeout(() => { document.getElementById('btnDataModalAction').textContent = 'Copy to Clipboard'; }, 2000);
+}
+
+// JSON export
+document.getElementById('btnExportJSON').onclick = () => {
+  if (entries.length === 0) { openDataModal('Export JSON', 'No entries to export.', '', null, null); return; }
+  const text = buildJSONPayload();
+  const dateStr = new Date().toISOString().slice(0,10);
+  openDataModal(
+    'Export JSON',
+    `${entries.length} entries. Copy the text below, or it will also try to download as sleep-shift-${dateStr}.json.`,
+    text,
+    'Copy to Clipboard',
+    () => copyAndTryDownload(text, `sleep-shift-${dateStr}.json`, 'application/json')
+  );
+};
+
+// CSV export
+document.getElementById('btnExportCSV').onclick = () => {
+  if (entries.length === 0) { openDataModal('Export CSV', 'No entries to export.', '', null, null); return; }
+  const text = buildCSVPayload();
+  const dateStr = new Date().toISOString().slice(0,10);
+  openDataModal(
+    'Export CSV',
+    `${entries.length} entries. Copy the text below, or it will also try to download as sleep-shift-${dateStr}.csv.`,
+    text,
+    'Copy to Clipboard',
+    () => copyAndTryDownload(text, `sleep-shift-${dateStr}.csv`, 'text/csv')
+  );
+};
+
+// JSON import — show paste area
+document.getElementById('btnImportJSON').onclick = () => {
+  openDataModal(
+    'Import JSON',
+    'Paste your previously exported JSON below, then tap Import.',
+    '',
+    'Import',
+    () => {
+      const text = document.getElementById('dataModalTextarea').value.trim();
+      if (!text) return;
+      try {
+        const payload = JSON.parse(text);
+        if (!payload.entries || !Array.isArray(payload.entries)) {
+          alert('Invalid JSON — no entries array found.'); return;
+        }
+        let added = 0, skipped = 0;
+        for (const imp of payload.entries) {
+          if (entries.find(ex => ex.day === imp.day)) { skipped++; continue; }
+          if (!imp.id) imp.id = genId();
+          entries.push(imp);
+          added++;
+        }
+        if (payload.customFieldDefs && Array.isArray(payload.customFieldDefs)) {
+          for (const fd of payload.customFieldDefs) {
+            if (!customFieldDefs.find(ex => ex.id === fd.id)) customFieldDefs.push(fd);
+          }
+        }
+        entries.sort((a,b) => a.day.localeCompare(b.day));
+        normalizeChartOrder();
+        saveData();
+        closeDataModal(true);
+        renderEntriesList();
+        setTimeout(renderCharts, 80);
+        const skippedMsg = skipped > 0 ? ` ${skipped} not imported because an entry for that day was already saved.` : '';
+        alert(`Import complete: ${added} entries added.${skippedMsg}`);
+      } catch(err) {
+        alert('Failed to parse JSON: ' + err.message);
+      }
+    }
+  );
+  // Make textarea editable for import
+  setTimeout(() => { document.getElementById('dataModalTextarea').readOnly = false; }, 50);
+};
+
+// Also keep file-based import working when file input is triggered from file picker
+document.getElementById('importFileInput').onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    document.getElementById('dataModalTextarea').value = ev.target.result;
+    document.getElementById('dataModalTextarea').readOnly = false;
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+};
+
+// Save App: download the HTML file itself
+document.getElementById('btnSaveApp').onclick = () => {
+  const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  const ok = triggerDownload('sleep-shift.html', html, 'text/html');
+  const desc = ok
+    ? 'sleep-shift.html is downloading. Once saved, open it directly in Safari and bookmark it for reliable data storage that won\'t be cleared by app updates.'
+    : '⚠ File download is blocked in the Claude app\'s webview.\n\nTo save the app:\n1. Open this Claude conversation in Safari (not the Claude app) — tap Share → Open in Browser\n2. Then tap 💾 Save App again — it will download to your Files app\n3. Open the saved file in Safari and bookmark it\n\nOnce running in Safari, your data is stored reliably and won\'t be lost when apps update.';
+  openDataModal('Save App to Device', '', desc, null, null);
+  // Show the description in the textarea so it's easy to read and scroll
+  setTimeout(() => {
+    const ta = document.getElementById('dataModalTextarea');
+    ta.value = desc;
+    ta.readOnly = true;
+    ta.style.minHeight = '140px';
+  }, 50);
+};
+
+function applyAccentUi(color) {
+  settings.accentUi = color;
+  document.documentElement.style.setProperty('--accent-ui', color);
+}
+
+// Preset dropdown syncs to color picker
+document.getElementById('accentPreset').onchange = function() {
+  if (!this.value) return;
+  document.getElementById('colAccentUi').value = this.value;
+  applyAccentUi(this.value);
+  this.value = ''; // reset dropdown so it doesn't show as "selected"
+};
+document.getElementById('colAccentUi').oninput = function() {
+  applyAccentUi(this.value);
+};
+
+// ---- Settings Modal ----
+let settingsDirty = false;
+
+function markSettingsDirty() { settingsDirty = true; }
+
+function closeSettingsWithCheck() {
+  if (settingsDirty) {
+    document.getElementById('confirmMessage').textContent =
+      'You have unsaved changes in Settings. Close without saving?';
+    document.getElementById('confirmModal').dataset.settingsDiscard = '1';
+    document.getElementById('btnConfirmOk').textContent = 'Close without saving';
+    document.getElementById('confirmModal').classList.add('open');
+  } else {
+    document.getElementById('settingsModal').classList.remove('open');
+  }
+}
+
+function saveSettingsAndClose() {
+  settings.timeFormat = document.getElementById('setTimeFormat').value;
+  settings.smoothLines = document.getElementById('setSmoothLines').checked;
+  settings.goalBed = document.getElementById('setGoalBed').value;
+  settings.goalWake = document.getElementById('setGoalWake').value;
+  settings.goalOob = document.getElementById('setGoalOob').value;
+  settings.goalDur = parseFloat(document.getElementById('setGoalDur').value) || 8;
+  settings.defaultBedOffset = document.getElementById('setDefaultBedOffset').value;
+  settings.defaultWakeOffset = document.getElementById('setDefaultWakeOffset').value;
+  settings.defaultOobOffset = document.getElementById('setDefaultOobOffset').value;
+  settings.colBed = document.getElementById('colBed').value;
+  settings.colWake = document.getElementById('colWake').value;
+  settings.colOob = document.getElementById('colOob').value;
+  settings.colDur = document.getElementById('colDur').value;
+  settings.colChartBg = document.getElementById('colChartBg').value;
+  applyAccentUi(document.getElementById('colAccentUi').value);
+  document.documentElement.style.setProperty('--accent-bed', settings.colBed);
+  document.documentElement.style.setProperty('--accent-wake', settings.colWake);
+  document.documentElement.style.setProperty('--accent-dur', settings.colDur);
+  saveData();
+  settingsDirty = false;
+  document.getElementById('settingsModal').classList.remove('open');
+  renderEntriesList();
+  setTimeout(renderCharts, 80);
+}
+
+document.getElementById('btnSettings').onclick = () => {
+  document.getElementById('setTimeFormat').value = settings.timeFormat;
+  document.getElementById('setSmoothLines').checked = settings.smoothLines !== false;
+  document.getElementById('setGoalBed').value = settings.goalBed;
+  document.getElementById('setGoalWake').value = settings.goalWake;
+  document.getElementById('setGoalOob').value = settings.goalOob || '';
+  document.getElementById('setGoalDur').value = settings.goalDur;
+  document.getElementById('setDefaultBedOffset').value = settings.defaultBedOffset || '0';
+  document.getElementById('setDefaultWakeOffset').value = settings.defaultWakeOffset || '1';
+  document.getElementById('setDefaultOobOffset').value = settings.defaultOobOffset || '1';
+  document.getElementById('colBed').value = settings.colBed;
+  document.getElementById('colWake').value = settings.colWake;
+  document.getElementById('colOob').value = settings.colOob || '#9b59b6';
+  document.getElementById('colDur').value = settings.colDur;
+  document.getElementById('colChartBg').value = settings.colChartBg;
+  document.getElementById('colAccentUi').value = settings.accentUi || '#5b8ccc';
+  renderChartOrderList();
+  renderBubbleFieldsList();
+  renderSettingsCustomFields();
+  settingsDirty = false;
+  document.getElementById('settingsModal').classList.add('open');
+  // Mark dirty on any change inside the modal
+  document.getElementById('settingsModal').addEventListener('change', markSettingsDirty, { once: false });
+  document.getElementById('settingsModal').addEventListener('input', markSettingsDirty, { once: false });
+};
+
+document.getElementById('btnSettingsClose').onclick = closeSettingsWithCheck;
+document.getElementById('btnSettingsCancel').onclick = () => {
+  settingsDirty = false;
+  document.getElementById('settingsModal').classList.remove('open');
+};
+document.getElementById('btnSaveSettingsTop').onclick = saveSettingsAndClose;
+document.getElementById('settingsModal').onclick = (e) => {
+  if (e.target === document.getElementById('settingsModal')) closeSettingsWithCheck();
+};
+
+function applyTheme(t) {
+  settings.theme = t;
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const useDark = t === 'dark' || (t === 'auto' && prefersDark);
+  if (useDark) {
+    document.documentElement.setAttribute('data-theme','dark');
+    document.body.style.background = '#0e0c0c';
+    document.body.style.color = '#f0ece8';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    document.body.style.background = '#f4f0eb';
+    document.body.style.color = '#2c2420';
+  }
+  // Update top-bar icon
+  const btn = document.getElementById('btnTheme');
+  if (t === 'auto') btn.textContent = '⬤'; // filled circle = auto
+  else if (t === 'dark') btn.textContent = '☀';
+  else btn.textContent = '🌙';
+}
+
+// Listen for OS-level theme changes when in auto mode
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (settings.theme === 'auto') { applyTheme('auto'); renderCharts(); }
+  });
+}
+
+document.getElementById('setThemeAuto').onclick  = () => { applyTheme('auto');  saveData(); renderCharts(); };
+document.getElementById('setThemeLight').onclick = () => { applyTheme('light'); saveData(); renderCharts(); };
+document.getElementById('setThemeDark').onclick  = () => { applyTheme('dark');  saveData(); renderCharts(); };
+
+document.getElementById('btnTheme').onclick = () => {
+  // Cycle: auto -> light -> dark -> auto
+  const next = settings.theme === 'auto' ? 'light' : settings.theme === 'light' ? 'dark' : 'auto';
+  applyTheme(next);
+  saveData();
+  renderCharts();
+};
+
+document.getElementById('btnSaveSettings').onclick = saveSettingsAndClose;
+
+document.getElementById('btnResetColors').onclick = () => {
+  settings.colBed = DEFAULT_SETTINGS.colBed;
+  settings.colWake = DEFAULT_SETTINGS.colWake;
+  settings.colOob = DEFAULT_SETTINGS.colOob;
+  settings.colDur = DEFAULT_SETTINGS.colDur;
+  settings.colChartBg = DEFAULT_SETTINGS.colChartBg;
+  settings.accentUi = DEFAULT_SETTINGS.accentUi;
+  document.getElementById('colBed').value = settings.colBed;
+  document.getElementById('colWake').value = settings.colWake;
+  document.getElementById('colOob').value = settings.colOob;
+  document.getElementById('colDur').value = settings.colDur;
+  document.getElementById('colChartBg').value = settings.colChartBg;
+  document.getElementById('colAccentUi').value = settings.accentUi;
+  document.documentElement.style.setProperty('--accent-bed', settings.colBed);
+  document.documentElement.style.setProperty('--accent-wake', settings.colWake);
+  document.documentElement.style.setProperty('--accent-dur', settings.colDur);
+  applyAccentUi(settings.accentUi);
+  saveData();
+  setTimeout(renderCharts, 80);
+};
+
+document.getElementById('btnResetSettings').onclick = () => {
+  settings = Object.assign({}, DEFAULT_SETTINGS);
+  settings.chartVisible = Object.assign({}, DEFAULT_SETTINGS.chartVisible);
+  settings.chartOrder = DEFAULT_SETTINGS.chartOrder.slice();
+  settings.bubbleFields = Object.assign({}, DEFAULT_SETTINGS.bubbleFields);
+  applyTheme('auto');
+  document.documentElement.style.removeProperty('--accent-bed');
+  document.documentElement.style.removeProperty('--accent-wake');
+  document.documentElement.style.removeProperty('--accent-dur');
+  applyAccentUi(DEFAULT_SETTINGS.accentUi);
+  saveData();
+  document.getElementById('setTimeFormat').value = settings.timeFormat;
+  document.getElementById('setSmoothLines').checked = settings.smoothLines !== false;
+  document.getElementById('setGoalBed').value = settings.goalBed;
+  document.getElementById('setGoalWake').value = settings.goalWake;
+  document.getElementById('setGoalOob').value = settings.goalOob || '';
+  document.getElementById('setGoalDur').value = settings.goalDur;
+  document.getElementById('setDefaultBedOffset').value = settings.defaultBedOffset;
+  document.getElementById('setDefaultWakeOffset').value = settings.defaultWakeOffset;
+  document.getElementById('setDefaultOobOffset').value = settings.defaultOobOffset;
+  document.getElementById('colBed').value = settings.colBed;
+  document.getElementById('colWake').value = settings.colWake;
+  document.getElementById('colOob').value = settings.colOob;
+  document.getElementById('colDur').value = settings.colDur;
+  document.getElementById('colChartBg').value = settings.colChartBg;
+  renderChartOrderList();
+  renderBubbleFieldsList();
+  renderEntriesList();
+  setTimeout(renderCharts, 80);
+};
+
+// ---- Chart point bubble ----
+// Each chart card has its own bubble div positioned absolute within it.
+
+function makeBubbleHTML(entry) {
+  if (!entry) return '';
+  const dur = durationHours(entry);
+  let html = `<div class="bubble-day">${entry.day}</div>`;
+  if (settings.bubbleFields['bed'] !== false && entry.bedTime) {
+    const bedStr = formatTime(entry.bedTime, settings.timeFormat) + (entry.bedOffset ? ' +1d' : '');
+    html += `<div class="bubble-row"><span class="bubble-lbl">Bed</span><span>${bedStr}</span></div>`;
+  }
+  if (settings.bubbleFields['wake'] !== false && entry.wakeTime) {
+    const wakeStr = formatTime(entry.wakeTime, settings.timeFormat) + (entry.wakeOffset ? ' +1d' : '');
+    html += `<div class="bubble-row"><span class="bubble-lbl">Wake</span><span>${wakeStr}</span></div>`;
+  }
+  if (settings.bubbleFields['oob'] !== false && entry.oobTime) {
+    const oobStr = formatTime(entry.oobTime, settings.timeFormat) + (entry.oobOffset ? ' +1d' : '');
+    html += `<div class="bubble-row"><span class="bubble-lbl">OOB</span><span>${oobStr}</span></div>`;
+  }
+  if (settings.bubbleFields['dur'] !== false && dur !== null) {
+    html += `<div class="bubble-row"><span class="bubble-lbl">Sleep</span><span>${dur.toFixed(1)} hrs</span></div>`;
+  }
+  if (settings.bubbleFields['custom'] !== false && entry.customFields) {
+    customFieldDefs.forEach(fd => {
+      if (settings.bubbleFields['cf_'+fd.id] === false) return;
+      const val = entry.customFields[fd.id];
+      if (val === null || val === undefined || val === '') return;
+      let display = '';
+      if (fd.type === 'datetime' && val && val.time) display = formatTime(val.time, settings.timeFormat) + (val.offset ? ' +1d' : '');
+      else if (fd.type === 'numeric') display = typeof val === 'number' ? val.toFixed(fd.decimalPlaces||0) : val;
+      else if (fd.type === 'yesno') display = val === 'yes' ? '✓ Yes' : '✗ No';
+      else if (fd.type === 'marker') display = val === 'on' ? '📍' : '';
+      else display = val;
+      if (display) html += `<div class="bubble-row"><span class="bubble-lbl">${fd.name}</span><span>${display}</span></div>`;
+    });
+  }
+  return html;
+}
+
+function hideBubble() {
+  document.querySelectorAll('.chart-bubble').forEach(b => b.style.display = 'none');
+}
+
+function showBubble(entry, bubbleEl, cardEl, canvas, tapClientX) {
+  if (!entry) { bubbleEl.style.display = 'none'; return; }
+  bubbleEl.innerHTML = makeBubbleHTML(entry);
+  bubbleEl.style.display = 'block';
+
+  const canvasRect = canvas.getBoundingClientRect();
+  const bubW = bubbleEl.offsetWidth  || 150;
+  const bubH = bubbleEl.offsetHeight || 92;
+
+  // Vertical: fixed per-chart — bottom of bubble 32px above highest point
+  const topYcss = canvas._topY !== undefined ? canvas._topY : 30;
+  const highestViewportY = canvasRect.top + topYcss;
+  const top = Math.max(4, highestViewportY - bubH - 32);
+
+  // Horizontal: centered on tap X, clamped within viewport
+  const vw = window.innerWidth;
+  const pad = 8;
+  let left = tapClientX - bubW / 2;
+  left = Math.max(pad, Math.min(left, vw - bubW - pad));
+
+  bubbleEl.style.top   = top + 'px';
+  bubbleEl.style.left  = left + 'px';
+  bubbleEl.style.right = 'auto';
+}
+
+// Update only the bubble's content and X position during drag (Y stays fixed)
+function updateBubbleX(bubbleEl, entry, clientX) {
+  if (!entry || bubbleEl.style.display === 'none') return;
+  bubbleEl.innerHTML = makeBubbleHTML(entry);
+  const bubW = bubbleEl.offsetWidth || 150;
+  const vw = window.innerWidth;
+  const pad = 8;
+  let left = clientX - bubW / 2;
+  left = Math.max(pad, Math.min(left, vw - bubW - pad));
+  bubbleEl.style.left = left + 'px';
+}
+
+// Find nearest hit by X only (for drag scrubbing)
+function findNearestByX(canvas, clientX) {
+  const rect = canvas.getBoundingClientRect();
+  const cx = clientX - rect.left;
+  const hits = canvas._hits || [];
+  if (!hits.length) return null;
+  let best = null, bestDist = Infinity;
+  for (const h of hits) {
+    const d = Math.abs(cx - h.x);
+    if (d < bestDist) { bestDist = d; best = h; }
+  }
+  return best;
+}
+
+// Shared drag handler — only activates when touch is in the X axis label zone
+function handleDragScrub(canvas, clientX, clientY, bubbleEl, cardEl) {
+  const rect = canvas.getBoundingClientRect();
+  const cy = clientY - rect.top;
+  // X axis label zone: bottom CHART_PAD.bottom pixels of the canvas (CSS coords)
+  const axisZoneTop = CHART_HEIGHT - CHART_PAD.bottom;
+  if (cy < axisZoneTop) return; // outside label strip — ignore
+
+  const best = findNearestByX(canvas, clientX);
+  if (!best) return;
+  if (bubbleEl.style.display === 'none') {
+    showBubble(best.entry, bubbleEl, cardEl, canvas, clientX);
+  } else {
+    updateBubbleX(bubbleEl, best.entry, clientX);
+  }
+}
+
+function handleChartClick(canvas, clientX, clientY, originalEvt, isDur, bubbleEl, cardEl) {
+  const rect = canvas.getBoundingClientRect();
+  const cx = clientX - rect.left;
+  const cy = clientY - rect.top;
+
+  const hits = canvas._hits || [];
+  let best = null, bestDist = Infinity;
+
+  if (isDur) {
+    for (const h of hits) {
+      if (cx >= h.bx && cx <= h.bRight && cy >= h.bTop && cy <= h.bBot) {
+        best = h; break;
+      }
+    }
+    if (!best) {
+      for (const h of hits) {
+        const d = Math.abs(cx - h.x);
+        if (d < bestDist) { bestDist = d; best = h; }
+      }
+      if (bestDist > 30) best = null;
+    }
+  } else {
+    for (const h of hits) {
+      const d = Math.hypot(cx - h.x, cy - h.y);
+      if (d < bestDist) { bestDist = d; best = h; }
+    }
+    if (bestDist > 28) best = null;
+  }
+
+  if (best) {
+    hideBubble();
+    showBubble(best.entry, bubbleEl, cardEl, canvas, clientX);
+    if (originalEvt && originalEvt.stopPropagation) originalEvt.stopPropagation();
+  } else {
+    bubbleEl.style.display = 'none';
+  }
+}
+
+// Returns true if a touch clientY falls within the X-axis label strip of a canvas
+function inAxisZone(canvas, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const cy = clientY - rect.top;
+  return cy >= (CHART_HEIGHT - CHART_PAD.bottom);
+}
+
+// Wire up click + touch events on each chart canvas
+['bedtimeChart','wakeChart','oobChart'].forEach(id => {
+  const c = document.getElementById(id);
+  const bubId = id === 'bedtimeChart' ? 'bubbleBed' : id === 'wakeChart' ? 'bubbleWake' : 'bubbleOob';
+  const bub = document.getElementById(bubId);
+  const card = c.closest('.chart-card');
+  c.style.cursor = 'pointer';
+  c.addEventListener('click', e => handleChartClick(c, e.clientX, e.clientY, e, false, bub, card));
+  c.addEventListener('touchmove', e => {
+    const t = e.touches[0];
+    if (!t) return;
+    if (inAxisZone(c, t.clientY)) e.preventDefault();
+    handleDragScrub(c, t.clientX, t.clientY, bub, card);
+  }, {passive: false});
+  c.addEventListener('touchend', e => {
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    if (t) handleChartClick(c, t.clientX, t.clientY, e, false, bub, card);
+  }, {passive: false});
+});
+const durC = document.getElementById('durChart');
+const durBub = document.getElementById('bubbleDur');
+const durCard = durC.closest('.chart-card');
+durC.style.cursor = 'pointer';
+durC.addEventListener('click', e => handleChartClick(durC, e.clientX, e.clientY, e, true, durBub, durCard));
+durC.addEventListener('touchmove', e => {
+  const t = e.touches[0];
+  if (!t) return;
+  if (inAxisZone(durC, t.clientY)) e.preventDefault();
+  handleDragScrub(durC, t.clientX, t.clientY, durBub, durCard);
+}, {passive: false});
+durC.addEventListener('touchend', e => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  if (t) handleChartClick(durC, t.clientX, t.clientY, e, true, durBub, durCard);
+}, {passive: false});
+
+// Dismiss bubble on click/touch anywhere outside charts
+document.addEventListener('click', e => {
+  if (!e.target.closest('canvas')) hideBubble();
+});
+
+// ---- Suppress iOS long-press context menu on charts and UI ----
+document.addEventListener('contextmenu', e => {
+  // Allow context menu in textareas (user may want copy/paste)
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  e.preventDefault();
+});
+
+// ---- Responsive redraw on resize / orientation change ----
+let resizeTimer = null;
+function scheduleRedraw() {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(renderCharts, 120);
+}
+if (typeof ResizeObserver !== 'undefined') {
+  const ro = new ResizeObserver(scheduleRedraw);
+  ro.observe(document.getElementById('app'));
+}
+window.addEventListener('orientationchange', () => { setTimeout(renderCharts, 200); });
+window.addEventListener('resize', scheduleRedraw);
+
+// ---- Prevent scroll-through on modal overlays ----
+// Blocks touch scroll events from reaching the page behind open modals.
+// The inner .modal div has overflow-y:auto so it scrolls itself;
+// touches that originate on the overlay backdrop are blocked entirely.
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('touchmove', e => {
+    // Allow scrolling if the touch target is inside the scrollable .modal div
+    const modal = overlay.querySelector('.modal');
+    if (modal && modal.contains(e.target)) {
+      // Let the modal scroll, but stop it reaching the page
+      e.stopPropagation();
+    } else {
+      // Backdrop tap — block entirely
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, { passive: false });
+});
+
+// ---- Init ----
+loadData();
+normalizeChartOrder();
+applyTheme(settings.theme);
+document.documentElement.style.setProperty('--accent-bed', settings.colBed);
+document.documentElement.style.setProperty('--accent-wake', settings.colWake);
+document.documentElement.style.setProperty('--accent-dur', settings.colDur);
+applyAccentUi(settings.accentUi || '#5b8ccc');
+resetEntryPanel();
+renderCharts();
+</script>
+</body>
+</html>
