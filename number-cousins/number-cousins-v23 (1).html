@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Number Cousins</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+
+  :root {
+    --sky: #e8f4fd;
+    --cloud: #ffffff;
+    --grass: #4caf7d;
+    --sun: #ffc842;
+    --coral: #ff6b6b;
+    --blue: #4a90d9;
+    --purple: #9b59b6;
+    --teal: #1abc9c;
+    --ink: #2c3e50;
+    --muted: #7f8c8d;
+    --light: #ecf0f1;
+    --shadow: rgba(44,62,80,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--sky);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(255,200,66,0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 5%, rgba(74,144,217,0.1) 0%, transparent 40%);
+  }
+
+  /* ───── START SCREEN ───── */
+  #start-screen {
+    background: white;
+    border-radius: 28px;
+    padding: 40px 36px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: 0 8px 40px var(--shadow);
+    text-align: center;
+    margin-top: 20px;
+  }
+
+  .app-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 3rem;
+    color: var(--blue);
+    letter-spacing: 1px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .app-subtitle {
+    font-size: 1rem;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 32px;
+  }
+
+  .section-label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  /* operation toggle */
+  .op-toggle {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+  .op-btn {
+    flex: 1;
+    max-width: 160px;
+    padding: 14px 0;
+    border-radius: 16px;
+    border: 3px solid var(--light);
+    background: white;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    color: var(--muted);
+  }
+  .op-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .op-btn.active {
+    border-color: var(--blue);
+    background: var(--blue);
+    color: white;
+    box-shadow: 0 4px 16px rgba(74,144,217,0.35);
+  }
+
+  /* digit selector */
+  .digit-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .digit-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    border: 3px solid var(--light);
+    background: white;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .digit-btn:hover { border-color: var(--coral); color: var(--coral); transform: scale(1.07); }
+  .digit-btn.selected-a {
+    border-color: var(--coral);
+    background: var(--coral);
+    color: white;
+    box-shadow: 0 3px 12px rgba(255,107,107,0.35);
+    transform: scale(1.08);
+  }
+  .digit-btn.selected-b {
+    border-color: var(--teal);
+    background: var(--teal);
+    color: white;
+    box-shadow: 0 3px 12px rgba(26,188,156,0.35);
+    transform: scale(1.08);
+  }
+
+  .digit-labels {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 28px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .lbl-a { color: var(--coral); }
+  .lbl-b { color: var(--teal); }
+
+  .go-btn {
+    background: var(--grass);
+    color: white;
+    border: none;
+    border-radius: 18px;
+    padding: 16px 48px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #359960, 0 8px 20px rgba(76,175,125,0.3);
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+  }
+  .go-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #359960, 0 12px 24px rgba(76,175,125,0.3); }
+  .go-btn:active { transform: translateY(2px); box-shadow: 0 3px 0 #359960; }
+  .go-btn:disabled { background: #bdc3c7; box-shadow: 0 5px 0 #95a5a6; cursor: not-allowed; transform: none; }
+
+  .fact-preview {
+    margin-top: 20px;
+    font-size: 1rem;
+    color: var(--muted);
+    font-weight: 700;
+    min-height: 24px;
+  }
+  .fact-preview span { color: var(--ink); }
+
+  /* ───── GAME SCREEN ───── */
+  #game-screen { display: none; width: 100%; max-width: 700px; }
+
+  .game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .back-btn {
+    background: white;
+    border: 2px solid var(--light);
+    border-radius: 12px;
+    padding: 8px 16px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .back-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+  .game-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    color: var(--blue);
+  }
+
+  .fact-badge {
+    background: white;
+    border-radius: 12px;
+    padding: 6px 14px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: var(--ink);
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  /* number line card */
+  .nl-card {
+    background: white;
+    border-radius: 24px;
+    padding: 32px 28px 24px;
+    box-shadow: 0 6px 30px var(--shadow);
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  #nl-canvas {
+    width: 100%;
+    display: block;
+  }
+
+  /* equation area */
+  .eq-card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px 28px;
+    box-shadow: 0 4px 20px var(--shadow);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .equation-display {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.8rem;
+    color: var(--ink);
+    letter-spacing: 2px;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .eq-num-a { color: var(--coral); }
+  .eq-num-b { color: var(--teal); }
+  .eq-op { color: var(--muted); }
+  .eq-eq { color: var(--muted); }
+  .eq-ans {
+    color: var(--purple);
+    position: relative;
+    min-width: 60px;
+  }
+
+  .answer-hidden {
+    background: var(--light);
+    border-radius: 12px;
+    padding: 2px 16px;
+    color: transparent;
+    user-select: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 3px dashed #bdc3c7;
+  }
+  .answer-hidden::after {
+    content: '?';
+    color: var(--muted);
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.8rem;
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .answer-revealed {
+    animation: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes pop {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .reveal-btn {
+    background: var(--sun);
+    color: var(--ink);
+    border: none;
+    border-radius: 14px;
+    padding: 13px 32px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.15rem;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #e6a800;
+    transition: all 0.15s;
+  }
+  .reveal-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #e6a800; }
+  .reveal-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #e6a800; }
+  .reveal-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .prev-btn {
+    background: white;
+    color: var(--muted);
+    border: 2px solid var(--light);
+    border-radius: 14px;
+    padding: 13px 20px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.15rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .prev-btn:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
+  .prev-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .next-btn {
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 13px 32px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.15rem;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #2d6da3;
+    transition: all 0.15s;
+  }
+  .next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #2d6da3; }
+  .next-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #2d6da3; }
+
+  .hint-text {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-weight: 700;
+    margin-top: 10px;
+  }
+
+  /* cousins row */
+  .cousins-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 8px;
+  }
+  .cousin-chip {
+    background: var(--light);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--muted);
+  }
+  .cousin-chip.active-cousin {
+    background: #e8f0fe;
+    color: var(--blue);
+  }
+
+  .digit-picker-row {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+  .digit-picker-col {
+    flex: 1;
+  }
+  .digit-picker-label {
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .lbl-a { color: var(--coral); }
+  .lbl-b { color: var(--teal); }
+  #digit-row-a, #digit-row-b {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ START SCREEN ═══ -->
+<div id="start-screen">
+  <div class="app-title">🔢 Number Cousins</div>
+  <div class="app-subtitle">Discover how math facts are related!</div>
+
+  <div class="section-label">Choose operation</div>
+  <div class="op-toggle">
+    <button class="op-btn active" id="op-add" onclick="setOp('add')">➕ Addition</button>
+    <button class="op-btn" id="op-sub" onclick="setOp('sub')">➖ Subtraction</button>
+    <button class="op-btn" id="op-both" onclick="setOp('both')">✚ Both</button>
+  </div>
+
+  <div class="section-label">Pick your two digits</div>
+  <div class="digit-picker-row">
+    <div class="digit-picker-col">
+      <div class="digit-picker-label lbl-a">First digit</div>
+      <div class="digit-row" id="digit-row-a"></div>
+    </div>
+    <div class="digit-picker-col">
+      <div class="digit-picker-label lbl-b">Second digit</div>
+      <div class="digit-row" id="digit-row-b"></div>
+    </div>
+  </div>
+
+  <div class="fact-preview" id="fact-preview"></div>
+
+  <br>
+  <button class="go-btn" id="go-btn" onclick="startGame()" disabled>Let's Go! 🚀</button>
+</div>
+
+<!-- ═══ GAME SCREEN ═══ -->
+<div id="game-screen">
+  <div class="game-header">
+    <button class="back-btn" onclick="showStart()">← Settings</button>
+    <div class="game-title">🔢 Number Cousins</div>
+    <div class="fact-badge" id="fact-badge"></div>
+  </div>
+
+  <div class="nl-card">
+    <canvas id="nl-canvas" height="160"></canvas>
+  </div>
+
+  <div class="eq-card">
+    <div class="equation-display" id="eq-display"></div>
+    <div class="hint-text" id="hint-text">Tap the ? to reveal the answer</div>
+    <div style="margin-top:6px;" class="cousins-row" id="cousins-row"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="prev-btn" id="prev-btn" onclick="prevProblem()">← Prev</button>
+    <button class="reveal-btn" id="reveal-btn" onclick="revealAnswer()">Reveal Answer ✨</button>
+    <button class="next-btn" onclick="nextProblem()">Next →</button>
+  </div>
+</div>
+
+<script>
+// ─── State ───
+let op = 'add';
+let digitA = null, digitB = null;
+let currentProblem = null;
+let answered = false;
+
+// History-based navigation: history is an array of {cousin, problem, revealed}
+// problemHistoryPos is the current index into history.
+// allCousins is shuffled; usedCousinKeys tracks which have been shown so we never repeat.
+let problemHistory = [];
+let problemHistoryPos = -1;
+let usedCousinKeys = new Set();
+
+// ─── Start screen setup ───
+(function buildDigits() {
+  ['a', 'b'].forEach(which => {
+    const row = document.getElementById('digit-row-' + which);
+    for (let d = 1; d <= 9; d++) {
+      const btn = document.createElement('button');
+      btn.className = 'digit-btn';
+      btn.textContent = d;
+      btn.onclick = () => selectDigit(which, d);
+      btn.id = 'dbt-' + which + '-' + d;
+      row.appendChild(btn);
+    }
+  });
+})();
+
+function setOp(o) {
+  op = o;
+  document.getElementById('op-add').classList.toggle('active', o === 'add');
+  document.getElementById('op-sub').classList.toggle('active', o === 'sub');
+  document.getElementById('op-both').classList.toggle('active', o === 'both');
+  updatePreview();
+}
+
+function selectDigit(which, d) {
+  if (which === 'a') {
+    // Deselect previous A
+    if (digitA !== null) document.getElementById('dbt-a-' + digitA).classList.remove('selected-a');
+    digitA = (digitA === d) ? null : d;  // tap same = deselect
+    if (digitA !== null) document.getElementById('dbt-a-' + digitA).classList.add('selected-a');
+  } else {
+    // Deselect previous B
+    if (digitB !== null) document.getElementById('dbt-b-' + digitB).classList.remove('selected-b');
+    digitB = (digitB === d) ? null : d;  // tap same = deselect
+    if (digitB !== null) document.getElementById('dbt-b-' + digitB).classList.add('selected-b');
+  }
+  updatePreview();
+  document.getElementById('go-btn').disabled = !(digitA && digitB);
+}
+
+function updatePreview() {
+  const el = document.getElementById('fact-preview');
+  if (!digitA || !digitB) { el.innerHTML = ''; return; }
+  const sum = digitA + digitB;
+  const [a, b] = [digitA, digitB];
+  if (op === 'add') {
+    el.innerHTML = `Core fact: <span>${a} + ${b} = ${sum}</span>`;
+  } else if (op === 'sub') {
+    el.innerHTML = `Core facts: <span>${sum}−${b}=${a}</span> and <span>${sum}−${a}=${b}</span>`;
+  } else {
+    el.innerHTML = `Core facts: <span>${a}+${b}=${sum}</span>, <span>${sum}−${b}=${a}</span>, <span>${sum}−${a}=${b}</span>`;
+  }
+
+}
+
+// ─── Problem Generation ───
+
+// Core rule: BOTH digits (a and b) must always appear in the SAME place value.
+// If the active place value is tens, then numA ends in a*10 and numB ends in b*10
+// (with zeros in the ones place), and any prefix is a multiple of a higher power of 10.
+//
+// Generated problem types for digits a, b (sum = a+b), at place-value magnitude mag:
+//   Pure scaled:   a*mag  +  b*mag  =  sum*mag        e.g. 30 + 50 = 80
+//   Prefix on A:   (P + a*mag) + b*mag                e.g. 130 + 50 = 180  (P = 100)
+//   Prefix on B:   a*mag + (P + b*mag)                e.g. 30 + 150 = 180
+//   Prefix on both: (P + a*mag) + (Q + b*mag)         e.g. 130 + 150 = 280
+// P and Q must be multiples of a higher power of 10 than mag, so the digits in
+// the mag place are cleanly a and b with no interference.
+
+function generateCousins(a, b) {
+  const sum = a + b;
+  const problems = [];
+
+  // Place value magnitudes to exercise
+  const mags = [1, 10, 100, 1000];
+
+  // Valid prefixes for each magnitude (must be multiples of mag*10 or higher)
+  // We keep prefixes small and round so the problems stay accessible
+  function prefixesFor(mag) {
+    const unit = mag * 10; // next power up
+    const results = [0]; // 0 = no prefix
+    for (let mult = 1; mult <= 9; mult++) {
+      const p = mult * unit;
+      if (p <= 9000) results.push(p);
+    }
+    return results;
+  }
+
+  for (const mag of mags) {
+    const prefixes = prefixesFor(mag);
+    for (const pA of prefixes) {
+      for (const pB of prefixes) {
+        // Keep it simple: don't add prefixes to both unless they're the same
+        // (avoids explosion of problems; "cousin of 3+5" not "cousin of 143+285")
+        if (pA > 0 && pB > 0 && pA !== pB) continue;
+        // Also skip very large numbers
+        const numA = pA + a * mag;
+        const numB = pB + b * mag;
+        const total = numA + numB;
+        if (total > 9999) continue;
+        if (numA <= 0 || numB <= 0) continue;
+        problems.push({ numA, numB });
+      }
+    }
+  }
+
+  // Dedupe by sorted pair (order will be shuffled later, but a+b = b+a same family)
+  const seen = new Set();
+  const unique = [];
+  for (const p of problems) {
+    const key = p.numA + '_' + p.numB;
+    if (!seen.has(key)) { seen.add(key); unique.push(p); }
+  }
+  return unique;
+}
+
+function makeProblem(numA, numB) {
+  const sum = numA + numB;
+  // Determine this problem's operation — 'both' picks randomly each time
+  const thisOp = (op === 'both') ? (Math.random() < 0.5 ? 'add' : 'sub') : op;
+  if (thisOp === 'add') {
+    return { numA, numB, answer: sum, thisOp, display: [numA, '+', numB, '=', sum] };
+  } else {
+    // subtraction: randomly pick sum-numA or sum-numB
+    if (Math.random() < 0.5) {
+      return { numA: sum, numB: numA, answer: numB, thisOp, display: [sum, '−', numA, '=', numB] };
+    } else {
+      return { numA: sum, numB: numB, answer: numA, thisOp, display: [sum, '−', numB, '=', numA] };
+    }
+  }
+}
+
+let allCousins = [];
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startGame() {
+  allCousins = shuffleArray(generateCousins(digitA, digitB));
+  problemHistory = [];
+  problemHistoryPos = -1;
+  usedCousinKeys = new Set();
+
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'block';
+
+  const sum = digitA + digitB;
+  const badge = document.getElementById('fact-badge');
+  if (op === 'add') {
+    badge.textContent = `${digitA}+${digitB}=${sum}`;
+  } else if (op === 'sub') {
+    badge.textContent = `${sum}−${digitA}/${digitB}`;
+  } else {
+    badge.textContent = `${digitA}+${digitB}=${sum} ✚`;
+  }
+
+  // Defer until after the game screen has laid out so canvas width is valid
+  requestAnimationFrame(advanceToNew);
+}
+
+function showStart() {
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('start-screen').style.display = 'block';
+}
+
+// Pick the next unused cousin and push onto history
+function advanceToNew() {
+  const unused = allCousins.filter(c => !usedCousinKeys.has(c.numA + '_' + c.numB));
+  if (unused.length === 0) {
+    // All used — reshuffle and reset (but keep history for back-nav)
+    usedCousinKeys.clear();
+    allCousins = shuffleArray(allCousins);
+  }
+  const pool = allCousins.filter(c => !usedCousinKeys.has(c.numA + '_' + c.numB));
+  const cousin = pool[0];
+  usedCousinKeys.add(cousin.numA + '_' + cousin.numB);
+  const problem = makeProblem(cousin.numA, cousin.numB);
+  // Truncate any forward history beyond current pos, then push
+  problemHistory = problemHistory.slice(0, problemHistoryPos + 1);
+  problemHistory.push({ cousin, problem, revealed: false });
+  problemHistoryPos = problemHistory.length - 1;
+  loadFromHistory();
+}
+
+function nextProblem() {
+  if (problemHistoryPos < problemHistory.length - 1) {
+    // There is forward history (user had gone back), step forward
+    problemHistoryPos++;
+    loadFromHistory();
+  } else {
+    advanceToNew();
+  }
+}
+
+function prevProblem() {
+  if (problemHistoryPos <= 0) return;
+  problemHistoryPos--;
+  loadFromHistory();
+}
+
+function loadFromHistory() {
+  if (problemHistoryPos < 0 || problemHistoryPos >= problemHistory.length) return;
+  const entry = problemHistory[problemHistoryPos];
+  currentProblem = entry.problem;
+  answered = entry.revealed;
+
+  renderEquation(answered);
+  renderNumberLine(answered);
+  renderCousinsRow();
+
+  document.getElementById('reveal-btn').disabled = answered;
+  document.getElementById('hint-text').textContent = answered
+    ? '✓ Nice work! Tap Next for another cousin.'
+    : 'Tap Reveal to see the answer';
+  document.getElementById('prev-btn').disabled = problemHistoryPos <= 0;
+}
+
+function revealAnswer() {
+  if (answered) return;
+  answered = true;
+  problemHistory[problemHistoryPos].revealed = true;
+  renderEquation(true);
+  renderNumberLine(true);
+  document.getElementById('reveal-btn').disabled = true;
+  document.getElementById('hint-text').textContent = '✓ Nice work! Tap Next for another cousin.';
+}
+
+function renderEquation(reveal = false) {
+  const el = document.getElementById('eq-display');
+  const p = currentProblem;
+
+  let html = '';
+  if (p.thisOp === 'add') {
+    html = `<span class="eq-num-a">${p.numA}</span>`;
+    html += `<span class="eq-op">+</span>`;
+    html += `<span class="eq-num-b">${p.numB}</span>`;
+    html += `<span class="eq-eq">=</span>`;
+    if (reveal) {
+      html += `<span class="eq-ans answer-revealed">${p.answer}</span>`;
+    } else {
+      html += `<span class="eq-ans answer-hidden" onclick="revealAnswer()"></span>`;
+    }
+  } else {
+    // subtraction display
+    const [whole, part] = [p.numA, p.numB];
+    const diff = p.answer;
+    html = `<span class="eq-num-a">${whole}</span>`;
+    html += `<span class="eq-op">−</span>`;
+    html += `<span class="eq-num-b">${part}</span>`;
+    html += `<span class="eq-eq">=</span>`;
+    if (reveal) {
+      html += `<span class="eq-ans answer-revealed">${diff}</span>`;
+    } else {
+      html += `<span class="eq-ans answer-hidden" onclick="revealAnswer()"></span>`;
+    }
+  }
+  el.innerHTML = html;
+}
+
+// ─── Number Line ───
+function renderNumberLine(reveal = false) {
+  const canvas = document.getElementById('nl-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const W = Math.max(200, canvas.parentElement.clientWidth - 56);
+  canvas.style.width = W + 'px';
+  canvas.width = W * dpr;
+  canvas.height = 160 * dpr;
+  canvas.style.height = '160px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const p = currentProblem;
+  ctx.clearRect(0, 0, W, 160);
+
+  // For addition: points are 0, numA, numA+numB (answer)
+  // For subtraction: points are 0, answer(diff), numA (the whole)
+  // Always draw: start=0, and the three key values
+
+  let ptStart, ptMid, ptEnd;
+  let colorMid, colorEnd, colorArc;
+
+  if (p.thisOp === 'add') {
+    ptStart = 0;
+    ptMid = p.numA;
+    ptEnd = p.answer;
+    colorMid = '#ff6b6b';  // coral = numA
+    colorEnd = '#1abc9c';  // teal = answer (sum)
+    colorArc = '#4a90d9';
+  } else {
+    // subtraction: we visualize the whole, then show the two parts
+    ptStart = 0;
+    ptMid = p.answer;   // the difference (smaller part)
+    ptEnd = p.numA;     // the minuend (whole)
+    colorMid = '#ff6b6b';
+    colorEnd = '#9b59b6';
+    colorArc = '#4a90d9';
+  }
+
+  // Tick mark strategy:
+  // 1. Key points (ptMid, ptEnd) always appear.
+  // 2. Round landmark ticks at every multiple of domMag within the range.
+  // 3. lineStart = largest domMag multiple <= smaller addend, so we zoom in.
+  //    Zero is only shown when lineStart computes to 0.
+
+  const maxVal = ptEnd;
+
+  // Dominant magnitude = largest power of 10 that is <= maxVal
+  const domMag = Math.pow(10, Math.floor(Math.log10(maxVal)));
+
+  // Zoom in: start axis at the domMag floor of the smaller key value.
+  // e.g. 53+8=61 -> domMag=10, floor(53/10)*10 = 50 -> start at 50.
+  // e.g. 3+5=8   -> domMag=1,  floor(3/1)*1   = 3  -> but domMag=1 means
+  //                              single digits; just start at 0.
+  // e.g. 250+230=480 -> domMag=100, floor(250/100)*100=200 -> start at 200? 
+  //                     but 0,100,200 are meaningful landmarks, so start at 0.
+  //                     Rule: only zoom when floorMin > 0 AND
+  //                     floorMin >= domMag (i.e. there is at least one full
+  //                     domMag step of empty space we can remove).
+  const smallerKey = Math.min(ptMid, ptEnd);
+  const floorMin = Math.floor(smallerKey / domMag) * domMag;
+  const lineStart = (domMag > 1 && floorMin >= domMag) ? floorMin : 0;
+
+  // Axis end: one domMag step past the answer
+  const lineEnd = Math.ceil(maxVal / domMag) * domMag;
+
+  const PAD_L = 32, PAD_R = 32;
+
+  // Collect landmark multiples + key points.
+  // For domMag=1 (single-digit problems), skip the landmark loop.
+  const allValues = new Set();
+  if (domMag > 1) {
+    for (let v = lineStart; v <= lineEnd; v += domMag) {
+      allValues.add(v);
+    }
+  }
+  allValues.add(ptMid);
+  allValues.add(ptEnd);
+  if (lineStart === 0) allValues.add(0);
+
+  // Drop non-key ticks that crowd a key point or each other (~28px threshold)
+  const canvasW = document.getElementById('nl-canvas').parentElement.clientWidth - 56;
+  const usableW_est = canvasW - PAD_L - PAD_R;
+  const valRange = lineEnd - lineStart;
+  const minGapVal = valRange * (28 / Math.max(usableW_est, 200));
+
+  const keySet = new Set([lineStart, ptMid, ptEnd]);
+  let tickArr = [...allValues].sort((a, b) => a - b);
+
+  tickArr = tickArr.filter(v => {
+    if (keySet.has(v)) return true;
+    for (const kp of keySet) {
+      if (Math.abs(v - kp) < minGapVal) return false;
+    }
+    return true;
+  });
+
+  const finalTicks = [];
+  for (const v of tickArr) {
+    const last = finalTicks[finalTicks.length - 1];
+    if (last !== undefined && !keySet.has(v) && (v - last) < minGapVal) continue;
+    finalTicks.push(v);
+  }
+
+  const ticks = finalTicks;
+
+  // Map value -> x; axis spans lineStart..lineEnd
+  const lineY = 110;
+  const usableW = W - PAD_L - PAD_R;
+
+  function valToX(v) {
+    return PAD_L + ((v - lineStart) / (lineEnd - lineStart)) * usableW;
+  }
+
+  // Draw axis line
+  ctx.strokeStyle = '#bdc3c7';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(PAD_L - 10, lineY);
+  ctx.lineTo(W - PAD_R + 10, lineY);
+  ctx.stroke();
+
+  // Arrow right
+  ctx.fillStyle = '#bdc3c7';
+  ctx.beginPath();
+  ctx.moveTo(W - PAD_R + 10, lineY);
+  ctx.lineTo(W - PAD_R + 4, lineY - 5);
+  ctx.lineTo(W - PAD_R + 4, lineY + 5);
+  ctx.closePath();
+  ctx.fill();
+
+  // Draw tick marks and labels.
+  // ptEnd is the answer — hide its label (show '?') until revealed.
+  // For subtraction, ptMid is also the answer (the difference) — hide it too
+  // since the arc itself is hidden.
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+
+  for (const v of ticks) {
+    const x = valToX(v);
+    let tickColor = '#95a5a6';
+    let tickH = 8;
+    let labelColor = '#95a5a6';
+    let bold = false;
+    let labelSize = 11;
+
+    if (v === ptMid) { tickColor = colorMid; tickH = 14; labelColor = colorMid; bold = true; labelSize = 13; }
+    if (v === ptEnd) { tickColor = colorEnd; tickH = 14; labelColor = colorEnd; bold = true; labelSize = 13; }
+
+    ctx.strokeStyle = tickColor;
+    ctx.lineWidth = v === ptMid || v === ptEnd ? 3 : 2;
+    ctx.beginPath();
+    ctx.moveTo(x, lineY - tickH);
+    ctx.lineTo(x, lineY + tickH);
+    ctx.stroke();
+
+    // Determine label text:
+    // Addition:    ptEnd is the sum (unknown) — hide until revealed
+    // Subtraction: ptMid is the difference (unknown) — hide until revealed
+    //              ptEnd is the minuend (given in problem) — always show
+    let labelText;
+    if (p.thisOp === 'add' && v === ptEnd && !reveal) {
+      labelText = '?';
+      labelColor = '#2c3e50';
+    } else if (p.thisOp === 'sub' && v === ptMid && !reveal) {
+      labelText = '?';
+      labelColor = '#2c3e50';
+    } else {
+      labelText = v === 0 ? '0' : String(v);
+    }
+
+    ctx.fillStyle = labelColor;
+    const isQuestion = (labelText === '?');
+    ctx.font = (isQuestion ? '900 ' : (bold ? '800 ' : '600 ')) + (isQuestion ? labelSize + 3 : labelSize) + 'px Nunito';
+    ctx.fillText(labelText, x, lineY + tickH + (isQuestion ? 2 : 4));
+  }
+
+  // Arc: from ptMid to ptEnd.
+  // Addition:    always draw; label (numB) always shown.
+  // Subtraction: hide arc and label until revealed (the arc spans the unknown gap).
+  {
+    const xFrom = valToX(ptMid);
+    const xTo   = valToX(ptEnd);
+    const mx    = (xFrom + xTo) / 2;
+    const span  = xTo - xFrom;
+    const h     = Math.max(28, Math.min(60, span * 0.55));
+    const cy    = lineY - h;
+    const arcColor = '#4a90d9';
+
+    if (p.thisOp === 'add') {
+      // Draw arc and label — label is the addend being added (numB), always visible
+      ctx.strokeStyle = arcColor;
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(xFrom, lineY - 2);
+      ctx.quadraticCurveTo(mx, cy, xTo, lineY - 2);
+      ctx.stroke();
+
+      ctx.fillStyle = arcColor;
+      ctx.beginPath(); ctx.arc(xFrom, lineY - 2, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(xTo,   lineY - 2, 4, 0, Math.PI * 2); ctx.fill();
+
+      ctx.fillStyle = arcColor;
+      ctx.font = 'bold 13px Nunito';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(String(p.numB), mx, cy + 2);
+
+    } else {
+      // Subtraction: always draw the arc with the subtrahend label (always visible)
+      ctx.strokeStyle = arcColor;
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(xFrom, lineY - 2);
+      ctx.quadraticCurveTo(mx, cy, xTo, lineY - 2);
+      ctx.stroke();
+
+      ctx.fillStyle = arcColor;
+      ctx.beginPath(); ctx.arc(xFrom, lineY - 2, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(xTo,   lineY - 2, 4, 0, Math.PI * 2); ctx.fill();
+
+      ctx.fillStyle = arcColor;
+      ctx.font = 'bold 13px Nunito';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(String(p.numB), mx, cy + 2);
+    }
+  }
+
+  // "Core fact" reminder label at top left
+  const sum = digitA + digitB;
+  ctx.fillStyle = '#bdc3c7';
+  ctx.font = '700 10px Nunito';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(op === 'add' ? `cousin of ${digitA}+${digitB}=${sum}` : `cousin of ${sum}−${digitA}/${digitB}`, 0, 0);
+}
+
+// ─── Cousins chip strip ───
+function renderCousinsRow() {
+  const row = document.getElementById('cousins-row');
+  const a = digitA, b = digitB, s = a + b;
+  const p = currentProblem;
+
+  const examples = [];
+  const chipOp = (op === 'both') ? 'add' : op;
+  if (chipOp === 'add') {
+    examples.push(`${a}+${b}=${s}`);
+    if (a !== b) examples.push(`${b}+${a}=${s}`);
+    examples.push(`${a*10}+${b*10}=${s*10}`);
+    examples.push(`${a*100}+${b*100}=${s*100}`);
+  } else {
+    examples.push(`${s}−${a}=${b}`);
+    examples.push(`${s}−${b}=${a}`);
+    examples.push(`${s*10}−${a*10}=${b*10}`);
+    examples.push(`${s*100}−${b*100}=${a*100}`);
+  }
+
+  const currentKey = p.thisOp === 'add'
+    ? `${p.numA}+${p.numB}=${p.answer}`
+    : `${p.numA}−${p.numB}=${p.answer}`;
+
+  // Build spoiler keys: any chip that contains the current answer gives it away.
+  // For addition, the answer is the sum — hide any chip showing numA+numB=answer
+  // or numB+numA=answer (commuted). For subtraction, hide chips showing the difference.
+  const spoilerKeys = new Set();
+  if (p.thisOp === 'add') {
+    spoilerKeys.add(`${p.numA}+${p.numB}=${p.answer}`);
+    spoilerKeys.add(`${p.numB}+${p.numA}=${p.answer}`);
+  } else {
+    // subtraction: the answer is the difference; hide chips that reveal it
+    spoilerKeys.add(`${p.numA}−${p.numB}=${p.answer}`);
+    spoilerKeys.add(`${p.numA}−${p.answer}=${p.numB}`);
+  }
+
+  row.innerHTML = examples
+    .filter(e => answered || !spoilerKeys.has(e))
+    .map(e => `<span class="cousin-chip${e === currentKey ? ' active-cousin' : ''}">${e}</span>`)
+    .join('');
+}
+
+// ─── Resize handler ───
+window.addEventListener('resize', () => {
+  if (currentProblem) renderNumberLine(answered);
+});
+</script>
+</body>
+</html>
