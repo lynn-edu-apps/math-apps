@@ -410,6 +410,7 @@
   <div class="op-toggle">
     <button class="op-btn active" id="op-add" onclick="setOp('add')">➕ Addition</button>
     <button class="op-btn" id="op-sub" onclick="setOp('sub')">➖ Subtraction</button>
+    <button class="op-btn" id="op-both" onclick="setOp('both')">✚ Both</button>
   </div>
 
   <div class="section-label">Pick your two digits</div>
@@ -488,6 +489,7 @@ function setOp(o) {
   op = o;
   document.getElementById('op-add').classList.toggle('active', o === 'add');
   document.getElementById('op-sub').classList.toggle('active', o === 'sub');
+  document.getElementById('op-both').classList.toggle('active', o === 'both');
   updatePreview();
 }
 
@@ -514,9 +516,10 @@ function updatePreview() {
   const [a, b] = [digitA, digitB];
   if (op === 'add') {
     el.innerHTML = `Core fact: <span>${a} + ${b} = ${sum}</span>`;
-  } else {
-    // subtraction: show both subtractions from the sum
+  } else if (op === 'sub') {
     el.innerHTML = `Core facts: <span>${sum}−${b}=${a}</span> and <span>${sum}−${a}=${b}</span>`;
+  } else {
+    el.innerHTML = `Core facts: <span>${a}+${b}=${sum}</span>, <span>${sum}−${b}=${a}</span>, <span>${sum}−${a}=${b}</span>`;
   }
 
 }
@@ -584,14 +587,16 @@ function generateCousins(a, b) {
 
 function makeProblem(numA, numB) {
   const sum = numA + numB;
-  if (op === 'add') {
-    return { numA, numB, answer: sum, display: [numA, '+', numB, '=', sum] };
+  // Determine this problem's operation — 'both' picks randomly each time
+  const thisOp = (op === 'both') ? (Math.random() < 0.5 ? 'add' : 'sub') : op;
+  if (thisOp === 'add') {
+    return { numA, numB, answer: sum, thisOp, display: [numA, '+', numB, '=', sum] };
   } else {
     // subtraction: randomly pick sum-numA or sum-numB
     if (Math.random() < 0.5) {
-      return { numA: sum, numB: numA, answer: numB, display: [sum, '−', numA, '=', numB] };
+      return { numA: sum, numB: numA, answer: numB, thisOp, display: [sum, '−', numA, '=', numB] };
     } else {
-      return { numA: sum, numB: numB, answer: numA, display: [sum, '−', numB, '=', numA] };
+      return { numA: sum, numB: numB, answer: numA, thisOp, display: [sum, '−', numB, '=', numA] };
     }
   }
 }
@@ -620,8 +625,10 @@ function startGame() {
   const badge = document.getElementById('fact-badge');
   if (op === 'add') {
     badge.textContent = `${digitA}+${digitB}=${sum}`;
-  } else {
+  } else if (op === 'sub') {
     badge.textContent = `${sum}−${digitA}/${digitB}`;
+  } else {
+    badge.textContent = `${digitA}+${digitB}=${sum} ✚`;
   }
 
   // Defer until after the game screen has laid out so canvas width is valid
@@ -700,7 +707,7 @@ function renderEquation(reveal = false) {
   const p = currentProblem;
 
   let html = '';
-  if (op === 'add') {
+  if (p.thisOp === 'add') {
     html = `<span class="eq-num-a">${p.numA}</span>`;
     html += `<span class="eq-op">+</span>`;
     html += `<span class="eq-num-b">${p.numB}</span>`;
@@ -749,7 +756,7 @@ function renderNumberLine(reveal = false) {
   let ptStart, ptMid, ptEnd;
   let colorMid, colorEnd, colorArc;
 
-  if (op === 'add') {
+  if (p.thisOp === 'add') {
     ptStart = 0;
     ptMid = p.numA;
     ptEnd = p.answer;
@@ -889,10 +896,10 @@ function renderNumberLine(reveal = false) {
     // Subtraction: ptMid is the difference (unknown) — hide until revealed
     //              ptEnd is the minuend (given in problem) — always show
     let labelText;
-    if (op === 'add' && v === ptEnd && !reveal) {
+    if (p.thisOp === 'add' && v === ptEnd && !reveal) {
       labelText = '?';
       labelColor = '#2c3e50';
-    } else if (op === 'sub' && v === ptMid && !reveal) {
+    } else if (p.thisOp === 'sub' && v === ptMid && !reveal) {
       labelText = '?';
       labelColor = '#2c3e50';
     } else {
@@ -917,7 +924,7 @@ function renderNumberLine(reveal = false) {
     const cy    = lineY - h;
     const arcColor = '#4a90d9';
 
-    if (op === 'add') {
+    if (p.thisOp === 'add') {
       // Draw arc and label — label is the addend being added (numB), always visible
       ctx.strokeStyle = arcColor;
       ctx.lineWidth = 2.5;
@@ -975,7 +982,8 @@ function renderCousinsRow() {
   const p = currentProblem;
 
   const examples = [];
-  if (op === 'add') {
+  const chipOp = (op === 'both') ? 'add' : op;
+  if (chipOp === 'add') {
     examples.push(`${a}+${b}=${s}`);
     if (a !== b) examples.push(`${b}+${a}=${s}`);
     examples.push(`${a*10}+${b*10}=${s*10}`);
@@ -987,13 +995,27 @@ function renderCousinsRow() {
     examples.push(`${s*100}−${b*100}=${a*100}`);
   }
 
-  const currentKey = op === 'add'
+  const currentKey = p.thisOp === 'add'
     ? `${p.numA}+${p.numB}=${p.answer}`
     : `${p.numA}−${p.numB}=${p.answer}`;
 
-  row.innerHTML = examples.map(e =>
-    `<span class="cousin-chip${e === currentKey ? ' active-cousin' : ''}">${e}</span>`
-  ).join('');
+  // Build spoiler keys: any chip that contains the current answer gives it away.
+  // For addition, the answer is the sum — hide any chip showing numA+numB=answer
+  // or numB+numA=answer (commuted). For subtraction, hide chips showing the difference.
+  const spoilerKeys = new Set();
+  if (p.thisOp === 'add') {
+    spoilerKeys.add(`${p.numA}+${p.numB}=${p.answer}`);
+    spoilerKeys.add(`${p.numB}+${p.numA}=${p.answer}`);
+  } else {
+    // subtraction: the answer is the difference; hide chips that reveal it
+    spoilerKeys.add(`${p.numA}−${p.numB}=${p.answer}`);
+    spoilerKeys.add(`${p.numA}−${p.answer}=${p.numB}`);
+  }
+
+  row.innerHTML = examples
+    .filter(e => answered || !spoilerKeys.has(e))
+    .map(e => `<span class="cousin-chip${e === currentKey ? ' active-cousin' : ''}">${e}</span>`)
+    .join('');
 }
 
 // ─── Resize handler ───
