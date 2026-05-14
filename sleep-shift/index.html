@@ -146,11 +146,11 @@ button{cursor:pointer;border:none;font-family:var(--font-body);font-size:0.875re
 canvas{display:block}
 
 /* ---- settings modal ---- */
-.modal-overlay{display:none;position:fixed;inset:0;background:var(--modal-overlay);z-index:100;align-items:center;justify-content:center}
+.modal-overlay{display:none;position:fixed;inset:0;background:var(--modal-overlay);z-index:100;align-items:center;justify-content:center;touch-action:none}
 .modal-overlay.open{display:flex}
 #confirmModal{z-index:300}
 #dataModal{z-index:250}
-.modal{background:var(--surface);border-radius:var(--radius);padding:22px;max-width:480px;width:calc(100% - 24px);max-height:90vh;overflow-y:auto;overflow-x:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.18);touch-action:pan-y}
+.modal{background:var(--surface);border-radius:var(--radius);padding:22px;max-width:480px;width:calc(100% - 24px);max-height:90vh;overflow-y:auto;overflow-x:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.18);touch-action:pan-y;overscroll-behavior:contain}
 .modal h2{font-size:1.3rem;margin-bottom:20px}
 @media(max-width:480px){.modal{padding:14px;width:calc(100% - 12px)}}
 .settings-group{margin-bottom:18px}
@@ -175,7 +175,10 @@ canvas{display:block}
 .modal-data{max-width:560px;max-height:85vh;display:flex;flex-direction:column}
 .data-modal-desc{font-size:0.82rem;color:var(--text2);margin:6px 0 8px}
 .data-textarea{width:100%;flex:1;min-height:180px;max-height:340px;font-family:'Courier New',monospace;font-size:0.72rem;padding:10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);resize:vertical;line-height:1.4}
-/* ---- iOS long-press suppression ---- */
+/* ---- iOS auto-zoom prevention ---- */
+/* iOS zooms in when focusing inputs with font-size < 16px and never zooms back out.
+   Setting font-size:16px on all inputs/selects prevents this entirely. */
+input,select,textarea{font-size:16px !important}
 /* Prevent text selection loupe and callout on all interactive/visual elements */
 *{-webkit-tap-highlight-color:transparent}
 body,button,select,input,canvas,.chart-card,.chart-bubble,.modal,.entry-row,
@@ -447,7 +450,10 @@ canvas{-webkit-touch-callout:none;touch-action:pan-y}
   <div class="modal">
     <div class="modal-close-row">
       <h2 style="margin-bottom:0">Settings</h2>
-      <button class="btn-icon modal-x" id="btnSettingsClose">✕</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn-primary btn-sm" id="btnSaveSettingsTop">Save</button>
+        <button class="btn-icon modal-x" id="btnSettingsClose">✕</button>
+      </div>
     </div>
     <div class="settings-group">
       <label>Time Format</label>
@@ -463,6 +469,14 @@ canvas{-webkit-touch-callout:none;touch-action:pan-y}
         <button class="btn-ghost btn-sm" id="setThemeLight">☀ Light</button>
         <button class="btn-ghost btn-sm" id="setThemeDark">🌙 Dark</button>
       </div>
+    </div>
+    <hr class="section-divider">
+    <div class="settings-group">
+      <label>Chart Lines</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);cursor:pointer">
+        <input type="checkbox" id="setSmoothLines" checked>
+        Smooth curves (uncheck for straight lines)
+      </label>
     </div>
     <hr class="section-divider">
     <div class="settings-group">
@@ -618,6 +632,7 @@ const DEFAULT_SETTINGS = {
   colDur: '#5daa80',
   colChartBg: '#fdfbf8',
   accentUi: '#5b8ccc',
+  smoothLines: true,
   defaultBedOffset: '0',
   defaultWakeOffset: '1',
   defaultOobOffset: '1',
@@ -665,7 +680,7 @@ function saveData() {
 function normalizeChartOrder() {
   const builtIn = ['bed','wake','oob','dur'];
   const customChartIds = customFieldDefs
-    .filter(f => ['datetime','numeric','yesno'].includes(f.type))
+    .filter(f => ['datetime','numeric','yesno','text'].includes(f.type))
     .map(f => 'cf_' + f.id);
   const allIds = [...builtIn, ...customChartIds];
   // Add missing ids to end
@@ -1465,7 +1480,7 @@ function drawTimeChart(canvas, filteredEntries, getVal, color, goalMins, markerD
     return hits;
   }
 
-  // Smooth Catmull-Rom spline
+  // Line drawing — smooth or straight based on settings
   ctx.save();
   ctx.strokeStyle = color;
   ctx.lineWidth = 2.5;
@@ -1476,18 +1491,23 @@ function drawTimeChart(canvas, filteredEntries, getVal, color, goalMins, markerD
   const ys = normPts.map(p => pt + h - ((p.nv - yMin) / yRange) * h);
 
   ctx.beginPath();
-  // Catmull-Rom to bezier
-  for (let i = 0; i < xs.length - 1; i++) {
-    const p0 = i > 0 ? i-1 : 0;
-    const p1 = i;
-    const p2 = i+1;
-    const p3 = i < xs.length-2 ? i+2 : i+1;
-    const cp1x = xs[p1] + (xs[p2]-xs[p0])/6;
-    const cp1y = ys[p1] + (ys[p2]-ys[p0])/6;
-    const cp2x = xs[p2] - (xs[p3]-xs[p1])/6;
-    const cp2y = ys[p2] - (ys[p3]-ys[p1])/6;
-    if (i === 0) ctx.moveTo(xs[p1], ys[p1]);
-    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, xs[p2], ys[p2]);
+  if (settings.smoothLines !== false) {
+    // Catmull-Rom to bezier
+    for (let i = 0; i < xs.length - 1; i++) {
+      const p0 = i > 0 ? i-1 : 0;
+      const p1 = i;
+      const p2 = i+1;
+      const p3 = i < xs.length-2 ? i+2 : i+1;
+      const cp1x = xs[p1] + (xs[p2]-xs[p0])/6;
+      const cp1y = ys[p1] + (ys[p2]-ys[p0])/6;
+      const cp2x = xs[p2] - (xs[p3]-xs[p1])/6;
+      const cp2y = ys[p2] - (ys[p3]-ys[p1])/6;
+      if (i === 0) ctx.moveTo(xs[p1], ys[p1]);
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, xs[p2], ys[p2]);
+    }
+  } else {
+    ctx.moveTo(xs[0], ys[0]);
+    for (let i = 1; i < xs.length; i++) ctx.lineTo(xs[i], ys[i]);
   }
   ctx.stroke();
 
@@ -1769,7 +1789,7 @@ function renderSettingsCustomFields() {
     return `<div class="cf-item">
       <span class="cf-item-name">${fd.name}</span>
       <span class="cf-item-type">${typeLabel}</span>
-      ${(fd.type === 'datetime' || fd.type === 'numeric' || fd.type === 'yesno') ? `<input type="color" value="${fd.color||'#888888'}" title="Color" style="width:32px;height:28px;border:none;border-radius:5px;cursor:pointer;padding:1px" onchange="updateCFColor('${fd.id}',this.value)">` : ''}
+      ${(fd.type === 'datetime' || fd.type === 'numeric' || fd.type === 'yesno' || fd.type === 'text') ? `<input type="color" value="${fd.color||'#888888'}" title="Color" style="width:32px;height:28px;border:none;border-radius:5px;cursor:pointer;padding:1px" onchange="updateCFColor('${fd.id}',this.value)">` : ''}
       <input type="text" value="${fd.name}" placeholder="Name" style="font-family:var(--font-body);font-size:0.8rem;padding:4px 7px;border:1.5px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);width:100px" onchange="renameCF('${fd.id}',this.value)">
       ${(fd.type === 'datetime' || fd.type === 'numeric') ? `<div style="font-size:0.75rem;color:var(--text2)">Goal: <input type="${fd.type==='numeric'?'number':'time'}" value="${fd.goalValue||''}" style="font-family:var(--font-body);font-size:0.78rem;padding:3px 6px;border:1.5px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);width:${fd.type==='numeric'?'60px':'90px'}" onchange="setCFGoal('${fd.id}',this.value)"></div>` : ''}
       ${fd.type === 'numeric' ? `<label style="font-size:0.75rem;color:var(--text2);display:flex;align-items:center;gap:4px;font-weight:400;text-transform:none;letter-spacing:0"><input type="checkbox" ${fd.unsetZero?'checked':''} onchange="setCFUnsetZero('${fd.id}',this.checked)"> unset=0</label>` : ''}
@@ -1800,6 +1820,7 @@ function deleteCF(id) {
   // Custom confirm using our modal
   document.getElementById('confirmMessage').textContent =
     `Delete custom field "${fd.name}"? All saved data for this field will be lost.`;
+  document.getElementById('btnConfirmOk').textContent = 'Delete';
   document.getElementById('confirmModal').classList.add('open');
   document.getElementById('confirmModal').dataset.deleteCfId = id;
 }
@@ -1867,7 +1888,7 @@ function getChartMeta() {
     {id:'dur', icon:'⏱', label:'Sleep Duration'}
   ];
   const custom = customFieldDefs
-    .filter(f => ['datetime','numeric','yesno'].includes(f.type))
+    .filter(f => ['datetime','numeric','yesno','text'].includes(f.type))
     .map(f => ({id:'cf_'+f.id, icon:'📊', label:f.name}));
   return [...builtIn, ...custom];
 }
@@ -2163,7 +2184,7 @@ function renderCustomCharts(filtered, markerDays) {
   const { totalDays } = getChartDateRange();
 
   // Build set of needed chart divs
-  const chartableFields = customFieldDefs.filter(f => ['datetime','numeric','yesno'].includes(f.type));
+  const chartableFields = customFieldDefs.filter(f => ['datetime','numeric','yesno','text'].includes(f.type));
 
   // Remove stale divs
   Array.from(container.children).forEach(child => {
@@ -2193,7 +2214,7 @@ function renderCustomCharts(filtered, markerDays) {
       // Wire up click/touch for bubble
       const canvas = card.querySelector('canvas');
       const bub = card.querySelector('.chart-bubble');
-      const isDur = fd.type === 'numeric' || fd.type === 'yesno';
+      const isDur = fd.type === 'numeric' || fd.type === 'yesno' || fd.type === 'text';
       canvas.style.cursor = 'pointer';
       canvas.addEventListener('click', e => handleChartClick(canvas, e.clientX, e.clientY, e, isDur, bub, card));
       canvas.addEventListener('touchmove', e => {
@@ -2251,6 +2272,11 @@ function renderCustomCharts(filtered, markerDays) {
       canvas._hits = drawYesNoChart(canvas, filtered, fd, color, markerDays);
       const yesCount = cfEntries.length;
       avgEl.innerHTML = yesCount > 0 ? `<span class="avg-label">Yes days:</span> <strong>${yesCount}</strong>` : '';
+    } else if (fd.type === 'text') {
+      const cfEntries = filtered.filter(e => e.customFields && e.customFields[fd.id] && e.customFields[fd.id].trim() !== '');
+      canvas._hits = drawTextChart(canvas, filtered, fd, color, markerDays);
+      const textCount = cfEntries.length;
+      avgEl.innerHTML = textCount > 0 ? `<span class="avg-label">Days with text:</span> <strong>${textCount}</strong>` : '';
     }
   });
 
@@ -2438,20 +2464,107 @@ function drawYesNoChart(canvas, filteredEntries, fd, color, markerDays) {
 
   return hits;
 }
+function drawTextChart(canvas, filteredEntries, fd, color, markerDays) {
+  // Identical to drawYesNoChart but shows bar when text is non-empty
+  // Y axis label: 'Has text' instead of 'YES'
+  const _range = getChartDateRange(); const { from, to, totalDays } = _range;
+  const containerW = (canvas.parentElement?canvas.parentElement.clientWidth:0)||400;
+  const drawW = Math.max(containerW, 300);
+  const ctx = setupCanvas(canvas, drawW, CHART_HEIGHT);
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  ctx.fillStyle = isDark?'#131111':settings.colChartBg;
+  ctx.fillRect(0,0,drawW,CHART_HEIGHT);
+
+  const pl=30, pt=CHART_PAD.top, pr=CHART_PAD.right, pb=CHART_PAD.bottom;
+  const w=drawW-pl-pr, h=CHART_HEIGHT-pt-pb;
+  const BAR_H = Math.round(h * 0.5);
+
+  function toX(dayStr) {
+    const d = new Date(dayStr+'T00:00:00');
+    return pl + ((d-from)/(totalDays*86400000))*w;
+  }
+
+  // Y axis label
+  ctx.save();
+  ctx.fillStyle = isDark?'#ddd':'#444';
+  ctx.font = '600 10px DM Sans,sans-serif'; ctx.textAlign='left';
+  const yesY = pt + h - BAR_H;
+  ctx.fillText('Has text', 2, yesY+4);
+  ctx.strokeStyle = isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.06)';
+  ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pl,yesY); ctx.lineTo(pl+w,yesY); ctx.stroke();
+  ctx.restore();
+
+  // X labels
+  ctx.save();
+  const xLs = getXLabels(from, totalDays, drawW, pl, pr);
+  for (const tick of xLs) {
+    ctx.fillStyle = tick.major?(isDark?'#eee':'#222'):(isDark?'#ddd':'#555');
+    ctx.font = tick.major?'bold 10px DM Sans,sans-serif':'600 10px DM Sans,sans-serif';
+    ctx.textAlign='center'; ctx.fillText(tick.label, tick.x, pt+h+14);
+  }
+  ctx.restore();
+
+  const barW = Math.max(6,(w/totalDays)*0.6);
+  const hits = []; let topY = CHART_HEIGHT;
+  for (const e of filteredEntries) {
+    const val = e.customFields?e.customFields[fd.id]:null;
+    if (!val || val.trim() === '') continue;
+    const x = toX(e.day);
+    const bx = x-barW/2, y = pt+h-BAR_H;
+    ctx.save(); ctx.fillStyle=color;
+    const r=Math.min(4,barW/2);
+    ctx.beginPath(); ctx.moveTo(bx+r,y); ctx.lineTo(bx+barW-r,y);
+    ctx.quadraticCurveTo(bx+barW,y,bx+barW,y+r);
+    ctx.lineTo(bx+barW,pt+h); ctx.lineTo(bx,pt+h); ctx.lineTo(bx,y+r);
+    ctx.quadraticCurveTo(bx,y,bx+r,y); ctx.closePath(); ctx.fill(); ctx.restore();
+    hits.push({x,y:y+BAR_H/2,bx,bRight:bx+barW,bTop:y,bBot:pt+h,entry:e});
+    if (y<topY) topY=y;
+  }
+  canvas._topY = topY;
+
+  // Markers
+  for (const marker of (markerDays||[])) {
+    const x = toX(marker.day);
+    ctx.save(); ctx.strokeStyle=isDark?'rgba(255,255,255,0.12)':'rgba(0,0,0,0.1)';
+    ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(x,pt); ctx.lineTo(x,pt+h); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.font='11px serif'; ctx.fillStyle=isDark?'#bbb':'#888';
+    ctx.textAlign='center'; ctx.fillText(marker.isDst?'⏰':'📍', x, pt+h+28); ctx.restore();
+    ctx.save(); ctx.translate(x-7, pt+h-4); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle=isDark?'#bbb':'#666'; ctx.font='600 9px DM Sans,sans-serif';
+    ctx.textAlign='left'; ctx.fillText(marker.label, 0, 0); ctx.restore();
+  }
+
+  return hits;
+}
+
 document.getElementById('btnDeleteAll').onclick = () => {
   if (entries.length === 0) return;
   document.getElementById('confirmMessage').textContent =
     'Are you sure you want to delete all saved entries? This action cannot be undone.';
+  document.getElementById('btnConfirmOk').textContent = 'Delete All';
   document.getElementById('entriesModal').classList.remove('open');
   document.getElementById('confirmModal').classList.add('open');
 };
 document.getElementById('btnConfirmCancel').onclick = () => {
+  const settingsDiscard = document.getElementById('confirmModal').dataset.settingsDiscard;
   document.getElementById('confirmModal').classList.remove('open');
-  document.getElementById('entriesModal').classList.add('open');
+  if (settingsDiscard) {
+    // User chose to stay — keep settings open
+  } else {
+    document.getElementById('entriesModal').classList.add('open');
+  }
 };
 document.getElementById('btnConfirmOk').onclick = () => {
   const cfId = document.getElementById('confirmModal').dataset.deleteCfId;
-  if (cfId) {
+  const settingsDiscard = document.getElementById('confirmModal').dataset.settingsDiscard;
+  if (settingsDiscard) {
+    delete document.getElementById('confirmModal').dataset.settingsDiscard;
+    settingsDirty = false;
+    document.getElementById('confirmModal').classList.remove('open');
+    document.getElementById('settingsModal').classList.remove('open');
+  } else if (cfId) {
     // Delete custom field
     customFieldDefs = customFieldDefs.filter(f => f.id !== cfId);
     entries.forEach(e => { if (e.customFields) delete e.customFields[cfId]; });
@@ -2630,7 +2743,8 @@ document.getElementById('btnImportJSON').onclick = () => {
         closeDataModal(true);
         renderEntriesList();
         setTimeout(renderCharts, 80);
-        alert(`Import complete: ${added} entries added, ${skipped} skipped (day already existed).`);
+        const skippedMsg = skipped > 0 ? ` ${skipped} not imported because an entry for that day was already saved.` : '';
+        alert(`Import complete: ${added} entries added.${skippedMsg}`);
       } catch(err) {
         alert('Failed to parse JSON: ' + err.message);
       }
@@ -2687,8 +2801,51 @@ document.getElementById('colAccentUi').oninput = function() {
 };
 
 // ---- Settings Modal ----
+let settingsDirty = false;
+
+function markSettingsDirty() { settingsDirty = true; }
+
+function closeSettingsWithCheck() {
+  if (settingsDirty) {
+    document.getElementById('confirmMessage').textContent =
+      'You have unsaved changes in Settings. Close without saving?';
+    document.getElementById('confirmModal').dataset.settingsDiscard = '1';
+    document.getElementById('btnConfirmOk').textContent = 'Close without saving';
+    document.getElementById('confirmModal').classList.add('open');
+  } else {
+    document.getElementById('settingsModal').classList.remove('open');
+  }
+}
+
+function saveSettingsAndClose() {
+  settings.timeFormat = document.getElementById('setTimeFormat').value;
+  settings.smoothLines = document.getElementById('setSmoothLines').checked;
+  settings.goalBed = document.getElementById('setGoalBed').value;
+  settings.goalWake = document.getElementById('setGoalWake').value;
+  settings.goalOob = document.getElementById('setGoalOob').value;
+  settings.goalDur = parseFloat(document.getElementById('setGoalDur').value) || 8;
+  settings.defaultBedOffset = document.getElementById('setDefaultBedOffset').value;
+  settings.defaultWakeOffset = document.getElementById('setDefaultWakeOffset').value;
+  settings.defaultOobOffset = document.getElementById('setDefaultOobOffset').value;
+  settings.colBed = document.getElementById('colBed').value;
+  settings.colWake = document.getElementById('colWake').value;
+  settings.colOob = document.getElementById('colOob').value;
+  settings.colDur = document.getElementById('colDur').value;
+  settings.colChartBg = document.getElementById('colChartBg').value;
+  applyAccentUi(document.getElementById('colAccentUi').value);
+  document.documentElement.style.setProperty('--accent-bed', settings.colBed);
+  document.documentElement.style.setProperty('--accent-wake', settings.colWake);
+  document.documentElement.style.setProperty('--accent-dur', settings.colDur);
+  saveData();
+  settingsDirty = false;
+  document.getElementById('settingsModal').classList.remove('open');
+  renderEntriesList();
+  setTimeout(renderCharts, 80);
+}
+
 document.getElementById('btnSettings').onclick = () => {
   document.getElementById('setTimeFormat').value = settings.timeFormat;
+  document.getElementById('setSmoothLines').checked = settings.smoothLines !== false;
   document.getElementById('setGoalBed').value = settings.goalBed;
   document.getElementById('setGoalWake').value = settings.goalWake;
   document.getElementById('setGoalOob').value = settings.goalOob || '';
@@ -2705,18 +2862,21 @@ document.getElementById('btnSettings').onclick = () => {
   renderChartOrderList();
   renderBubbleFieldsList();
   renderSettingsCustomFields();
+  settingsDirty = false;
   document.getElementById('settingsModal').classList.add('open');
+  // Mark dirty on any change inside the modal
+  document.getElementById('settingsModal').addEventListener('change', markSettingsDirty, { once: false });
+  document.getElementById('settingsModal').addEventListener('input', markSettingsDirty, { once: false });
 };
 
-document.getElementById('btnSettingsClose').onclick = () => {
-  document.getElementById('settingsModal').classList.remove('open');
-};
+document.getElementById('btnSettingsClose').onclick = closeSettingsWithCheck;
 document.getElementById('btnSettingsCancel').onclick = () => {
+  settingsDirty = false;
   document.getElementById('settingsModal').classList.remove('open');
 };
+document.getElementById('btnSaveSettingsTop').onclick = saveSettingsAndClose;
 document.getElementById('settingsModal').onclick = (e) => {
-  if (e.target === document.getElementById('settingsModal'))
-    document.getElementById('settingsModal').classList.remove('open');
+  if (e.target === document.getElementById('settingsModal')) closeSettingsWithCheck();
 };
 
 function applyTheme(t) {
@@ -2758,29 +2918,7 @@ document.getElementById('btnTheme').onclick = () => {
   renderCharts();
 };
 
-document.getElementById('btnSaveSettings').onclick = () => {
-  settings.timeFormat = document.getElementById('setTimeFormat').value;
-  settings.goalBed = document.getElementById('setGoalBed').value;
-  settings.goalWake = document.getElementById('setGoalWake').value;
-  settings.goalOob = document.getElementById('setGoalOob').value;
-  settings.goalDur = parseFloat(document.getElementById('setGoalDur').value) || 8;
-  settings.defaultBedOffset = document.getElementById('setDefaultBedOffset').value;
-  settings.defaultWakeOffset = document.getElementById('setDefaultWakeOffset').value;
-  settings.defaultOobOffset = document.getElementById('setDefaultOobOffset').value;
-  settings.colBed = document.getElementById('colBed').value;
-  settings.colWake = document.getElementById('colWake').value;
-  settings.colOob = document.getElementById('colOob').value;
-  settings.colDur = document.getElementById('colDur').value;
-  settings.colChartBg = document.getElementById('colChartBg').value;
-  applyAccentUi(document.getElementById('colAccentUi').value);
-  document.documentElement.style.setProperty('--accent-bed', settings.colBed);
-  document.documentElement.style.setProperty('--accent-wake', settings.colWake);
-  document.documentElement.style.setProperty('--accent-dur', settings.colDur);
-  saveData();
-  document.getElementById('settingsModal').classList.remove('open');
-  renderEntriesList();
-  setTimeout(renderCharts, 80);
-};
+document.getElementById('btnSaveSettings').onclick = saveSettingsAndClose;
 
 document.getElementById('btnResetColors').onclick = () => {
   settings.colBed = DEFAULT_SETTINGS.colBed;
@@ -2815,6 +2953,7 @@ document.getElementById('btnResetSettings').onclick = () => {
   applyAccentUi(DEFAULT_SETTINGS.accentUi);
   saveData();
   document.getElementById('setTimeFormat').value = settings.timeFormat;
+  document.getElementById('setSmoothLines').checked = settings.smoothLines !== false;
   document.getElementById('setGoalBed').value = settings.goalBed;
   document.getElementById('setGoalWake').value = settings.goalWake;
   document.getElementById('setGoalOob').value = settings.goalOob || '';
@@ -3050,6 +3189,25 @@ if (typeof ResizeObserver !== 'undefined') {
 }
 window.addEventListener('orientationchange', () => { setTimeout(renderCharts, 200); });
 window.addEventListener('resize', scheduleRedraw);
+
+// ---- Prevent scroll-through on modal overlays ----
+// Blocks touch scroll events from reaching the page behind open modals.
+// The inner .modal div has overflow-y:auto so it scrolls itself;
+// touches that originate on the overlay backdrop are blocked entirely.
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('touchmove', e => {
+    // Allow scrolling if the touch target is inside the scrollable .modal div
+    const modal = overlay.querySelector('.modal');
+    if (modal && modal.contains(e.target)) {
+      // Let the modal scroll, but stop it reaching the page
+      e.stopPropagation();
+    } else {
+      // Backdrop tap — block entirely
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, { passive: false });
+});
 
 // ---- Init ----
 loadData();
