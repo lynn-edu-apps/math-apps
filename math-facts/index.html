@@ -145,21 +145,25 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
 .btn-show-ans{flex:1;min-width:90px;padding:14px;font-family:'Fredoka One',cursive;font-size:1rem;color:#757575;background:#F5F5F5;border:3px solid #E0E0E0;border-radius:16px;cursor:pointer;box-shadow:0 4px 0 #BDBDBD;transition:all .12s;position:relative;top:0;}
 .btn-show-ans:hover{background:#EEE;}
 .btn-show-ans:active{top:3px;box-shadow:0 1px 0 #BDBDBD;}
-.subtle-row{display:flex;align-items:center;justify-content:space-between;margin-top:18px;gap:10px;padding:0 2px;}
 .btn-quit{font-family:'Fredoka One',cursive;font-size:.85rem;color:#BDBDBD;background:transparent;border:2px dashed #E0E0E0;border-radius:12px;cursor:pointer;transition:all .12s;padding:7px 18px;white-space:nowrap;flex-shrink:0;}
 .btn-quit:hover{border-color:var(--coral);color:var(--coral);background:#FBE9E7;}
 
 /* RTL toggle */
 #rtl-toggle-wrap{display:none;align-items:center;}
 #rtl-toggle-wrap.visible{display:flex;}
-.rtl-toggle-row{display:flex;align-items:center;gap:10px;margin-top:6px;padding:7px 10px;border-radius:12px;background:rgba(0,0,0,.03);border:1.5px solid #EEE;width:fit-content;cursor:pointer;user-select:none;transition:background .15s;}
-.rtl-toggle-row:hover{background:rgba(149,117,205,.08);border-color:#CE93D8;}
-.rtl-toggle-track{width:36px;height:20px;border-radius:20px;background:#E0E0E0;position:relative;transition:background .2s;flex-shrink:0;}
-.rtl-toggle-track::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:white;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.rtl-toggle-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:14px;background:#F5F5F5;border:3px solid #E0E0E0;box-shadow:0 3px 0 #BDBDBD;cursor:pointer;user-select:none;transition:all .15s;position:relative;top:0;}
+.rtl-toggle-row:hover{background:#EDE7F6;border-color:#CE93D8;box-shadow:0 3px 0 #9575CD;}
+.rtl-toggle-row:active{top:2px;box-shadow:0 1px 0 #BDBDBD;}
+.rtl-toggle-track{width:44px;height:24px;border-radius:24px;background:#BDBDBD;position:relative;transition:background .2s;flex-shrink:0;}
+.rtl-toggle-track::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:white;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.25);}
+.rtl-toggle-row.on{background:#EDE7F6;border-color:var(--purple);box-shadow:0 3px 0 #7B1FA2;}
+.rtl-toggle-row.on:active{box-shadow:0 1px 0 #7B1FA2;}
 .rtl-toggle-row.on .rtl-toggle-track{background:var(--purple);}
-.rtl-toggle-row.on .rtl-toggle-track::after{transform:translateX(16px);}
-.rtl-toggle-label{font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:800;color:#9E9E9E;letter-spacing:.3px;}
+.rtl-toggle-row.on .rtl-toggle-track::after{transform:translateX(20px);}
+.rtl-toggle-label{font-family:'Fredoka One',cursive;font-size:1rem;color:#9E9E9E;letter-spacing:.3px;}
+.rtl-toggle-row:hover .rtl-toggle-label{color:var(--purple);}
 .rtl-toggle-row.on .rtl-toggle-label{color:var(--purple);}
+.subtle-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:10px;padding:0 2px;flex-wrap:wrap;}
 
 /* feedback */
 .feedback-msg{text-align:center;padding:10px;border-radius:16px;margin-bottom:16px;margin-top:4px;font-family:'Fredoka One',cursive;font-size:1.4rem;display:none;}
@@ -297,6 +301,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
 /* decimal point numpad button */
 .np-btn.np-dot{background:#E8EAF6;border-color:#C5CAE9;color:#3F51B5;font-size:1.4rem;}
 .np-btn.np-dot:hover{background:#C5CAE9;}
+.rtl-default-row{padding:5px 8px !important;margin-top:0 !important;justify-content:center !important;}
 
 @media(max-width:480px){.op-btn{width:60px;height:60px;font-size:1.6rem;}.numpad{gap:8px;max-width:240px;}.np-btn{height:54px;font-size:1.4rem;}}
 </style>
@@ -448,8 +453,29 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
 
       <div class="modal-field" style="margin-bottom:16px;">
         <div class="modal-toggle-row" id="adv-qopts-toggle" onclick="toggleAdvQOpts()">
-          <div><span class="modal-toggle-row-label">Show advanced input options</span><span class="modal-toggle-row-hint">Reveals a right-to-left digit entry toggle during questions</span></div>
+          <div><span class="modal-toggle-row-label">Show right-to-left digit entry toggle</span><span class="modal-toggle-row-hint">Shows a toggle during questions to enter digits from right to left</span></div>
           <div class="modal-switch-track"></div>
+        </div>
+        <div style="margin-top:10px;padding:10px 12px;background:#F5F5F5;border-radius:12px;border:2px solid #E8E8E8;">
+          <div style="font-size:.75rem;font-weight:900;color:#9E9E9E;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">🔢 Default digit entry direction per operation</div>
+          <div style="font-size:.8rem;font-weight:800;color:#7986CB;background:#E8EAF6;border-radius:8px;padding:5px 8px;margin-bottom:8px;text-align:center;">🟣 On = right-to-left &nbsp;·&nbsp; ⬜ Off = left-to-right</div>
+          <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:5px 8px;align-items:center;">
+            <div></div>
+            <div style="font-size:.7rem;font-weight:900;color:#9E9E9E;text-align:center;text-transform:uppercase;letter-spacing:.4px;">Horizontal</div>
+            <div style="font-size:.7rem;font-weight:900;color:#9E9E9E;text-align:center;text-transform:uppercase;letter-spacing:.4px;">Vertical</div>
+            <div style="font-size:.78rem;font-weight:800;color:#757575;">+ Addition</div>
+            <div class="modal-toggle-row rtl-default-row" id="rtl-default-+-h" onclick="toggleRTLDefault('+','h')"><div class="modal-switch-track"></div></div>
+            <div class="modal-toggle-row rtl-default-row" id="rtl-default-+-v" onclick="toggleRTLDefault('+','v')"><div class="modal-switch-track"></div></div>
+            <div style="font-size:.78rem;font-weight:800;color:#757575;">− Subtraction</div>
+            <div class="modal-toggle-row rtl-default-row" id="rtl-default---h" onclick="toggleRTLDefault('-','h')"><div class="modal-switch-track"></div></div>
+            <div class="modal-toggle-row rtl-default-row" id="rtl-default---v" onclick="toggleRTLDefault('-','v')"><div class="modal-switch-track"></div></div>
+            <div style="font-size:.78rem;font-weight:800;color:#757575;">× Multiplication</div>
+            <div class="modal-toggle-row rtl-default-row" id="rtl-default-×-h" onclick="toggleRTLDefault('×','h')"><div class="modal-switch-track"></div></div>
+            <div class="modal-toggle-row rtl-default-row" id="rtl-default-×-v" onclick="toggleRTLDefault('×','v')"><div class="modal-switch-track"></div></div>
+            <div style="font-size:.78rem;font-weight:800;color:#757575;">÷ Division</div>
+            <div class="modal-toggle-row rtl-default-row" id="rtl-default-÷-h" onclick="toggleRTLDefault('÷','h')"><div class="modal-switch-track"></div></div>
+            <div class="modal-toggle-row rtl-default-row" style="opacity:.35;cursor:not-allowed;pointer-events:none;" title="Vertical division is always left-to-right"><div class="modal-switch-track"></div><span style="font-size:.6rem;font-weight:800;color:#9E9E9E;margin-left:4px;">fixed LTR</span></div>
+          </div>
         </div>
         <div class="modal-toggle-row" id="adv-anim-toggle" onclick="toggleAdvAnim()" style="margin-top:10px;">
           <div><span class="modal-toggle-row-label">🎉 Show answer animations</span><span class="modal-toggle-row-hint">Confetti on correct answers · emoji burst on wrong answers</span></div>
@@ -566,6 +592,18 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
         <div class="op-constraint-section" id="opc-÷">
           <div class="op-constraint-header" onclick="toggleOpConstraint('÷')"><span class="op-constraint-title">➗ Division</span><span class="op-constraint-chevron">▼</span></div>
           <div class="op-constraint-body" id="opc-body-÷">
+            <div class="operand-block"><div class="operand-block-label">Dividend (number being divided)</div>
+              <div class="constraint-mode-tabs">
+                <div class="c-tab active" data-op="÷" data-side="a" data-mode="free" onclick="setCMode('÷','a','free',this)">Any</div>
+                <div class="c-tab" data-op="÷" data-side="a" data-mode="fixed" onclick="setCMode('÷','a','fixed',this)">Fixed values</div>
+                <div class="c-tab" data-op="÷" data-side="a" data-mode="range" onclick="setCMode('÷','a','range',this)">Range</div>
+                <div class="c-tab" data-op="÷" data-side="a" data-mode="multiples" onclick="setCMode('÷','a','multiples',this)">Multiples</div>
+              </div>
+              <div class="constraint-panel" id="cp-÷-a-fixed"><div class="c-input-row"><span class="c-input-label">Values:</span><input class="c-input" style="width:140px" placeholder="e.g. 12, 24, 36" id="cv-÷-a-vals" oninput="saveCVal('÷','a','vals',this.value)"></div><div class="c-hint">Comma-separated list</div></div>
+              <div class="constraint-panel" id="cp-÷-a-range"><div class="c-input-row"><span class="c-input-label">Min:</span><input class="c-input" type="number" min="1" id="cv-÷-a-min" oninput="saveCVal('÷','a','min',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv-÷-a-max" oninput="saveCVal('÷','a','max',this.value)"></div></div>
+              <div class="constraint-panel" id="cp-÷-a-multiples"><div class="c-input-row"><span class="c-input-label">Multiple of:</span><input class="c-input" type="number" id="cv-÷-a-multipleOf" value="10" oninput="saveCVal('÷','a','multipleOf',this.value)"><span class="c-input-label">Max:</span><input class="c-input" type="number" id="cv-÷-a-max2" oninput="saveCVal('÷','a','max',this.value)"></div></div>
+              <div class="c-disallow"><div class="c-input-row"><span class="c-input-label">Disallow:</span><input class="c-input" style="width:140px" placeholder="e.g. 0" id="cv-÷-a-disallow" oninput="saveCVal('÷','a','disallow',this.value)"></div></div>
+            </div>
             <div class="operand-block"><div class="operand-block-label">Divisor</div>
               <div class="constraint-mode-tabs">
                 <div class="c-tab active" data-op="÷" data-side="b" data-mode="free" onclick="setCMode('÷','b','free',this)">Any</div>
@@ -632,7 +670,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
       <div id="rtl-toggle-wrap">
         <label class="rtl-toggle-row" id="rtl-toggle" onclick="toggleRTL()">
           <div class="rtl-toggle-track"></div>
-          <span class="rtl-toggle-label">Right-to-left digits</span>
+          <span class="rtl-toggle-label">🔢 Type digits right-to-left</span>
         </label>
       </div>
       <button class="btn-quit" onclick="quitSession()">Quit</button>
@@ -665,20 +703,28 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
 const STORAGE_KEY = 'mathblast_prefs';
 let prefs = {
   ops:['+'], orient:'vertical', numQ:10, timeMin:0, studentName:'',
-  showAdvQOpts:false, showAnimations:true, autoCheck:false, autoCheckDelay:'normal',
+  showAdvQOpts:true, showAnimations:true, autoCheck:false, autoCheckDelay:'normal',
+  rtlDefault:{
+    '+':{h:false,v:true}, '-':{h:false,v:true},
+    '×':{h:false,v:true}, '÷':{h:false,v:false}
+  },
   allowCarryBorrow:true, allowRemainder:false,
   orientMode:'student', opsMode:'student', fixedOps:['+','-','×','÷'],
   operandRules:{
     '+':{a:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''},b:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''}},
     '-':{b:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''}},
     '×':{a:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''},b:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''}},
-    '÷':{b:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''}}
+    '÷':{a:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''},b:{mode:'free',vals:'',min:'',max:'',multipleOf:'10',disallow:''}}
   },
   decimalPlaces:{
     '+':{a:0,b:0}, '-':{a:0,b:0}, '×':{a:0,b:0}, '÷':{a:0,b:0}
   },
   alwaysDecimal:{'+':false,'-':false,'×':false,'÷':false}
 };
+window.addEventListener('error', function(e){
+  console.error('Math Blast error:', e.message, '\n  in', e.filename, 'line', e.lineno, 'col', e.colno, '\n', e.error&&e.error.stack||'');
+});
+
 function loadPrefs(){
   try{
     const s=localStorage.getItem(STORAGE_KEY);
@@ -689,6 +735,7 @@ function loadPrefs(){
       if(saved.operandRules){prefs.operandRules={...prefs.operandRules};for(const op of['+','-','×','÷']){if(saved.operandRules[op])prefs.operandRules[op]={...prefs.operandRules[op],...saved.operandRules[op]};}}
       if(saved.decimalPlaces){prefs.decimalPlaces={...prefs.decimalPlaces};for(const op of['+','-','×','÷']){if(saved.decimalPlaces[op])prefs.decimalPlaces[op]={...prefs.decimalPlaces[op],...saved.decimalPlaces[op]};}}
       if(saved.alwaysDecimal)prefs.alwaysDecimal={...prefs.alwaysDecimal,...saved.alwaysDecimal};
+      if(saved.rtlDefault){prefs.rtlDefault={...prefs.rtlDefault};for(const op of['+','-','×','÷']){if(saved.rtlDefault[op])prefs.rtlDefault[op]={...prefs.rtlDefault[op],...saved.rtlDefault[op]};else if(typeof saved.rtlDefault[op]==='boolean')prefs.rtlDefault[op]={h:false,v:saved.rtlDefault[op]};}}
     }
   }catch(e){}
 }
@@ -789,7 +836,7 @@ function openAdvanced(){
   const qEl=document.getElementById('adv-qopts-toggle');if(qEl)qEl.classList.toggle('on',!!prefs.showAdvQOpts);
   const animEl=document.getElementById('adv-anim-toggle');if(animEl)animEl.classList.toggle('on',prefs.showAnimations!==false);
   const acEl=document.getElementById('adv-autocheck-toggle');if(acEl)acEl.classList.toggle('on',!!prefs.autoCheck);
-  syncAutoCheckSpeedRow(); syncSpeedButtons(); syncConstraintUI(); syncAllDecimalUI();
+  syncAutoCheckSpeedRow(); syncSpeedButtons(); syncConstraintUI(); syncAllDecimalUI(); syncRTLDefaultUI();
   document.getElementById('advanced-modal').classList.add('open');
 }
 function closeAdvanced(){
@@ -812,7 +859,7 @@ function saveAdvanced(){
 function validateAdvancedSettings(){
   const errors=[];
   const opLabels={'+':`Addition`,'-':`Subtraction`,'×':`Multiplication`,'÷':`Division`};
-  const sideLabels={'+':{a:'First Addend',b:'Second Addend'},'-':{b:'Subtrahend'},'×':{a:'First Factor',b:'Second Factor'},'÷':{b:'Divisor'}};
+  const sideLabels={'+':{a:'First Addend',b:'Second Addend'},'-':{b:'Subtrahend'},'×':{a:'First Factor',b:'Second Factor'},'÷':{a:'Dividend',b:'Divisor'}};
   Object.entries(prefs.operandRules).forEach(([op,sides])=>{
     Object.entries(sides).forEach(([side,r])=>{
       const label=`${opLabels[op]} › ${sideLabels[op][side]}`;
@@ -846,6 +893,21 @@ function validateAdvancedSettings(){
 
 // ── TOGGLE FUNCTIONS ──
 function toggleAdvQOpts(){prefs.showAdvQOpts=!prefs.showAdvQOpts;const e=document.getElementById('adv-qopts-toggle');if(e)e.classList.toggle('on',prefs.showAdvQOpts);}
+function toggleRTLDefault(op,orient){
+  if(!prefs.rtlDefault[op])prefs.rtlDefault[op]={h:false,v:true};
+  prefs.rtlDefault[op][orient]=!prefs.rtlDefault[op][orient];
+  const e=document.getElementById('rtl-default-'+op+'-'+orient);
+  if(e)e.classList.toggle('on',prefs.rtlDefault[op][orient]);
+}
+function syncRTLDefaultUI(){
+  ['+','-','×','÷'].forEach(op=>{
+    const def=prefs.rtlDefault[op]||{h:false,v:true};
+    ['h','v'].forEach(orient=>{
+      const e=document.getElementById('rtl-default-'+op+'-'+orient);
+      if(e)e.classList.toggle('on',!!def[orient]);
+    });
+  });
+}
 function toggleAdvAnim(){prefs.showAnimations=!prefs.showAnimations;const e=document.getElementById('adv-anim-toggle');if(e)e.classList.toggle('on',prefs.showAnimations);}
 function toggleCarryBorrow(){prefs.allowCarryBorrow=!prefs.allowCarryBorrow;const e=document.getElementById('adv-carryborrow-toggle');if(e)e.classList.toggle('on',prefs.allowCarryBorrow);}
 function toggleRemainder(){
@@ -888,8 +950,11 @@ function selectOrientMode(mode){
 function syncOrientSectionVisibility(){const c=document.getElementById('orient-section-card');if(c)c.style.display=(prefs.orientMode==='student')?'':'none';}
 
 function toggleRTL(){
+  const q=session.questions[session.current];
+  // Vertical division is always LTR — ignore toggle
+  if(q&&q.op==='÷'&&getOrient(q)==='vertical')return;
   session.rtlMode=!session.rtlMode;
-  const q=session.questions[session.current];if(q){q.userAnswer='';updateAnswerDisplay(q);}
+  if(q){q.userAnswer='';updateAnswerDisplay(q);}
   syncRTLToggle();
 }
 function syncRTLToggle(){const e=document.getElementById('rtl-toggle');if(e)e.classList.toggle('on',session.rtlMode);}
@@ -1072,22 +1137,33 @@ function generateQuestion(ops){
       const dpAns=dpA+dpB; // product decimal places = sum of factors' places
       answer=roundToDP(a*b,dpAns);
     }else{
+      const ca=pickConstrained('÷','a');
       const cb=pickConstrained('÷','b');
       let ib=cb!==null?cb:Math.floor(Math.random()*11)+2;
       if(ib===0)ib=2;
       if(!useDecimal&&prefs.allowRemainder){
-        // Whole-number division with remainder (existing logic)
+        // Whole-number division with remainder
         const quotient=Math.floor(Math.random()*12)+1;
         const rem=Math.floor(Math.random()*ib);
-        a=ib*quotient+rem; b=ib; answer=quotient;
+        a=ca!==null?ca:ib*quotient+rem; b=ib; answer=Math.floor(a/b);
       }else if(!useDecimal){
-        b=ib; a=ib*(Math.floor(Math.random()*12)+1); answer=a/b;
+        b=ib;
+        if(ca!==null){
+          // Dividend constrained — use it directly, answer must be integer
+          a=ca; answer=a/b;
+        }else{
+          a=ib*(Math.floor(Math.random()*12)+1); answer=a/b;
+        }
       }else{
-        // Decimal division: pick a clean quotient with decimals, build dividend
+        // Decimal division
         b=dpB>0?roundToDP(ib+Math.random(),dpB):ib;
         if(b===0)b=dpB>0?roundToDP(1+Math.random(),dpB):1;
-        const quotient=roundToDP((Math.floor(Math.random()*12)+1)+(dpA>0?Math.random():0),dpA);
-        a=roundToDP(b*quotient,Math.max(dpA,dpB)+1);
+        if(ca!==null){
+          a=dpA>0?roundToDP(ca+Math.random(),dpA):ca;
+        }else{
+          const quotient=roundToDP((Math.floor(Math.random()*12)+1)+(dpA>0?Math.random():0),dpA);
+          a=roundToDP(b*quotient,Math.max(dpA,dpB)+1);
+        }
         answer=roundToDP(a/b,Math.max(dpA,dpB));
       }
     }
@@ -1129,7 +1205,7 @@ function startSession(){
   const activeOps=(prefs.opsMode==='fixed'&&prefs.fixedOps&&prefs.fixedOps.length)?prefs.fixedOps:prefs.ops;
   session.questions=generateQuestions(activeOps,prefs.timeMin?999:prefs.numQ);
   session.current=0; session.correctFirst=0; session.fixed=0; session.wrong=0; session.skipped=0;
-  session.answered=false; session.revealed=false; session.rtlMode=false; session.activeField='quotient';
+  session.answered=false; session.revealed=false; session.activeField='quotient';
   session.timerMode=!!prefs.timeMin; session.secondsLeft=prefs.timeMin*60;
   clearInterval(session.countdownId); clearInterval(session.timerId);
   showScreen('question'); showQuestion();
@@ -1160,13 +1236,21 @@ function showQuestion(){
   const q=session.questions[session.current];
   q.startTime=Date.now(); session.qStartTime=q.startTime;
   session.answered=false; session.revealed=false; session.activeField='quotient';
+  // Set RTL mode from per-op, per-orientation default
+  // Vertical division is always LTR — place value direction is fixed
+  const orient=getOrient(q);
+  const orientKey=orient==='horizontal'?'h':'v';
+  const rtlDef=prefs.rtlDefault||{};
+  const opDef=rtlDef[q.op]||{h:false,v:false};
+  session.rtlMode=(q.op==='÷'&&orient==='vertical')?false:!!(opDef[orientKey]);
   document.getElementById('progress-text').textContent=session.timerMode?`Question ${session.current+1}`:`Question ${session.current+1} of ${session.questions.length}`;
   document.getElementById('progress-fill').style.width=session.timerMode?0:((session.current)/session.questions.length*100)+'%';
   const fb=document.getElementById('feedback-msg');fb.className='feedback-msg';fb.textContent='';fb.style.display='none';
   document.querySelector('.try-again-btn')&&document.querySelector('.try-again-btn').remove();
   document.getElementById('check-btn').disabled=false;
   const rtlWrap=document.getElementById('rtl-toggle-wrap');
-  if(rtlWrap)rtlWrap.classList.toggle('visible',!!prefs.showAdvQOpts);
+  const isVertDiv=q.op==='÷'&&getOrient(q)==='vertical';
+  if(rtlWrap)rtlWrap.classList.toggle('visible',!!prefs.showAdvQOpts&&!isVertDiv);
   syncRTLToggle();
   // Show decimal point button if this question uses decimals
   const dotBtn=document.getElementById('np-dot-btn');
@@ -1257,21 +1341,47 @@ function renderLongDivision(card,q,val,state){
 
   const MONO = "font-family:'Roboto Mono',monospace;font-weight:700";
   const FS   = "font-size:clamp(2rem,7vw,3.5rem)";
-  const qContent = val || '<span style="color:#E0E0E0">?</span>';
   const rContent = remVal || '<span style="color:#E0E0E0">?</span>';
+
+  // Width: match dividend character count
+  const dividendStr=String(q.a);
+  const dividendChars=dividendStr.length;
+  const quotWidth=(dividendChars*0.62+0.4).toFixed(2)+'em';
+
+  // Smart place-value display for quotient
+  const answerDigits=String(Math.round(q.answer)).length;
+  const padCount=dividendChars-answerDigits; // smart left-pad count
+  const PLACEHOLDER='·'; // middle dot — non-digit, holds monospace space
+  let qContent;
+  if(!val){
+    qContent='<span style="color:#E0E0E0">?</span>';
+  } else {
+    const leadingZeros=val.match(/^(0*)/)[1].length;
+    const significant=val.slice(leadingZeros);
+    const smartPad=Math.max(0,padCount-leadingZeros);
+    // Total visible+placeholder chars must equal dividendChars so digits land in correct columns
+    // Layout: [grey leading 0s][invisible smart-pad dots][significant digits][invisible right-fill dots]
+    const filledChars=leadingZeros+smartPad+significant.length;
+    const rightFill=Math.max(0,dividendChars-filledChars);
+    const darkLeading=leadingZeros>0
+      ?'<span style="color:#BDBDBD">'+'0'.repeat(leadingZeros)+'</span>':'';
+    const invisMid=smartPad>0
+      ?'<span style="color:transparent">'+PLACEHOLDER.repeat(smartPad)+'</span>':'';
+    const invisRight=rightFill>0
+      ?'<span style="color:transparent">'+PLACEHOLDER.repeat(rightFill)+'</span>':'';
+    qContent=darkLeading+invisMid+significant+invisRight;
+  }
 
   const quotBox =
     '<div id="ans-display"' +
     ' onclick="if(session.questions[session.current].remainder!=null)setActiveField(&quot;quotient&quot;)"' +
-    ' style="display:flex;align-items:center;justify-content:' + (val ? 'flex-end' : 'center') + ';' +
+    ' style="display:flex;align-items:center;justify-content:flex-start;' +
            MONO + ';' + FS + ';' +
            'border:4px solid ' + qBrd + ';border-radius:14px;' +
            'background:' + qBg + ';color:' + qClr + ';' +
-           'padding:0.1em 10px;min-width:1.5em;' +
+           'padding:0.1em 14px 0.1em 10px;width:100%;box-sizing:border-box;' +
            'cursor:' + (hasRem ? 'pointer' : 'default') + ';' +
-           'box-shadow:' + qShadow + ';' +
-           // margin-right offsets the bracket right-padding so digits align with dividend
-           'margin-right:-5px;">' +
+           'box-shadow:' + qShadow + ';margin-right:-5px;">' +
     qContent + '</div>';
 
   const remBlock = hasRem
@@ -1301,7 +1411,7 @@ function renderLongDivision(card,q,val,state){
       // Row 1 Col 1: empty
       '<div style="grid-row:1;grid-column:1;"></div>' +
 
-      // Row 1 Col 2: quotient box (same column as dividend — ensures digit alignment)
+      // Row 1 Col 2: quotient box — right-aligned to match bracket's align-items:flex-end
       '<div style="grid-row:1;grid-column:2;display:flex;justify-content:flex-end;">' +
         quotBox +
       '</div>' +
@@ -1356,6 +1466,12 @@ function numpadPress(key){
 }
 
 function updateAnswerDisplay(q){
+  // For vertical division, always re-render the full problem so the
+  // smart placeholder dot logic in renderLongDivision runs correctly
+  if(q&&q.op==='÷'&&getOrient(q)==='vertical'){
+    renderProblem(q);
+    return;
+  }
   const el=document.getElementById('ans-display');
   if(el){
     const v=q.userAnswer;
@@ -1401,8 +1517,14 @@ function checkAnswer(){
   const quotOk=Math.abs(userNum-q.answer)<0.0001;
   const remOk=!hasRem||(q.remainder===0&&q.userRemainder==='')||parseInt(q.userRemainder)===q.remainder;
   const correct=quotOk&&remOk;
+  // Strip leading zeros on correct vertical division answer (e.g. "014" → "14")
+  if(correct&&q.op==='÷'&&getOrient(q)==='vertical'&&q.userAnswer){
+    const stripped=String(parseFloat(q.userAnswer));
+    if(stripped!==q.userAnswer)q.userAnswer=stripped;
+  }
   if(q.attempts===0){q.firstAnswer=q.userAnswer;q.firstRemainder=q.userRemainder||'';}
   q.attempts++; session.answered=true;
+  renderProblem(q); // re-render so quotient box reflects any strip + correct state
   const ansEl=document.getElementById('ans-display');
   if(ansEl){ansEl.classList.remove('has-input','correct','wrong');ansEl.classList.add(correct?'correct':'wrong');}
   const remEl=document.getElementById('rem-display');
@@ -1476,7 +1598,7 @@ function endSession(){
     <div class="score-card fixed"><div class="score-num">${fixed.length}</div><div class="score-lbl">Fixed it 🔧</div></div>
     <div class="score-card wrong"><div class="score-num">${wrong.length}</div><div class="score-lbl">Missed ❌</div></div>
     <div class="score-card skipped"><div class="score-num">${skipped.length}</div><div class="score-lbl">Skipped ⏭</div></div>
-    <div class="score-card time"><div class="score-num">${avgTime}s</div><div class="score-lbl">Avg Time ⏱</div></div>`;
+    <div class="score-card time"><div class="score-num">${avgTime==='—'?'—':avgTime+'s'}</div><div class="score-lbl">Avg Time ⏱</div></div>`;
   const pct=done.length?correctFirst.length/done.length:0;
   document.getElementById('results-emoji').textContent=pct>=.9?'🌟🌟🌟 Perfect!':pct>=.7?'⭐⭐ Great job!':pct>=.5?'⭐ Keep practicing!':'💪 You can do it!';
   const hi=document.getElementById('history-items');hi.innerHTML='';
