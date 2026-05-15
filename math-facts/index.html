@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Math Blast! 🚀</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&family=Roboto+Mono:wght@700&display=swap');
@@ -14,6 +14,8 @@
   --shadow:0 4px 0px rgba(0,0,0,0.15); --shadow-lg:0 8px 0px rgba(0,0,0,0.15);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
+button,input,select,a,[onclick]{touch-action:manipulation;}
+html{touch-action:manipulation;}
 body{font-family:'Nunito',sans-serif;background:var(--bg);min-height:100vh;color:var(--text);overflow-x:hidden;}
 body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
   background:radial-gradient(circle at 10% 20%,rgba(79,195,247,.15) 0%,transparent 40%),
